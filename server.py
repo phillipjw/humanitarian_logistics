@@ -9,6 +9,9 @@ canvas_height = 300
 grid_width = int(canvas_width / 4)
 grid_height = int(canvas_height / 4)
 
+num_azc = 5
+nc_rate = .5
+
 
 def agent_portrayal(agent):
     
@@ -44,5 +47,5 @@ grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_
 server = ModularServer(HumanitarianLogistics,
                        [grid],
                        "Humanitarian Logistics",
-                       {"N_a": 2,"N_r" : 50, "width": grid_width, "height": grid_height})
+                       {"N_a": num_azc,"nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
 
