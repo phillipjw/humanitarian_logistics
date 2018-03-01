@@ -15,20 +15,35 @@ class HumanitarianLogistics(Model):
         self.num_azc = N_a #number of AZC in sim
         self.nc_rate = nc_rate #rate of inflow of newcomers
         
+        self.width = width
+        self.height = height
+        
         self.grid = MultiGrid(width, height, True)
         self.schedule = RandomActivation(self)
         self.running = True
         self.num_nc = 0
         
+        self.dq_min = .5
+        
         # Create AZCs
         for i in range(self.num_azc):
-            a = AZC(i, self)
+            
+            if i == 0:
+                occupant_type = 'edp'
+            elif i < self.num_azc - 1:
+                occupant_type = 'as'
+            else:
+                occupant_type = 'tr'
+            
+            a = AZC(i, self, occupant_type)
+            
             self.schedule.add(a)
             # Add the agent to a random grid cell
             
-            x = int(self.grid.width / self.num_azc) * (i)  
+            x = int((self.width / self.num_azc) * (i+.5))  
             
-            y = int(self.grid.height / 2)
+            y = int(self.height * .5)
+            
             self.grid.place_agent(a, (x, y))
                               
             
@@ -44,11 +59,17 @@ class HumanitarianLogistics(Model):
             
             self.num_nc += 1
             
-            x = randrange(self.grid.width)
-            y = randrange(self.grid.height)
+            
+            ter_apel = self.schedule.agents
+            
+            
+            x = int((self.width / self.num_azc)
+                    * .5) + int(uniform(0,30))
+            y = int(self.height * .5) + int(uniform(0,30))
+            
             pos = (x,y)
             
-            r = Newcomer(self.num_nc, self, pos)
+            r = Newcomer(self.num_nc, self, pos, self.dq_min)
             self.schedule.add(r)
             
             
@@ -57,24 +78,59 @@ class HumanitarianLogistics(Model):
         
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model, pos):
+    def __init__(self, unique_id, model, pos, dq_min):
+        
+        '''
+        
+        Initializes Newcomer Class (NC)
+        DQ - documentation quality
+        pos - position in x,y space
+        dq_min - refers to the IND standard
+        decision time - time until IND must make a decision. 
+       
+        
+        '''
         super().__init__(unique_id, model)
         self.pos = pos
         
+        self.ls = 'edp'
+        
         self.decision_time = 28
+        
+        
+        self.dq = uniform(0,1)
             
     def step(self):
         self.decision_time -= 1
-        print(self.decision_time)
-        if self.decision_time == 0:
-            self.model.grid.remove_agent(self)
-            print('out')
         
-
-class AZC(Agent):
-    """ An agent with fixed initial wealth."""
+        if self.decision_time == 0:
+            
+            if self.dq < self.model.dq_min:
+                self.model.grid.remove_agent(self)
+            else:
+                self.ls = 'tr'
+                
+class Building(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+         
+        self.capacity = 0
+        self.occupants = set([])
+        
+        self.occupancy = len(self.occupants)
+                          
+                
+                
+
+        
+
+class AZC(Building):
+    def __init__(self, unique_id, model,occupant_type):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 0
+        self.occupants = set([])
+        self.occupant_type = occupant_type
 
 
     def step(self):

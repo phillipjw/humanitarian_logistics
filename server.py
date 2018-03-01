@@ -6,10 +6,10 @@ from model import HumanitarianLogistics, AZC, Newcomer
 canvas_width = 500
 canvas_height = 300
 
-grid_width = int(canvas_width / 4)
-grid_height = int(canvas_height / 4)
+grid_width = int(canvas_width / 2)
+grid_height = int(canvas_height / 2)
 
-num_azc = 5
+num_azc = 3
 nc_rate = .5
 
 
