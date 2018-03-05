@@ -37,7 +37,8 @@ def agent_portrayal(agent):
         portrayal['Layer'] = 0
         portrayal['Color'] = 'blue'
         portrayal['w'] = 20
-        portrayal['h'] = 10        
+        portrayal['h'] = 10 
+        portrayal['text'] = agent.occupancy
 
 
         
