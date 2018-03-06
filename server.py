@@ -9,7 +9,7 @@ canvas_height = 300
 grid_width = int(canvas_width / 2)
 grid_height = int(canvas_height / 2)
 
-num_azc = 3
+num_azc = 4
 nc_rate = .5
 
 

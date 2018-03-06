@@ -28,7 +28,9 @@ class HumanitarianLogistics(Model):
         self.running = True
         self.num_nc = 0
         
-        self.dq_min = .5
+        self.dq_min = .85
+        
+        self.dq_ext = .6
         
         
         # create RVR
@@ -48,8 +50,11 @@ class HumanitarianLogistics(Model):
             
             if i == 0:
                 occupant_type = 'edp'
-            elif i < self.num_azc - 1:
+            elif i < self.num_azc - 2:
                 occupant_type = 'as'
+            elif i == self.num_azc - 2:
+                occupant_type = 'as_ext'
+                print('test')
             else:
                 occupant_type = 'tr'
                 
@@ -245,7 +250,6 @@ class Newcomer(Agent):
         elif self.ls == 'as':
         
             self.decision_time -= 1
-            
                         
             try:
                 self.asylum_procedure[self.current_step]
@@ -256,12 +260,22 @@ class Newcomer(Agent):
 
 
             if self.current_step == len(self.asylum_procedure):
+                
+                
 
                 if self.dq < self.model.dq_min:
-                    self.model.Remove(self)
+                    
+                    if self.dq > self.model.dq_ext:
+                        self.ls = 'as_ext'
+                        self.model.house(self)
+                    else:
+                        
+                        self.model.Remove(self)
                 else:
                     self.ls = 'tr'
                     self.model.house(self)
+                    
+                    
         elif self.ls == 'tr':
             print('made it!')
                     
