@@ -4,11 +4,23 @@ import mesa
 from mesa.space import MultiGrid
 from mesa import Agent, Model
 from mesa.time import RandomActivation
+from mesa.datacollection import DataCollector
 
 
 from random import randrange
 from random import uniform
 import numpy as np
+
+def calc_caps(model):
+    
+    azcs = np.array([x.occupancy for x in
+            model.schedule.agents if
+            type(x) is AZC and
+                    x.occupant_type == 'as_ext'])
+    
+    
+    
+    return np.mean(azcs)
 
 class HumanitarianLogistics(Model):
     """A model with: number of azc
@@ -42,6 +54,11 @@ class HumanitarianLogistics(Model):
         self.schedule.add(IND_)
         self.ind = IND_
         
+        #agent specs
+        
+        
+        self.datacollector = DataCollector(
+            model_reporters = {'Capacities' : calc_caps})
         
         
         
@@ -89,7 +106,7 @@ class HumanitarianLogistics(Model):
         
         house_loc = destination.pos
         
-        print(house_loc)
+        
         
         #add noise
         x = house_loc[0] + np.random.randint(1,10)
@@ -98,6 +115,8 @@ class HumanitarianLogistics(Model):
         self.grid.place_agent(newcomer, (x,y))
         
         destination.occupants.add(newcomer)
+        destination.occupancy = len(destination.occupants) #this can be in +/- form
+        
         
         
     def Remove(self, agent):
@@ -106,32 +125,46 @@ class HumanitarianLogistics(Model):
         self.grid.remove_agent(agent)
         
                               
+    def addNewcomer(self):
+        self.num_nc += 1
+        country_of_origin = None
+        
+        if np.random.randint(0,10) > 4:
+            country_of_origin = 'Syria'
             
+        else:
+            country_of_origin = 'Pakistan'
+            
+            
+        self.specs = {'Syria' : np.random.uniform(.5,1),
+                      'Pakistan' : np.random.uniform(0,.3)}
+            
+        
+            
+            
+        x = int((self.width / self.num_azc)
+                    * .5) + int(uniform(0,30))
+        y = int(self.height * .5) + int(uniform(0,30))
+
+        pos = (x,y)
+
+        r = Newcomer(self.num_nc, self, pos, self.specs[country_of_origin], country_of_origin)
+        self.schedule.add(r)
+
+        self.house(r)
           
            
 
     def step(self):
         self.schedule.step()
+        self.datacollector.collect(self)
         
         
         #adds newcomers to simuluation at a given rate
         if uniform(0,1) < self.nc_rate:
-            
-            self.num_nc += 1
-            
+            self.addNewcomer()
             
             
-            
-            x = int((self.width / self.num_azc)
-                    * .5) + int(uniform(0,30))
-            y = int(self.height * .5) + int(uniform(0,30))
-            
-            pos = (x,y)
-            
-            r = Newcomer(self.num_nc, self, pos, self.dq_min)
-            self.schedule.add(r)
-            
-            self.house(r)
             
             
 class Organization(Agent):
@@ -169,7 +202,6 @@ class RVR(NGO):
         Help agent gather documentation
         """
         agt.dq += self.dq_rate
-        print('Meeting w RVR')
         
         
 class IND(Organization):
@@ -187,14 +219,13 @@ class IND(Organization):
         possibility of misinterpretation
         """
         agt.case -= self.likelihood_misinterpretation
-        print('meeting w IND')
         
         
         
         
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model, pos, dq_min):
+    def __init__(self, unique_id, model, pos, dq, country_of_origin):
         
         '''
         
@@ -218,7 +249,7 @@ class Newcomer(Agent):
         
         self.intake_time = 4
         
-        self.dq = uniform(0,1) #initially random documentation quality, to be changed later
+        self.dq = dq
         
         self.asylum_procedure = [self.model.rvr.counsel(self),
                                  self.model.ind.interview(self),
@@ -226,6 +257,8 @@ class Newcomer(Agent):
                                  self.model.ind.interview(self)]
         
         self.current_step = 0
+        
+        self.coo = country_of_origin
         
         
         
@@ -277,8 +310,7 @@ class Newcomer(Agent):
                     
                     
         elif self.ls == 'tr':
-            print('made it!')
-                    
+            pass
  
                     
                     

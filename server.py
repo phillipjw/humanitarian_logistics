@@ -2,6 +2,8 @@
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
 from model import HumanitarianLogistics, AZC, Newcomer
+from mesa.visualization.modules import ChartModule
+
 
 canvas_width = 500
 canvas_height = 300
@@ -45,8 +47,13 @@ def agent_portrayal(agent):
     return portrayal
 
 grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_height)
+
+chart = ChartModule([{'Label' : 'Capacities',
+                      'Color' : 'Black'}],
+                    data_collector_name = 'datacollector')
+
 server = ModularServer(HumanitarianLogistics,
-                       [grid],
+                       [grid,chart],
                        "Humanitarian Logistics",
                        {"N_a": num_azc,"nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
 
