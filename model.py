@@ -95,6 +95,11 @@ class HumanitarianLogistics(Model):
         destination.occupants.add(newcomer)
         
         
+    def Remove(self, agent):
+        
+        self.schedule.remove(agent)
+        self.grid.remove_agent(agent)
+        
                               
             
           
@@ -253,8 +258,7 @@ class Newcomer(Agent):
             if self.current_step == len(self.asylum_procedure):
 
                 if self.dq < self.model.dq_min:
-                    self.model.grid.remove_agent(self)
-                    self.model.schedule.remove(self)
+                    self.model.Remove(self)
                 else:
                     self.ls = 'tr'
                     self.model.house(self)
