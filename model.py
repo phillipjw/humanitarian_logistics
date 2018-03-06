@@ -84,9 +84,11 @@ class HumanitarianLogistics(Model):
         
         house_loc = destination.pos
         
+        print(house_loc)
+        
         #add noise
-        x = house_loc[0] +np.random.randint(0,10)
-        y = house_loc[1] +np.random.randint(0,10)
+        x = house_loc[0] + np.random.randint(1,10)
+        y = house_loc[1] + np.random.randint(1,10)
         
         self.grid.place_agent(newcomer, (x,y))
         
@@ -159,6 +161,7 @@ class RVR(NGO):
         agt.dq += self.dq_rate
         print('Meeting w RVR')
         
+        
 class IND(Organization):
     
     def __init__(self, unique_id, model):
@@ -190,6 +193,7 @@ class Newcomer(Agent):
         pos - position in x,y space
         dq_min - refers to the IND standard
         decision time - time until IND must make a decision. 
+        current_step - refers to what position the agent is in the sequence of actions
        
         
         '''
@@ -237,18 +241,30 @@ class Newcomer(Agent):
         
             self.decision_time -= 1
             
-            self.asylum_procedure[self.current_step]
-            self.current_step += 1
-            #self.model.rvr.counsel(self)
-            #self.model.ind.interview(self)
+                        
+            try:
+                self.asylum_procedure[self.current_step]
+                self.current_step += 1
+            except IndexError:
+                print(self.ls)
+                print(self.current_step)
 
-            if self.decision_time == 0:
+
+            if self.current_step == len(self.asylum_procedure):
 
                 if self.dq < self.model.dq_min:
                     self.model.grid.remove_agent(self)
+                    self.model.schedule.remove(self)
                 else:
                     self.ls = 'tr'
                     self.model.house(self)
+        elif self.ls == 'tr':
+            print('made it!')
+                    
+ 
+                    
+                    
+                    
                 
 class Building(Agent):
     def __init__(self, unique_id, model):
