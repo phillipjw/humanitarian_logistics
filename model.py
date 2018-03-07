@@ -34,6 +34,24 @@ def calc_as(model):
     
     return np.mean(azcs)
 
+def calc_successrate(model):
+    
+    newcomers = [agent for agent in model.schedule.agents if
+                 type(agent) is Newcomer]
+    
+    
+    syrians = [agent for agent in newcomers if
+               agent.coo == 'Syria']
+    
+    
+    status = [agent for agent in syrians if
+              agent.ls == 'tr']
+    
+      
+    return 1.0*len(status) / (model.country_count[0] + 1)
+    
+
+
 class HumanitarianLogistics(Model):
     """A model with: number of azc
         rate of newcomer arrival
@@ -63,6 +81,8 @@ class HumanitarianLogistics(Model):
         
         self.country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
         
+        self.country_count = np.zeros(4)
+        
         
         # create RVR
         RVR_ = RVR(0, self)
@@ -79,6 +99,9 @@ class HumanitarianLogistics(Model):
         self.datacollector = DataCollector(
             model_reporters = {'Cap - Extended-AS' : calc_extended_as,
                               'Cap - AS' : calc_as})
+        
+        self.sr = DataCollector(
+            model_reporters = {'Syria' : calc_successrate})
         
         
         
@@ -160,7 +183,10 @@ class HumanitarianLogistics(Model):
         
         country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
         country = np.random.multinomial(1, [.50,.30,.10,.10], size = 1)
-        country_of_origin = country_list[np.where(country == 1)[1][0]]
+        country = np.where(country == 1)[1][0]
+        country_of_origin = country_list[country]
+        
+        self.country_count[country] += 1
             
         
             
@@ -182,11 +208,13 @@ class HumanitarianLogistics(Model):
     def step(self):
         self.schedule.step()
         self.datacollector.collect(self)
+        self.sr.collect(self)
         
         
         #adds newcomers to simuluation at a given rate
         if uniform(0,1) < self.nc_rate:
             self.addNewcomer()
+            print(self.nc_rate)
             
             
             
