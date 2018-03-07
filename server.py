@@ -85,7 +85,13 @@ chart = ChartModule([{'Label' : 'Cap - Extended-AS',
                       data_collector_name = 'datacollector')
 
 chart_suces = ChartModule([{'Label' : 'Syria',
-                            'Color' : 'blue'}],
+                            'Color' : 'blue'},
+                          {'Label' : 'Iraq',
+                            'Color' : 'red'},
+                          {'Label' : 'Eritrea',
+                            'Color' : 'black'},
+                          {'Label' : 'Afghanistan',
+                            'Color' : 'yellow'},],
                           data_collector_name = 'sr')
 
 
