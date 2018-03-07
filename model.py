@@ -56,6 +56,13 @@ class HumanitarianLogistics(Model):
         
         self.dq_ext = .6
         
+        self.specs = {'Syria' : [.97,.96],
+                      'Eritrea' : [.96,.89],
+                     'Iraq' : [.482,.611],
+                     'Afghanistan' : [.518,.52]}
+        
+        self.country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
+        
         
         # create RVR
         RVR_ = RVR(0, self)
@@ -146,17 +153,14 @@ class HumanitarianLogistics(Model):
         self.num_nc += 1
         country_of_origin = None
         
-        if np.random.randint(0,10) > 4:
-            country_of_origin = 'Syria'
-            
-        else:
-            country_of_origin = 'Iraq'
+       
             
             
-        self.specs = {'Syria' : [.97,.96],
-                      'Eritrea' : [.96,.89],
-                     'Iraq' : [.482,.611],
-                     'Afghanistan' : [.518,.52]}
+        
+        
+        country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
+        country = np.random.multinomial(1, [.50,.30,.10,.10], size = 1)
+        country_of_origin = country_list[np.where(country == 1)[1][0]]
             
         
             
@@ -269,10 +273,12 @@ class Newcomer(Agent):
         
         self.decision_time = 28 #28 days is the length of the general asylum procedure
         
-        self.intake_time = 4
+        self.intake_time = 4 #time until transfer out of ter apel
         
-        self.dq = dq
+        self.dq = dq #quality of documentation #REMOVE
         
+        
+        #series of actions undergone during asylum procedure #REMOVE
         self.asylum_procedure = [self.model.rvr.counsel(self),
                                  self.model.ind.interview(self),
                                  self.model.rvr.counsel(self),
