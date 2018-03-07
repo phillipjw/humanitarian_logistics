@@ -5,18 +5,30 @@ from mesa.space import MultiGrid
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
+from scipy.stats import bernoulli
 
 
 from random import randrange
 from random import uniform
 import numpy as np
 
-def calc_caps(model):
+def calc_extended_as(model):
     
     azcs = np.array([x.occupancy for x in
             model.schedule.agents if
             type(x) is AZC and
                     x.occupant_type == 'as_ext'])
+    
+    
+    
+    return np.mean(azcs)
+
+def calc_as(model):
+    
+    azcs = np.array([x.occupancy for x in
+            model.schedule.agents if
+            type(x) is AZC and
+                    x.occupant_type == 'as'])
     
     
     
@@ -58,7 +70,8 @@ class HumanitarianLogistics(Model):
         
         
         self.datacollector = DataCollector(
-            model_reporters = {'Capacities' : calc_caps})
+            model_reporters = {'Cap - Extended-AS' : calc_extended_as,
+                              'Cap - AS' : calc_as})
         
         
         
@@ -96,30 +109,34 @@ class HumanitarianLogistics(Model):
     
     def house(self,newcomer):
 
-        
+        #find building for newcomers legal status
         eligible_buildings = [x for x in self.schedule.agents 
                     if type(x) is AZC and
                     x.occupant_type == newcomer.ls]
+        destination = eligible_buildings[0] #take first one, in future, evaluate buildings on some criteria
+        house_loc = destination.pos #where is it
         
-        
-        destination = eligible_buildings[0]
-        
-        house_loc = destination.pos
+        if newcomer.ls is not 'edp':
+            newcomer.loc.occupancy -= 1
         
         
         
         #add noise
-        x = house_loc[0] + np.random.randint(1,10)
-        y = house_loc[1] + np.random.randint(1,10)
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
         
-        self.grid.place_agent(newcomer, (x,y))
+        self.grid.place_agent(newcomer, (x,y)) #place
         
-        destination.occupants.add(newcomer)
-        destination.occupancy = len(destination.occupants) #this can be in +/- form
+        destination.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = destination #update agent loca
+        
+        destination.occupancy += 1 #update occupancy
         
         
         
     def Remove(self, agent):
+        
+        agent.loc.occupancy -= 1
         
         self.schedule.remove(agent)
         self.grid.remove_agent(agent)
@@ -133,11 +150,13 @@ class HumanitarianLogistics(Model):
             country_of_origin = 'Syria'
             
         else:
-            country_of_origin = 'Pakistan'
+            country_of_origin = 'Iraq'
             
             
-        self.specs = {'Syria' : np.random.uniform(.5,1),
-                      'Pakistan' : np.random.uniform(0,.3)}
+        self.specs = {'Syria' : [.97,.96],
+                      'Eritrea' : [.96,.89],
+                     'Iraq' : [.482,.611],
+                     'Afghanistan' : [.518,.52]}
             
         
             
@@ -148,7 +167,8 @@ class HumanitarianLogistics(Model):
 
         pos = (x,y)
 
-        r = Newcomer(self.num_nc, self, pos, self.specs[country_of_origin], country_of_origin)
+        r = Newcomer(self.num_nc, self, pos, uniform(0,1),
+                     country_of_origin, self.specs[country_of_origin])
         self.schedule.add(r)
 
         self.house(r)
@@ -225,7 +245,7 @@ class IND(Organization):
         
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model, pos, dq, country_of_origin):
+    def __init__(self, unique_id, model, pos, dq, country_of_origin, specs):
         
         '''
         
@@ -245,6 +265,8 @@ class Newcomer(Agent):
         
         self.ls = 'edp' #externally displaced person
         
+        self.loc = None
+        
         self.decision_time = 28 #28 days is the length of the general asylum procedure
         
         self.intake_time = 4
@@ -259,6 +281,13 @@ class Newcomer(Agent):
         self.current_step = 0
         
         self.coo = country_of_origin
+        
+        self.ext_time = 90 #duration of extended procedure
+        
+        self.specs = specs
+        
+        self.first = bernoulli.rvs(self.specs[0], size = 1)[0]
+        self.second = None
         
         
         
@@ -283,27 +312,49 @@ class Newcomer(Agent):
         elif self.ls == 'as':
         
             self.decision_time -= 1
-                        
-            try:
-                self.asylum_procedure[self.current_step]
-                self.current_step += 1
-            except IndexError:
-                print(self.ls)
-                print(self.current_step)
-
-
-            if self.current_step == len(self.asylum_procedure):
-                
-                
-
-                if self.dq < self.model.dq_min:
+            
+            if self.decision_time == 0:
+                if self.first == 0:
+                    self.ls = 'as_ext'
+                    self.model.house(self)
                     
-                    if self.dq > self.model.dq_ext:
-                        self.ls = 'as_ext'
-                        self.model.house(self)
-                    else:
+                    self.second = bernoulli.rvs(self.specs[1], size = 1)[0]
+                    
+                else:
+                    self.ls = 'tr'
+                    self.model.house(self)
                         
-                        self.model.Remove(self)
+            #try:
+            #    self.asylum_procedure[self.current_step]
+            #    self.current_step += 1
+            #except IndexError:
+            #    print(self.ls)
+            #  print(self.current_step)
+
+
+            #if self.current_step == len(self.asylum_procedure):
+                
+                
+
+            #    if self.dq < self.model.dq_min:
+            #        
+            #        if self.dq > self.model.dq_ext:
+            #            self.ls = 'as_ext'
+            #            self.model.house(self)
+            #        else:
+                        
+            #            self.model.Remove(self)
+            #    else:
+            #        self.ls = 'tr'
+            #        self.model.house(self)
+                    
+        elif self.ls == 'as_ext':
+            self.ext_time -= 1
+            
+            if self.ext_time == 0:
+            
+                if self.second == 0:
+                    self.model.Remove(self)
                 else:
                     self.ls = 'tr'
                     self.model.house(self)
@@ -323,7 +374,7 @@ class Building(Agent):
         self.capacity = 0
         self.occupants = set([])
         
-        self.occupancy = len(self.occupants)
+        self.occupancy = 0
         
 
                           
