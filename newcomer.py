@@ -1,12 +1,13 @@
 import mesa 
 from mesa import Agent, Model
 from scipy.stats import bernoulli
+import numpy as np
 
 
 
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model,country_of_origin):
+    def __init__(self, unique_id, model,country_of_origin, pos):
         
         '''
         
@@ -21,12 +22,12 @@ class Newcomer(Agent):
         '''
         super().__init__(unique_id, model)
         
-        self.pos = None
+        self.pos = pos
         
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
         
-        self.model.house(self) #place in ter apel
+        #self.model.house(self) #place in ter apel
         
         self.decision_time = 28 #28 days is the length of the general asylum procedure
         

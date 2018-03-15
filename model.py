@@ -151,7 +151,7 @@ class HumanitarianLogistics(Model):
         x = house_loc[0] + np.random.randint(-20,20)
         y = house_loc[1] + np.random.randint(-20,20)
         
-        self.grid.place_agent(newcomer, (x,y)) #place
+        self.grid.move_agent(newcomer, (x,y)) #place
         
         destination.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = destination #update agent location
@@ -191,11 +191,13 @@ class HumanitarianLogistics(Model):
         self.country_count[country] += 1
             
         
-            
-            
+        x = np.random.randint(0,10, dtype = 'int')
+        y = np.random.randint(0,10, dtype = 'int')    
         #define newcomer
-        r = Newcomer(self.num_nc, self, country_of_origin)
+        r = Newcomer(self.num_nc, self, country_of_origin,(x,y))
         self.schedule.add(r)
+        self.grid.place_agent(r, r.pos)
+        self.house(r)
 
           
            
