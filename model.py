@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from organizations import AZC, City
+from organizations import AZC, City, Hotel, Empty
 
     
 
@@ -101,7 +101,21 @@ class HumanitarianLogistics(Model):
                 self.schedule.add(a)                   #add in time          
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
+                
+            #create civilian buildings
+            #hotels
+            x = np.random.randint(0,self.width, dtype = 'int')
+            y = np.random.randint(0,self.height, dtype = 'int')
+            hotel = Hotel(i, self, (x,y), 50)
+            current_city.buildings.add(hotel)
+            #empty buildings
+            x = np.random.randint(0,self.width, dtype = 'int')
+            y = np.random.randint(0,self.height, dtype = 'int')
+            empty = Empty(i, self, (x,y), 100)
+            current_city.buildings.add(empty)
+            
             print(current_city.buildings)
+            
         
             
             

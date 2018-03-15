@@ -68,7 +68,7 @@ class AZC(Building):
     def __init__(self, unique_id, model,occupant_type, pos):
         super().__init__(unique_id, model)
         
-        self.capacity = 0
+        self.capacity = 400
         self.occupants = set([])
         self.occupant_type = occupant_type
         self.pos = pos
@@ -76,3 +76,32 @@ class AZC(Building):
 
     def step(self):
         pass
+
+class Hotel(Building):
+    '''
+    Hotels are commerical buildings
+    they have a cost p room p person
+    '''
+    
+    def __init__(self, unique_id, model,
+                 pos, cost_pp):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 1000
+        self.occupants = set([])
+        self.pos = pos
+        self.cost_pp = cost_pp
+    
+class Empty(Building):
+    '''
+    Empty buildings have a refurbishing cost
+    and can be converted into AZCs
+    '''
+    def __init__(self, unique_id, model,
+                 pos, convert_cost):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 1000
+        self.occupants = set([])
+        self.pos = pos
+        self.convert_cost = convert_cost
