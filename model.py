@@ -72,12 +72,13 @@ class HumanitarianLogistics(Model):
         
         for city in range(self.num_cities):
             
-            pos = (int(self.width / 2), int(self.height / 2))
-            current_city = City(city, self, pos)
-            self.schedule.add(current_city)
+            pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
+            current_city = City(city, self, pos) #instantiates city
+            
+            #adds city to schedule n grid
+            self.schedule.add(current_city) 
             self.grid.place_agent(current_city, (current_city.pos))
             
-            print(self.schedule.agents)
         
             # Create AZCs
             for i in range(self.num_azc):
@@ -99,6 +100,9 @@ class HumanitarianLogistics(Model):
                 a = AZC(i, self, occupant_type, (x,y)) #instantiate
                 self.schedule.add(a)                   #add in time          
                 self.grid.place_agent(a, (x, y))       #add in spaace
+                current_city.buildings.add(a)
+            print(current_city.buildings)
+        
             
             
        
