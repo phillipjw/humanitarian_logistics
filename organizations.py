@@ -3,6 +3,18 @@ from random import randrange
 from random import uniform
 import numpy as np
 
+class City(Agent):
+    '''
+    A city contains buildings
+    '''
+    
+    def __init__(self, unique_id, model, pos):
+        super().__init__(unique_id, model)
+        
+        self.buildings = set([])
+        
+
+
 
 class Organization(Agent):
     
