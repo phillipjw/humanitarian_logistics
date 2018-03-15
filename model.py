@@ -108,11 +108,16 @@ class HumanitarianLogistics(Model):
             y = np.random.randint(0,self.height, dtype = 'int')
             hotel = Hotel(i, self, (x,y), 50)
             current_city.buildings.add(hotel)
+            self.grid.place_agent(hotel, (x,y))
+            self.schedule.add(hotel)
             #empty buildings
             x = np.random.randint(0,self.width, dtype = 'int')
             y = np.random.randint(0,self.height, dtype = 'int')
             empty = Empty(i, self, (x,y), 100)
             current_city.buildings.add(empty)
+            self.grid.place_agent(empty, (x,y))
+            self.schedule.add(empty)
+            
             
             print(current_city.buildings)
             
