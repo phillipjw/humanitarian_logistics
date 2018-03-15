@@ -14,7 +14,7 @@ grid_width = int(canvas_width / 2)
 grid_height = int(canvas_height / 2)
 
 num_azc = 4
-#nc_rate = .5
+num_cities = 1
 
 nc_rate = UserSettableParameter('slider', "In-Flow", .25, 0, 1, .1)
 
@@ -101,5 +101,5 @@ chart_suces = ChartModule([{'Label' : 'Syria',
 server = ModularServer(HumanitarianLogistics,
                        [grid,chart, chart_suces],
                        "Humanitarian Logistics",
-                       {"N_a": num_azc,"nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
+                       {"N_cities": num_cities, "N_a": num_azc,"nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
 

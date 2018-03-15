@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from organizations import AZC
+from organizations import AZC, City
 
     
 
@@ -24,11 +24,12 @@ class HumanitarianLogistics(Model):
         dimensions width and height"""
     
     
-    def __init__(self, N_a,nc_rate, width, height):
+    def __init__(self, N_cities,N_a,nc_rate, width, height):
         
         #canvas info
         self.width = width
         self.height = height
+        
         
         #sim boilerplate
         self.grid = MultiGrid(width, height, True)
@@ -40,6 +41,7 @@ class HumanitarianLogistics(Model):
         self.num_nc = 0 #counts number of applicants
         self.num_azc = N_a #number of AZC in sim
         self.nc_rate = nc_rate #rate of inflow of newcomers
+        self.num_cities = N_cities #number of cities in sim
         
 
         #dict of probabilities of first/second decision success rates by country
@@ -68,26 +70,35 @@ class HumanitarianLogistics(Model):
         
         
         
-        # Create AZCs
-        for i in range(self.num_azc):
+        for city in range(self.num_cities):
             
-            if i == 0:
-                occupant_type = 'edp'   # ter apel 
-            elif i < self.num_azc - 2:
-                occupant_type = 'as'    # standard AZC
-            elif i == self.num_azc - 2:
-                occupant_type = 'as_ext'# extended procedure AZC
-                print('test')
-            else:
-                occupant_type = 'tr'    # 'Housing' for those with 
+            pos = (int(self.width / 2), int(self.height / 2))
+            current_city = City(city, self, pos)
+            self.schedule.add(current_city)
+            self.grid.place_agent(current_city, (current_city.pos))
             
-            #place evenly
-            x = int((self.width / self.num_azc) * (i+.5))  
-            y = int(self.height * .5)
-            
-            a = AZC(i, self, occupant_type, (x,y)) #instantiate
-            self.schedule.add(a)                   #add in time          
-            self.grid.place_agent(a, (x, y))       #add in spaace
+            print(self.schedule.agents)
+        
+            # Create AZCs
+            for i in range(self.num_azc):
+                
+                if i == 0:
+                    occupant_type = 'edp'   # ter apel 
+                elif i < self.num_azc - 2:
+                    occupant_type = 'as'    # standard AZC
+                elif i == self.num_azc - 2:
+                    occupant_type = 'as_ext'# extended procedure AZC
+                    print('test')
+                else:
+                    occupant_type = 'tr'    # 'Housing' for those with 
+                
+                #place evenly
+                x = int((self.width / self.num_azc) * (i+.5))  
+                y = int(self.height * .5)
+                
+                a = AZC(i, self, occupant_type, (x,y)) #instantiate
+                self.schedule.add(a)                   #add in time          
+                self.grid.place_agent(a, (x, y))       #add in spaace
             
             
        

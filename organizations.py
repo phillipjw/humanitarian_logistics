@@ -12,6 +12,7 @@ class City(Agent):
         super().__init__(unique_id, model)
         
         self.buildings = set([])
+        self.pos = pos
         
 
 
@@ -27,6 +28,7 @@ class Organization(Agent):
         """
         self.unique_id = unique_id
         self.model = model
+        
 
         
 class NGO(Organization):
