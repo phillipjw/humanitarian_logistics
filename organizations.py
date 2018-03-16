@@ -29,6 +29,15 @@ class Organization(Agent):
         self.unique_id = unique_id
         self.model = model
         
+class COA(Organization):
+    
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+        
+        self.azcs = set([])
+        self.capacities = dict()
+        
+        
 
         
 class NGO(Organization):

@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from organizations import AZC, City, Hotel, Empty
+from organizations import AZC, City, Hotel, Empty, COA
 
     
 
@@ -50,7 +50,7 @@ class HumanitarianLogistics(Model):
         self._shock_duration = shock_duration  #current position in shock
         self.shock_rate = shock_rate           #amt of increase during shock
         self.shock = False                     #shock flag
-        self.number_added = 1
+        self.number_added = 1                  #base rate of influx
 
         #dict of probabilities of first/second decision success rates by country
         self.specs = {'Syria' : [.97,.96],
@@ -82,6 +82,7 @@ class HumanitarianLogistics(Model):
             
             pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
+            current_coa = COA(city, self)
             
             #adds city to schedule n grid
             self.schedule.add(current_city) 
@@ -109,6 +110,9 @@ class HumanitarianLogistics(Model):
                 self.schedule.add(a)                   #add in time          
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
+                if a.occupant_type != 'tr':
+                    current_coa.azcs.add(a)
+                    
                 
             #create civilian buildings
             #hotels
@@ -125,6 +129,8 @@ class HumanitarianLogistics(Model):
             current_city.buildings.add(empty)
             self.grid.place_agent(empty, (x,y))
             self.schedule.add(empty)
+            
+            print(current_coa.azcs)
             
             
             
