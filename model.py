@@ -176,26 +176,32 @@ class HumanitarianLogistics(Model):
         self.grid.remove_agent(agent)
         
                               
-    def addNewcomer(self):
+    def addNewcomer(self, shock, country_of_origin):
         
         #increase count
-        self.num_nc += 1          
-        country_of_origin = None
+        self.num_nc += 1
+
+        if not shock:
+            
+            country_of_origin = None
         
         
-        country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
-        
-        #draws a random discrete number from multinomial distribution
-        country = np.random.multinomial(1, [.50,.30,.10,.10], size = 1)
-        
-        # turns that distribution into a number
-        country = np.where(country == 1)[1][0]
-        
-        # assigns that number to a country
-        country_of_origin = country_list[country]
-        
-        # updates country count
-        self.country_count[country] += 1
+            
+            
+            #draws a random discrete number from multinomial distribution
+            country = np.random.multinomial(1, [.50,.30,.10,.10], size = 1)
+            
+            # turns that distribution into a number
+            country = np.where(country == 1)[1][0]
+            
+            # assigns that number to a country
+            country_of_origin = self.country_list[country]
+            
+            # updates country count
+            self.country_count[country] += 1
+        else:
+            
+            self.country_count[self.country_list.index(country_of_origin)] += 1
             
         
         x = np.random.randint(0,10, dtype = 'int')
@@ -228,7 +234,7 @@ class HumanitarianLogistics(Model):
             
             for i in range(int(self.number_added)):
                 
-                self.addNewcomer()
+                self.addNewcomer(True, 'Syria')  #should be generalized to have shocks from whereever
                 
             self._shock_duration -= 1
             
@@ -241,7 +247,7 @@ class HumanitarianLogistics(Model):
         
             #adds newcomers to simuluation at a given rate
             if uniform(0,1) < self.nc_rate:
-                self.addNewcomer()
+                self.addNewcomer(False, None)
             
             
 
