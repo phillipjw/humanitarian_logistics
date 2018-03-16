@@ -82,8 +82,9 @@ class HumanitarianLogistics(Model):
             
             pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
-            current_coa = COA(city, self)
             
+            current_coa = COA(city, self)
+            self.schedule.add(current_coa)
             #adds city to schedule n grid
             self.schedule.add(current_city) 
             self.grid.place_agent(current_city, (current_city.pos))
@@ -112,6 +113,7 @@ class HumanitarianLogistics(Model):
                 current_city.buildings.add(a)
                 if a.occupant_type != 'tr':
                     current_coa.azcs.add(a)
+                    current_coa.capacities[a] = a.occupancy
                     
                 
             #create civilian buildings
@@ -130,7 +132,6 @@ class HumanitarianLogistics(Model):
             self.grid.place_agent(empty, (x,y))
             self.schedule.add(empty)
             
-            print(current_coa.azcs)
             
             
             
@@ -240,7 +241,7 @@ class HumanitarianLogistics(Model):
             
             for i in range(int(self.number_added)):
                 
-                self.addNewcomer(True, 'Syria')  #should be generalized to have shocks from whereever
+                self.addNewcomer(True, 'Iraq')  #should be generalized to have shocks from whereever
                 
             self._shock_duration -= 1
             

@@ -36,7 +36,23 @@ class COA(Organization):
         
         self.azcs = set([])
         self.capacities = dict()
+        self.model = model
         
+    def step(self):
+        
+        if self.model.schedule.steps % 30 == 0:
+            
+            new_caps = dict()
+            
+            for k,v in self.capacities.items():
+                diff = k.occupancy - v       #new dictionary of delta capacities
+                print('a', k.occupancy)
+                rate = diff / 30
+                projection = v + rate*180
+                print('b', projection)
+                print('rate', rate)
+                
+                
         
 
         
