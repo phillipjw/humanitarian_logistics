@@ -16,6 +16,11 @@ grid_height = int(canvas_height / 3)
 num_azc = 4
 num_cities = 1
 
+shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
+shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
+shock_rate = UserSettableParameter('slider', "Shock Growth", .25, 0, 2, .1)
+
+
 nc_rate = UserSettableParameter('slider', "In-Flow", .25, 0, 1, .1)
 
 class HistogramModule(VisualizationElement):
@@ -120,5 +125,7 @@ chart_suces = ChartModule([{'Label' : 'Syria',
 server = ModularServer(HumanitarianLogistics,
                        [grid,chart, chart_suces],
                        "Humanitarian Logistics",
-                       {"N_cities": num_cities, "N_a": num_azc,"nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
+                       {"shock_period" : shock_period, "shock_duration" : shock_duration,
+                        "shock_rate" : shock_rate, "N_cities": num_cities, "N_a": num_azc,
+                        "nc_rate" : nc_rate, "width": grid_width, "height": grid_height})
 

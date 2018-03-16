@@ -24,7 +24,8 @@ class HumanitarianLogistics(Model):
         dimensions width and height"""
     
     
-    def __init__(self, N_cities,N_a,nc_rate, width, height):
+    def __init__(self, shock_period, shock_duration, shock_rate,
+                 N_cities,N_a,nc_rate, width, height):
         
         #canvas info
         self.width = width
@@ -43,6 +44,11 @@ class HumanitarianLogistics(Model):
         self.nc_rate = nc_rate #rate of inflow of newcomers
         self.num_cities = N_cities #number of cities in sim
         
+        #initialize shock values
+        self.shock_period = shock_period       #how often does shock occur
+        self.shock_duration = shock_duration   #how long does shock last
+        self._shock_duration = shock_duration  #current position in shock
+        self.shock_rate = shock_rate           #amt of increase during shock
 
         #dict of probabilities of first/second decision success rates by country
         self.specs = {'Syria' : [.97,.96],
@@ -119,7 +125,6 @@ class HumanitarianLogistics(Model):
             self.schedule.add(empty)
             
             
-            print(current_city.buildings)
             
         
             
@@ -197,7 +202,7 @@ class HumanitarianLogistics(Model):
         r = Newcomer(self.num_nc, self, country_of_origin,(x,y))
         self.schedule.add(r)
         self.grid.place_agent(r, r.pos)
-        self.house(r)
+        self.house(r) #place n ter apel
 
           
            
