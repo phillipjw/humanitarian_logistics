@@ -49,6 +49,8 @@ class HumanitarianLogistics(Model):
         self.shock_duration = shock_duration   #how long does shock last
         self._shock_duration = shock_duration  #current position in shock
         self.shock_rate = shock_rate           #amt of increase during shock
+        self.shock = False                     #shock flag
+        self.number_added = 1
 
         #dict of probabilities of first/second decision success rates by country
         self.specs = {'Syria' : [.97,.96],
@@ -213,10 +215,33 @@ class HumanitarianLogistics(Model):
         self.sr.collect(self)            #collects success rate data
         
         
-        #adds newcomers to simuluation at a given rate
-        if uniform(0,1) < self.nc_rate:
-            self.addNewcomer()
-            print(self.nc_rate)
+        
+        if self.schedule.steps % self.shock_period == 0:
+            self.shock = True
+        
+        if self.shock:
+            
+            if self._shock_duration > (self._shock_duration / 2):
+                self.number_added += self.shock_rate
+            else:
+                self.number_added -= self.shock_rate
+            
+            for i in range(int(self.number_added)):
+                
+                self.addNewcomer()
+                
+            self._shock_duration -= 1
+            
+            if self._shock_duration == 0:
+                
+                self.shock = False
+                self._shock_duration = self.shock_duration
+                self.number_added = 1
+        else:
+        
+            #adds newcomers to simuluation at a given rate
+            if uniform(0,1) < self.nc_rate:
+                self.addNewcomer()
             
             
 
