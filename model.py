@@ -58,6 +58,8 @@ class HumanitarianLogistics(Model):
                      'Iraq' : [.482,.611],
                      'Afghanistan' : [.518,.52]}
         
+        self.country_multinomial = [.50,.30,.10,.10]
+        
         
         self.country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
         self.country_count = np.zeros(4) #keeps track of how many applicants from each country
@@ -83,7 +85,7 @@ class HumanitarianLogistics(Model):
             pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
             
-            current_coa = COA(city, self)
+            current_coa = COA(city, self, current_city)
             self.schedule.add(current_coa)
             #adds city to schedule n grid
             self.schedule.add(current_city) 
@@ -99,7 +101,6 @@ class HumanitarianLogistics(Model):
                     occupant_type = 'as'    # standard AZC
                 elif i == self.num_azc - 2:
                     occupant_type = 'as_ext'# extended procedure AZC
-                    print('test')
                 else:
                     occupant_type = 'tr'    # 'Housing' for those with 
                 
@@ -127,7 +128,7 @@ class HumanitarianLogistics(Model):
             #empty buildings
             x = np.random.randint(0,self.width, dtype = 'int')
             y = np.random.randint(0,self.height, dtype = 'int')
-            empty = Empty(i, self, (x,y), 100)
+            empty = Empty(i, self, (x,y), 1000)
             current_city.buildings.add(empty)
             self.grid.place_agent(empty, (x,y))
             self.schedule.add(empty)
@@ -182,6 +183,20 @@ class HumanitarianLogistics(Model):
         self.schedule.remove(agent)
         self.grid.remove_agent(agent)
         
+    def country_distribution(self):
+        #draws a random discrete number from multinomial distribution
+        country = np.random.multinomial(1, self.country_multinomial, size = 1)
+        
+        # turns that distribution into a number
+        country = np.where(country == 1)[1][0]
+        
+        
+        # updates country count
+        self.country_count[country] += 1
+        
+        # assigns that number to a country
+        country_of_origin = self.country_list[country]
+        return country_of_origin
                               
     def addNewcomer(self, shock, country_of_origin):
         
@@ -190,22 +205,12 @@ class HumanitarianLogistics(Model):
 
         if not shock:
             
-            country_of_origin = None
+            country_of_origin = self.country_distribution()
         
         
             
             
-            #draws a random discrete number from multinomial distribution
-            country = np.random.multinomial(1, [.50,.30,.10,.10], size = 1)
-            
-            # turns that distribution into a number
-            country = np.where(country == 1)[1][0]
-            
-            # assigns that number to a country
-            country_of_origin = self.country_list[country]
-            
-            # updates country count
-            self.country_count[country] += 1
+          
         else:
             
             self.country_count[self.country_list.index(country_of_origin)] += 1
@@ -241,7 +246,7 @@ class HumanitarianLogistics(Model):
             
             for i in range(int(self.number_added)):
                 
-                self.addNewcomer(True, 'Iraq')  #should be generalized to have shocks from whereever
+                self.addNewcomer(True, 'Syria')  #should be generalized to have shocks from whereever
                 
             self._shock_duration -= 1
             
