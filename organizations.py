@@ -98,7 +98,7 @@ class COA(Organization):
             return [building for building in self.city.buildings
                     if building.available]
             
-    '''
+
     
     def online_mean(self):
         
@@ -111,7 +111,7 @@ class COA(Organization):
 
         
         
-    
+      '''  
 
       
         
@@ -221,30 +221,19 @@ class COA(Organization):
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
                 if self.ter_apel.occupancy / variance_ta > 3:
                     print('shock')
+                    self.shock = True
                 else:
                     print('no shock')
                     self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
+        if shock:
+            
+            #project error
             
             
             
     
         
-        '''
-        
-        if self.model.schedule.steps > 2:
-            if self.model.schedule.steps % self.occupancy_frequency == 0:
-                
-                
-                self.occupancy_counter += 1
-                
-                #self.online_mean()
-                #self.online_variance()
-                
-                self.shock_check()
-     
-        else:
-            self.squared_capacities = {k:self.capacities[k]**2 for
-                                       k in self.capacities.keys()}
+'''
             
             
         
