@@ -150,7 +150,7 @@ class COA(Organization):
             if self.model.schedule.steps % self.assessment_frequency == 0:
                 #check variance of current point
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
-                if self.ter_apel.occupancy / variance_ta > 3:
+                if self.ter_apel.occupancy / variance_ta > 4:
                     print('shock')
                     self.shock = True
                 else:
@@ -182,6 +182,8 @@ class COA(Organization):
                     
                     if project > building.capacity*.75:
                         print('Problematic')
+                    else:
+                        print('Manageeable')
 
             
             
