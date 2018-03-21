@@ -97,6 +97,7 @@ class HumanitarianLogistics(Model):
                 
                 if i == 0:
                     occupant_type = 'edp'   # ter apel 
+                    
                 elif i < self.num_azc - 2:
                     occupant_type = 'as'    # standard AZC
                 elif i == self.num_azc - 2:
@@ -115,6 +116,8 @@ class HumanitarianLogistics(Model):
                 if a.occupant_type != 'tr':
                     current_coa.azcs.add(a)
                     current_coa.capacities[a] = a.occupancy
+                if a.occupant_type == 'edp':
+                    current_coa.ter_apel = a
                     
                 
             #create civilian buildings

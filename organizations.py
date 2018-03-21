@@ -49,6 +49,16 @@ class COA(Organization):
         self.sum_capacities = self.capacities
         self.squared_capacities = dict()
         self.variance = dict()
+        self.var_copy = None
+        self.shock = False
+        
+        #ter apel shock check
+        self.sum_ta = 0 
+        self.squared_ta =  0 
+        self.counter_ta = 1
+        self.variance_ta = None
+        self.var_copy_ta = None
+        self.ter_apel = None
         
         
         
@@ -88,6 +98,8 @@ class COA(Organization):
             return [building for building in self.city.buildings
                     if building.available]
             
+    '''
+    
     def online_mean(self):
         
         for building,occupancy in self.capacities.items():
@@ -96,29 +108,128 @@ class COA(Organization):
                 
                 
                 
-    def online_variance(self):
-        
-        
-        for building,occupancy in self.capacities.items():
-            
-            self.sum_capacities[building] += building.occupancy
-            
-            self.squared_capacities[building] += np.square(building.occupancy)
-            
-            self.variance[building] = np.sqrt((self.occupancy_counter *
-                         self.squared_capacities[building] -
-                         self.sum_capacities[building]**2) / 
-                         (self.occupancy_counter*(self.occupancy_counter-1)))
-            
-            
 
         
         
+    
+
+      
+        
+        
+        
+
+        
+        
+        
+    
+    def online_variance(self):
+        
+        self.var_copy = self.variance
+        
+        if self.shock:
+            shock_ = False
+            for building,occupancy in self.capacities.items():
+                if building.occupancy / self.variance[building] > 3:
+                    print('shock')
+                    shock_ = True
+                if not shock_:
+                    self.shock = False
+                    print('Shock Over')
+        else:
+                    
+                    
+                
+        
+        
+            for building,occupancy in self.capacities.items():
+                
+                self.sum_capacities[building] += building.occupancy
+                
+                self.squared_capacities[building] += np.square(building.occupancy)
+                
+                self.variance[building] = np.sqrt((self.occupancy_counter *
+                             self.squared_capacities[building] -
+                             self.sum_capacities[building]**2) / 
+                             (self.occupancy_counter*(self.occupancy_counter-1)))
+        
+                if building.occupancy / self.variance[building] > 3:  #if current occupancy is an outlier
+                    print('shock')
+                    self.shock = True
+                    self.variance = self.var_copy
+                    break
+ 
+        
+
             
+            
+     ''' 
+        
+        
+    def shock_check(self):
+        
+        #how many currently entering
+        
+        
+        #current variance of ter apel
+        test = self.online_variance_ta(ter_apel)
+        
+        if ter_apel.occupancy / test[0] > 3:
+            print('shock')
+        else:
+            print('no shock')
+            self.variance_ta, self.squared_ta, self.sum_ta = test
+    
+    def online_variance_ta(self, building):
+        
+        '''
+        Calculates online variance for anomoly detection
+        '''
+        
+        self.counter_ta += 1
+        
+        sum_ta = self.sum_ta
+        squared_ta = self.squared_ta
+        variance_ta = self.variance_ta
+        
+        sum_ta += building.occupancy
+        squared_ta += building.occupancy**2
+        variance_ta = np.sqrt((self.counter_ta * 
+                                    self.squared_ta - 
+                                    self.sum_ta**2) / 
+                                    (self.counter_ta*(self.counter_ta - 1)))
+        
+        return (variance_ta, squared_ta, sum_ta)            
         
         
         
     def step(self):
+        
+        '''
+        COA is essentially checking for anomalies in the 'Ter Apel'
+        If detected, inspects the gravity of the anomoly and acts
+        accordingly
+        '''
+    
+        if self.model.schedule.steps < self.model.shock_period / 2:
+            
+            # start calculting variances
+            self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.ter_apel)
+        else:
+            
+            if self.model.schedule.steps % self.assessment_frequency == 0:
+                #check variance of current point
+                variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
+                if self.ter_apel.occupancy / variance_ta > 3:
+                    print('shock')
+                else:
+                    print('no shock')
+                    self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
+            
+            
+            
+    
+        
+        '''
         
         if self.model.schedule.steps > 2:
             if self.model.schedule.steps % self.occupancy_frequency == 0:
@@ -126,11 +237,11 @@ class COA(Organization):
                 
                 self.occupancy_counter += 1
                 
-                self.online_mean()
-                self.online_variance()
+                #self.online_mean()
+                #self.online_variance()
                 
-                print('avg cap',self.average_capacities)
-                print('var',self.variance)
+                self.shock_check()
+     
         else:
             self.squared_capacities = {k:self.capacities[k]**2 for
                                        k in self.capacities.keys()}
@@ -164,6 +275,7 @@ class COA(Organization):
                            
                     #asdf
                     pass
+        '''
                 
                 
         

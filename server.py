@@ -21,7 +21,7 @@ shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
 shock_rate = UserSettableParameter('slider', "Shock Growth", .5, 0, 1, .01)
 
 
-nc_rate = UserSettableParameter('slider', "In-Flow", .25, 0, 1, .1)
+nc_rate = UserSettableParameter('slider', "In-Flow", .8, 0, 1, .1)
 
 class HistogramModule(VisualizationElement):
     package_includes = ["Chart.min.js"]
