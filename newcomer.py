@@ -23,25 +23,23 @@ class Newcomer(Agent):
         super().__init__(unique_id, model)
         
         self.pos = pos
+        self.coa = None
         
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
-        
-        #self.model.house(self) #place in ter apel
-        
+                
         self.decision_time = 28 #28 days is the length of the general asylum procedure
-        
         self.intake_time = 4 #time until transfer out of ter apel
               
         self.coo = country_of_origin
         self.specs = self.model.specs[self.coo] #specs contains bournoulli distribution params
-        
         self.ext_time = 90 #duration of extended procedure
         
         #draw first decision outcome
         self.first = bernoulli.rvs(self.specs[0], size = 1)[0] 
         #second decision outcome not drawn unless necessary
-        self.second = None                                     
+        self.second = None   
+                                  
         
         
         
@@ -57,7 +55,7 @@ class Newcomer(Agent):
             if self.intake_time == 0:
                 
                 self.ls = 'as'
-                self.model.house(self)
+                self.coa.policy(self)
         
         
         
@@ -68,15 +66,18 @@ class Newcomer(Agent):
             self.decision_time -= 1
             
             if self.decision_time == 0:
-                if self.first == 0:
-                    self.ls = 'as_ext'
-                    self.model.house(self)
+                if self.coa.decide(True, self):
+                    self.ls = 'tr'
+                    self.coa.social_house(self)
+                else:
                     
+                    self.ls = 'as_ext'
+                    self.coa.policy(self)
+                    
+                    #draws decision outcome from bernoulli distribution based on attributes
                     self.second = bernoulli.rvs(self.specs[1], size = 1)[0]
                     
-                else:
-                    self.ls = 'tr'
-                    self.model.house(self)
+
                         
         # Extended Procedure to TR or Repatriation
         
@@ -89,7 +90,7 @@ class Newcomer(Agent):
                     self.model.Remove(self)
                 else:
                     self.ls = 'tr'
-                    self.model.house(self)
+                    self.coa.social_house(self)
          
        
         # Agent Temporary Resident            

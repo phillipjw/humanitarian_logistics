@@ -1,6 +1,7 @@
 from mesa import Agent, Model
 from random import randrange
 from random import uniform
+from operator import attrgetter
 import numpy as np
 
 class City(Agent):
@@ -13,6 +14,8 @@ class City(Agent):
         
         self.buildings = set([])
         self.pos = pos
+        self.social_housing = None
+        
         
 
 
@@ -42,6 +45,9 @@ class COA(Organization):
         self.projection_time = 180          #6 month conditions, given 5 month construction time
         self.budget = 10000                 #arbitrary and to be replaced
         self.city = city
+        self.newcomers = set([])
+        self.shock_assessment_frequency = 10
+        self.shock_threshold = 5
         
        
         self.shock = False
@@ -53,6 +59,81 @@ class COA(Organization):
         self.variance_ta = None
         self.var_copy_ta = None
         self.ter_apel = None
+        
+        #policies
+        self.policy = self.house
+    
+    def decide(self, first, newcomer):
+        
+        if first:
+            return newcomer.first == 1
+        else:
+            return newcomer.second == 1
+        
+    def house(self, newcomer):
+        
+        destination = [azc for azc in self.azcs if
+                       azc.occupant_type == newcomer.ls][0]
+        
+        newcomer.loc.occupancy -= 1 
+        
+        
+        #take first one, in future, evaluate buildings on some criteria
+        house_loc = destination.pos         #where is it
+        
+        #add noise so agents don't overlap
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
+        
+        self.model.grid.move_agent(newcomer, (x,y)) #place
+        
+        destination.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = destination #update agent location
+        
+        destination.occupancy += 1 #update occupancy    
+        
+    def social_house(self, newcomer):
+        
+        newcomer.loc.occupancy -= 1  
+        
+        destination = self.city.social_housing
+        
+        
+        #take first one, in future, evaluate buildings on some criteria
+        house_loc = destination.pos         #where is it
+        
+        #add noise so agents don't overlap
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
+        
+        self.model.grid.move_agent(newcomer, (x,y)) #place
+        
+        destination.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = destination #update agent location
+        
+        destination.occupancy += 1 #update occupancy  
+        
+    def min_house(self, newcomer):
+        
+        destination = min(self.azcs, key = attrgetter('occupancy'))
+        
+        newcomer.loc.occupancy -= 1 
+        
+        
+        #take first one, in future, evaluate buildings on some criteria
+        house_loc = destination.pos         #where is it
+        
+        #add noise so agents don't overlap
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
+        
+        self.model.grid.move_agent(newcomer, (x,y)) #place
+        
+        destination.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = destination #update agent location
+        
+        destination.occupancy += 1 #update occupancy    
+        
         
         
         
@@ -70,7 +151,7 @@ class COA(Organization):
         
         delta = difference / self.assessment_frequency #assuming monthly assessment
         
-        return self.capacities[building] + delta*self.projection_time
+        return self.capacities[building] + delta*self.projection_time, delta
     
     def evaluate_cost(self, need, building):
         
@@ -144,13 +225,14 @@ class COA(Organization):
             if self.model.schedule.steps % self.assessment_frequency == 0:
                 #check variance of current point
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
-                if self.ter_apel.occupancy / variance_ta > 4:
+                if self.ter_apel.occupancy / variance_ta > self.shock_threshold:
                     print('shock')
                     self.shock = True
                 else:
                     print('no shock')
                     self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                     self.shock = False
+                    self.policy = self.house
                 
                 #update monthly rate of change 
                 for k,v in self.capacities.items():
@@ -163,7 +245,7 @@ class COA(Organization):
         #only during shock periods project
         if self.shock:
             
-            if self.model.schedule.steps % self.assessment_frequency:
+            if self.model.schedule.steps % self.shock_assessment_frequency == 0:
             
                 #look at rate of change for each building
                 for building, occupancy in self.capacities.items():
@@ -174,21 +256,26 @@ class COA(Organization):
                     #update capacities    
                     self.capacities[building] = building.occupancy
                     
-                    if project > building.capacity*.75:
-                        print('Problematic')
-                        print(self.evaluate_need(building, project))
+                    if project[1] > 0:
+                        print('increasing')
+                    
+                        if project[0] > building.capacity*.60:
+                            print('Problematic')
+                            self.policy = self.min_house
+                            break
+                        else:
+                            print('Manageable')
+                            self.policy = self.house
                     else:
-                        print('Manageable')
-                        print(self.evaluate_need(building, project))
+                        print('decreasing')
+                        #self.policy = self.house
+                        
+                        
 
             
    
 
-    def intake(self,newcomer):
-
-        #find building for newcomers legal status
-        
-        
+    def intake(self,newcomer):       
         
         #take first one, in future, evaluate buildings on some criteria
         house_loc = self.ter_apel.pos         #where is it
@@ -206,7 +293,7 @@ class COA(Organization):
         self.ter_apel.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = self.ter_apel #update agent location
         
-        self.ter_apel.occupancy += 1 #update occupancy         
+        self.ter_apel.occupancy += 1 #update occupancy           
             
         
         

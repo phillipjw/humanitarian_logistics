@@ -118,6 +118,9 @@ class HumanitarianLogistics(Model):
                     current_coa.capacities[a] = a.occupancy
                 if a.occupant_type == 'edp':
                     current_coa.ter_apel = a
+                if a.occupant_type == 'tr':
+                    current_city.social_housing = a
+                
                     
                 
             #create civilian buildings
@@ -233,6 +236,8 @@ class HumanitarianLogistics(Model):
                type(x) is COA][0]
         
         coa.intake(r) #place n ter apel
+        coa.newcomers.add(r) #adds NC to coa's list of residents
+        r.coa = coa          #likewise for the newcomer
 
           
            
