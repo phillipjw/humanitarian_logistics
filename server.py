@@ -18,7 +18,7 @@ num_cities = 1
 
 shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
 shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
-shock_rate = UserSettableParameter('slider', "Shock Growth", .5, 0, 1, .01)
+shock_rate = UserSettableParameter('slider', "Shock Growth", .2, 0, 1, .01)
 
 
 nc_rate = UserSettableParameter('slider', "In-Flow", .8, 0, 1, .1)
