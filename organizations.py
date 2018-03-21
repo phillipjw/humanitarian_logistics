@@ -43,13 +43,7 @@ class COA(Organization):
         self.budget = 10000                 #arbitrary and to be replaced
         self.city = city
         
-        #online variance calculations
-        self.occupancy_frequency = 15
-        self.occupancy_counter = 1
-        self.sum_capacities = self.capacities
-        self.squared_capacities = dict()
-        self.variance = dict()
-        self.var_copy = None
+       
         self.shock = False
         
         #ter apel shock check
@@ -182,49 +176,72 @@ class COA(Organization):
                     
                     if project > building.capacity*.75:
                         print('Problematic')
+                        print(self.evaluate_need(building, project))
                     else:
-                        print('Manageeable')
+                        print('Manageable')
+                        print(self.evaluate_need(building, project))
 
             
+   
+
+    def intake(self,newcomer):
+
+        #find building for newcomers legal status
+        
+        
+        
+        #take first one, in future, evaluate buildings on some criteria
+        house_loc = self.ter_apel.pos         #where is it
+        
+
+        
+        
+        
+        #add noise so agents don't overlap
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
+        
+        self.model.grid.move_agent(newcomer, (x,y)) #place
+        
+        self.ter_apel.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = self.ter_apel #update agent location
+        
+        self.ter_apel.occupancy += 1 #update occupancy         
             
-            
+        
+        
     
-        
-'''
-            
-            
-        
-        if self.model.schedule.steps % 30 == 0:
-                        
-            for k,v in self.capacities.items():
-                
-                #project growth rate onto 6 months
-                projection = self.project(k)
-                
+    '''   
+    def house(self,newcomer):
 
-                #update capacities
-                self.capacities[k] = k.occupancy
-                
-                #check if problematic
-                if projection > k.capacity:
-                    
-                    print('PROBLEMATIC')
-                    
-                    need = self.evaluate_need(k, projection)
-                    
-                    #get list of candiate buildings
-                    candidates = self.get_buildings(True)
-                    
-                    #get cost per candidate
-                    for candidate in candidates:
-                        costs = self.evaluate_cost(need, candidate)
-                           
-                    #asdf
-                    pass
-        '''
-                
-                
+        #find building for newcomers legal status
+        eligible_buildings = [x for x in
+                              self.schedule.agents 
+                    if type(x) is AZC and
+                    x.occupant_type == newcomer.ls]
         
+        
+        #take first one, in future, evaluate buildings on some criteria
+        destination = eligible_buildings[0] 
+        house_loc = destination.pos         #where is it
+        
+        if newcomer.ls is not 'edp':
+            newcomer.loc.occupancy -= 1     #reduce occupance of prev building
+        
+        
+        
+        #add noise so agents don't overlap
+        x = house_loc[0] + np.random.randint(-20,20)
+        y = house_loc[1] + np.random.randint(-20,20)
+        
+        self.grid.move_agent(newcomer, (x,y)) #place
+        
+        destination.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = destination #update agent location
+        
+        destination.occupancy += 1 #update occupancy
+                
+      '''  
 
         
 class NGO(Organization):

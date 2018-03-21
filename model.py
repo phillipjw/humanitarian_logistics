@@ -146,7 +146,7 @@ class HumanitarianLogistics(Model):
     
     
     
-    
+
     def house(self,newcomer):
 
         #find building for newcomers legal status
@@ -175,6 +175,7 @@ class HumanitarianLogistics(Model):
         newcomer.loc = destination #update agent location
         
         destination.occupancy += 1 #update occupancy
+
         
         
         
@@ -225,7 +226,13 @@ class HumanitarianLogistics(Model):
         r = Newcomer(self.num_nc, self, country_of_origin,(x,y))
         self.schedule.add(r)
         self.grid.place_agent(r, r.pos)
-        self.house(r) #place n ter apel
+        
+        #find coa
+        coa = [x for x in 
+               self.schedule.agents if
+               type(x) is COA][0]
+        
+        coa.intake(r) #place n ter apel
 
           
            
