@@ -401,11 +401,11 @@ class Empty(Building):
     and can be converted into AZCs
     '''
     def __init__(self, unique_id, model,
-                 pos, convert_cost):
+                 pos, capacity):
         super().__init__(unique_id, model)
         
-        self.capacity = 1000
+        self.capacity = 100
         self.occupants = set([])
         self.pos = pos
-        self.convert_cost = convert_cost
+        self.convert_cost = self.capacity * 1000 * .80
         self.available = True

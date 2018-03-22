@@ -43,6 +43,7 @@ class HumanitarianLogistics(Model):
         self.num_azc = N_a #number of AZC in sim
         self.nc_rate = nc_rate #rate of inflow of newcomers
         self.num_cities = N_cities #number of cities in sim
+        self.num_buildings = 3
         
         #initialize shock values
         self.shock_period = shock_period       #how often does shock occur
@@ -125,19 +126,36 @@ class HumanitarianLogistics(Model):
                 
             #create civilian buildings
             #hotels
-            x = np.random.randint(0,self.width, dtype = 'int')
-            y = np.random.randint(0,self.height, dtype = 'int')
+            
             hotel = Hotel(i, self, (x,y), 50)
             current_city.buildings.add(hotel)
             self.grid.place_agent(hotel, (x,y))
             self.schedule.add(hotel)
             #empty buildings
-            x = np.random.randint(0,self.width, dtype = 'int')
-            y = np.random.randint(0,self.height, dtype = 'int')
-            empty = Empty(i, self, (x,y), 1000)
-            current_city.buildings.add(empty)
-            self.grid.place_agent(empty, (x,y))
-            self.schedule.add(empty)
+            
+            y = int(self.height / 5)
+            
+            for bdg in range(self.num_buildings):
+                
+                x = int((self.width / self.num_buildings) * (bdg+.5))
+
+                if bdg == 0:
+                    
+                    current = Hotel(bdg, self, (x,y),1000)
+                    current_city.buildings.add(current)
+                    self.grid.place_agent(current, (x,y))
+                    self.schedule.add(current)
+                else:
+                    empty = Empty(bdg, self, (x,y), 100 * bdg)
+                    current_city.buildings.add(empty)
+                    self.grid.place_agent(empty, (x,y))
+                    self.schedule.add(empty)
+            
+                    
+                    
+                
+                
+            
             
             
             
