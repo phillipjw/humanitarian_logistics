@@ -69,6 +69,7 @@ class Newcomer(Agent):
                 if self.coa.decide(True, self):
                     self.ls = 'tr'
                     self.coa.social_house(self)
+                    self.model.Remove(self)
                 else:
                     
                     self.ls = 'as_ext'
@@ -91,6 +92,7 @@ class Newcomer(Agent):
                 else:
                     self.ls = 'tr'
                     self.coa.social_house(self)
+                    self.model.Remove(self)      #temporary just to speed things up
          
        
         # Agent Temporary Resident            

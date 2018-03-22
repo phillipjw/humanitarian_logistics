@@ -125,14 +125,7 @@ class HumanitarianLogistics(Model):
                     
                 
             #create civilian buildings
-            #hotels
-            
-            hotel = Hotel(i, self, (x,y), 50)
-            current_city.buildings.add(hotel)
-            self.grid.place_agent(hotel, (x,y))
-            self.schedule.add(hotel)
-            #empty buildings
-            
+                       
             y = int(self.height / 5)
             
             for bdg in range(self.num_buildings):
@@ -146,10 +139,12 @@ class HumanitarianLogistics(Model):
                     self.grid.place_agent(current, (x,y))
                     self.schedule.add(current)
                 else:
-                    empty = Empty(bdg, self, (x,y), 100 * bdg)
+                    empty = Empty(bdg, self, (x,y), 100*bdg)
                     current_city.buildings.add(empty)
                     self.grid.place_agent(empty, (x,y))
                     self.schedule.add(empty)
+                    print(empty.capacity)
+                    print(empty.convert_cost)
             
                     
                     

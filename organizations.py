@@ -41,16 +41,19 @@ class COA(Organization):
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
-        self.assessment_frequency = 30      #monthly checks
+        self.assessment_frequency = 15      #monthly checks
         self.projection_time = 180          #6 month conditions, given 5 month construction time
         self.budget = 10000                 #arbitrary and to be replaced
         self.city = city
         self.newcomers = set([])
         self.shock_assessment_frequency = 10
         self.shock_threshold = 5
-        
-       
-        self.shock = False
+        self.capacity_threshold = .75
+
+        self.shock = False                 # is current influx an anomoly 
+        self.crisis = False                # is there sufficient housing 
+                                           # for current influx
+        self.problematic = False           # is change in policy required
         
         #ter apel shock check
         self.sum_ta = 0 
@@ -204,7 +207,63 @@ class COA(Organization):
         
         return (variance_ta, squared_ta, sum_ta)            
         
+     
+    def shock_check(self,variance_ta):
+        return self.ter_apel.occupancy / variance_ta > self.shock_threshold
+    
+    def update_capacities(self):
+        #update monthly rate of change 
+        for k,v in self.capacities.items():
+            
+            self.capacities[k] = k.occupancy
+            
+    def problematic_check(self):
         
+        problematic = False 
+        #look at rate of change for each building
+        for building, occupancy in self.capacities.items():
+            
+            #project rate of growth
+            project = self.project(building)
+            
+            #update capacities    
+            self.capacities[building] = building.occupancy
+            
+            if project[0] > building.capacity*self.capacity_threshold:
+                print('Problematic')
+                problematic = True
+                break                         
+            else:
+                print('Manageable')
+                #all must be manageable for normal housing policies
+        return problematic
+    
+    def crisis_check(self):
+        
+        '''
+        Checks if the projected amount of inflow is 
+        greater than the capacity in the city
+        '''
+
+        
+        total_need = 0
+        for building, occupancy in self.capacities.items():
+            
+            #how many in 6 months
+            project = self.project(building)
+            
+            #difference between that and occupancy
+            total_need += self.evaluate_need(building, project[0])
+            
+        print(total_need)
+        return total_need > 0
+        
+        
+            
+            
+            
+             
+                
         
     def step(self):
         
@@ -213,62 +272,58 @@ class COA(Organization):
         If detected, inspects the gravity of the anomoly and acts
         accordingly
         '''
-    
+        #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
             # start calculting variances
             self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.ter_apel)
+        
+        #starts checking for anamolies
         else:
             
-            
-            
+            #only with a certain frequency so as not to slow it down
             if self.model.schedule.steps % self.assessment_frequency == 0:
                 #check variance of current point
+                
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
-                if self.ter_apel.occupancy / variance_ta > self.shock_threshold:
+                if self.shock_check(variance_ta):
                     print('shock')
                     self.shock = True
+                    
+                    
+                #if no anomoly add to normal flow distribution    
                 else:
                     print('no shock')
                     self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                     self.shock = False
                     self.policy = self.house
-                
-                #update monthly rate of change 
-                for k,v in self.capacities.items():
                     
-                    self.capacities[k] = k.occupancy
-                
-                
-        
+                    self.update_capacities()
         
         #only during shock periods project
         if self.shock:
             
-            if self.model.schedule.steps % self.shock_assessment_frequency == 0:
-            
-                #look at rate of change for each building
-                for building, occupancy in self.capacities.items():
-                    
-                    #project rate of growth
-                    project = self.project(building)
-                    
-                    #update capacities    
-                    self.capacities[building] = building.occupancy
-                    
-                    if project[1] > 0:
-                        print('increasing')
-                    
-                        if project[0] > building.capacity*.60:
-                            print('Problematic')
-                            self.policy = self.min_house
-                            break
-                        else:
-                            print('Manageable')
-                            self.policy = self.house
+            if self.model.schedule.steps % self.assessment_frequency == 0:
+                
+                if self.problematic:
+                    if self.crisis_check():
+                        self.crisis = True
+                        print('Crisis')
                     else:
-                        print('decreasing')
-                        #self.policy = self.house
+                        self.crisis = False
+                        self.problematic = False #forcing reevaluation.
+                
+                else:
+
+                    #check for problematic
+                    if self.problematic_check():
+                        self.problematic = True
+                        self.policy = self.min_house
+                    else:
+                        self.policy = self.house
+                        self.problematic = False
+            
+                
                         
                         
 
@@ -295,41 +350,6 @@ class COA(Organization):
         
         self.ter_apel.occupancy += 1 #update occupancy           
             
-        
-        
-    
-    '''   
-    def house(self,newcomer):
-
-        #find building for newcomers legal status
-        eligible_buildings = [x for x in
-                              self.schedule.agents 
-                    if type(x) is AZC and
-                    x.occupant_type == newcomer.ls]
-        
-        
-        #take first one, in future, evaluate buildings on some criteria
-        destination = eligible_buildings[0] 
-        house_loc = destination.pos         #where is it
-        
-        if newcomer.ls is not 'edp':
-            newcomer.loc.occupancy -= 1     #reduce occupance of prev building
-        
-        
-        
-        #add noise so agents don't overlap
-        x = house_loc[0] + np.random.randint(-20,20)
-        y = house_loc[1] + np.random.randint(-20,20)
-        
-        self.grid.move_agent(newcomer, (x,y)) #place
-        
-        destination.occupants.add(newcomer) #add agent to building roster
-        newcomer.loc = destination #update agent location
-        
-        destination.occupancy += 1 #update occupancy
-                
-      '''  
-
         
 class NGO(Organization):
     
@@ -404,7 +424,7 @@ class Empty(Building):
                  pos, capacity):
         super().__init__(unique_id, model)
         
-        self.capacity = 100
+        self.capacity = capacity
         self.occupants = set([])
         self.pos = pos
         self.convert_cost = self.capacity * 1000 * .80
