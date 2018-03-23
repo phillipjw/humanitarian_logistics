@@ -89,6 +89,7 @@ class HumanitarianLogistics(Model):
             current_city = City(city, self, pos) #instantiates city
             
             current_coa = COA(city, self, current_city)
+            current_city.coa = current_coa
             self.schedule.add(current_coa)
             #adds city to schedule n grid
             self.schedule.add(current_city) 
@@ -112,7 +113,7 @@ class HumanitarianLogistics(Model):
                 x = int((self.width / self.num_azc) * (i+.5))  
                 y = int(self.height * .5)
                 
-                a = AZC(i, self, occupant_type, (x,y)) #instantiate
+                a = AZC(i, self, occupant_type, (x,y), current_coa) #instantiate
                 self.schedule.add(a)                   #add in time          
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
@@ -138,15 +139,16 @@ class HumanitarianLogistics(Model):
                     
                     current = Hotel(bdg, self, (x,y),1000)
                     current_city.buildings.add(current)
+                    current.city = current_city
                     self.grid.place_agent(current, (x,y))
                     self.schedule.add(current)
                 else:
                     empty = Empty(bdg, self, (x,y), 100*bdg)
                     current_city.buildings.add(empty)
+                    empty.city = current_city
                     self.grid.place_agent(empty, (x,y))
                     self.schedule.add(empty)
-                    print(empty.capacity)
-                    print(empty.convert_cost)
+                    
             
                     
                     

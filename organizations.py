@@ -15,6 +15,7 @@ class City(Agent):
         self.buildings = set([])
         self.pos = pos
         self.social_housing = None
+        self.coa = None
         
         
 
@@ -157,11 +158,8 @@ class COA(Organization):
         #until there's no room, house in azc
         if self.get_total_occupancy() / self.get_total_cap() < .90:
             self.min_house(newcomer)
-            print('minhousing')
         #then house in hotel
         else:
-            print('hotel')
-            print(self.get_total_occupancy() / self.get_total_cap())
             
             destination = [x for x in self.city.buildings if
                            type(x) is Hotel][0]
@@ -316,22 +314,27 @@ class COA(Organization):
         
         #find max value, need:cost ratio
         best = max(candidates, key = attrgetter('calculated_value'))
-        
+
         #return policy
         return best
      
         
-    def convert(self, empty):
+    def convert(self, building):
         
         #remove
-        new_azc = AZC(empty.unique_id,empty.model,
-                      'as_ext', empty.pos)
+        new_azc = AZC(building.unique_id,building.model,
+                      'as_ext', building.pos, self)
         self.model.schedule.add(new_azc)
-        self.model.grid.place_agent(new_azc, new_azc.pos)
+        self.model.grid.place_agent(new_azc, building.pos)
         self.city.buildings.add(new_azc)
         self.azcs.add(new_azc)
-        self.model.schedule.remove(empty)
-        self.model.grid.remove_agent(empty)
+        self.city.buildings.remove(building)
+        self.model.schedule.remove(building)
+        self.model.grid.remove_agent(building)
+        
+    def construct(self, building):
+        
+        building.under_construction = True
              
                 
         
@@ -342,6 +345,8 @@ class COA(Organization):
         If detected, inspects the gravity of the anomoly and acts
         accordingly
         '''
+        
+        
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
@@ -387,7 +392,8 @@ class COA(Organization):
                         else:
                             self.policy = self.hotel_house
                             #convert decision
-                            self.convert(decision)
+                            
+                            self.construct(decision)
                          
                     else:
                         self.crisis = False
@@ -465,7 +471,7 @@ class Building(Agent):
 
 
 class AZC(Building):
-    def __init__(self, unique_id, model,occupant_type, pos):
+    def __init__(self, unique_id, model, occupant_type, pos, coa):
         super().__init__(unique_id, model)
         
         self.capacity = 400
@@ -474,10 +480,14 @@ class AZC(Building):
         self.pos = pos
         self.available = False
         
+        self.coa = coa
+        
 
 
     def step(self):
+        
         pass
+            
 
 class Hotel(Building):
     '''
@@ -495,6 +505,7 @@ class Hotel(Building):
         self.cost_pp = cost_pp
         self.available = True
         self.calculated_value = None
+        self.city = None
     
     def calc_cost(self, need, average_duration):
         
@@ -520,8 +531,19 @@ class Empty(Building):
         self.convert_cost = self.capacity * 1000 * .80
         self.available = True
         self.calculated_value = None
+        self.under_construction = False
+        self.construction_time = 180
+        self.city = None
         
     def calc_cost(self, need, average_duration):
         
         self.calculated_value = need / self.convert_cost
+    def step(self):
+        
+        if self.under_construction == True:
+            self.construction_time -= 1
+        if self.construction_time == 0:
+            self.under_construction = False
+            self.city.coa.convert(self)
+            
         
