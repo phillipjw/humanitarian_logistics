@@ -52,7 +52,9 @@ class HumanitarianLogistics(Model):
         self.shock_rate = shock_rate           #amt of increase during shock
         self.shock = False                     #shock flag
         self.number_added = 1                  #base rate of influx
-
+        self.number_shocks = 4
+        self.shock_growth = 2
+        
         #dict of probabilities of first/second decision success rates by country
         self.specs = {'Syria' : [.97,.96],
                       'Eritrea' : [.96,.89],
@@ -264,25 +266,30 @@ class HumanitarianLogistics(Model):
         
         if self.schedule.steps % self.shock_period == 0:
             self.shock = True
+            self.shock_counter = 0
         
         if self.shock:
             
-            if self._shock_duration > (self._shock_duration / 2):
-                self.number_added += self.shock_rate
-            else:
-                self.number_added -= self.shock_rate
-            
+            #if self._shock_duration > (self._shock_duration / 2):
+            #    self.number_added += self.shock_rate
+            #else:
+            #    self.number_added -= self.shock_rate
+            self.number_added += self.shock_rate
             for i in range(int(self.number_added)):
                 
                 self.addNewcomer(True, 'Syria')  #should be generalized to have shocks from whereever
-                
+                self.shock_counter += 1
             self._shock_duration -= 1
+            
             
             if self._shock_duration == 0:
                 
                 self.shock = False
                 self._shock_duration = self.shock_duration
                 self.number_added = 1
+                print(self.shock_counter)
+                self.shock_counter = 0
+                self.shock_rate = self.shock_rate*self.shock_growth
         else:
         
             #adds newcomers to simuluation at a given rate

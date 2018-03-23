@@ -255,7 +255,6 @@ class COA(Organization):
             #difference between that and occupancy
             total_need += self.evaluate_need(building, project[0])
             
-        print(total_need)
         return total_need > 0
         
         
