@@ -114,15 +114,12 @@ class COA(Organization):
         destination.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = destination #update agent location
         
-        destination.occupancy += 1 #update occupancy  
-        
-    def min_house(self, newcomer):
-        
-        destination = min(self.azcs, key = attrgetter('occupancy'))
+        destination.occupancy += 1 #update occupancy 
+    
+    def move(self, newcomer, destination):
         
         newcomer.loc.occupancy -= 1 
-        
-        
+
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
         
@@ -135,8 +132,44 @@ class COA(Organization):
         destination.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = destination #update agent location
         
-        destination.occupancy += 1 #update occupancy    
+        destination.occupancy += 1 #update occupancy 
         
+        
+    def min_house(self, newcomer):
+        
+        destination = min(self.azcs, key = attrgetter('occupancy'))
+        
+        self.move(newcomer, destination)
+        
+    
+    def get_total_cap(self):
+        
+        return sum([azc.capacity for azc in self.azcs])
+    
+    def get_total_occupancy(self):
+        
+        return sum([azc.occupancy for azc in self.azcs])
+        
+    def hotel_house(self, newcomer):
+        '''
+        min-house till near max, then send to hotel
+        '''
+        #until there's no room, house in azc
+        if self.get_total_occupancy() / self.get_total_cap() < .90:
+            self.min_house(newcomer)
+            print('minhousing')
+        #then house in hotel
+        else:
+            print('hotel')
+            print(self.get_total_occupancy() / self.get_total_cap())
+            
+            destination = [x for x in self.city.buildings if
+                           type(x) is Hotel][0]
+            
+            self.move(newcomer, destination)
+            
+            
+                
         
         
         
@@ -255,12 +288,50 @@ class COA(Organization):
             #difference between that and occupancy
             total_need += self.evaluate_need(building, project[0])
             
-        return total_need > 0
+        return (total_need > 0, total_need)
         
         
             
-            
-            
+    def evaluate_options(self, need):
+        
+        '''
+        if in crisis, check cost of each
+        hotel v empty building conversion
+        need = amount of people over capacity
+        '''
+        #placeholder
+        average_duration = 50
+        
+        #gather candidates
+        hotel = [x for x in self.city.buildings
+                 if type(x) is Hotel][0]
+        candidates = [x for x in self.city.buildings if
+                   type(x) is Empty]
+        
+        candidates.append(hotel)
+        
+        #calculate values
+        for candidate in candidates:
+            candidate.calc_cost(need, average_duration)
+        
+        #find max value, need:cost ratio
+        best = max(candidates, key = attrgetter('calculated_value'))
+        
+        #return policy
+        return best
+     
+        
+    def convert(self, empty):
+        
+        #remove
+        new_azc = AZC(empty.unique_id,empty.model,
+                      'as_ext', empty.pos)
+        self.model.schedule.add(new_azc)
+        self.model.grid.place_agent(new_azc, new_azc.pos)
+        self.city.buildings.add(new_azc)
+        self.azcs.add(new_azc)
+        self.model.schedule.remove(empty)
+        self.model.grid.remove_agent(empty)
              
                 
         
@@ -305,9 +376,19 @@ class COA(Organization):
             if self.model.schedule.steps % self.assessment_frequency == 0:
                 
                 if self.problematic:
-                    if self.crisis_check():
+                    cc = self.crisis_check()
+                    if cc[0]:
                         self.crisis = True
                         print('Crisis')
+                        
+                        decision = self.evaluate_options(cc[1])
+                        if type(decision) is Hotel:
+                            self.policy = self.hotel_house
+                        else:
+                            self.policy = self.hotel_house
+                            #convert decision
+                            self.convert(decision)
+                         
                     else:
                         self.crisis = False
                         self.problematic = False #forcing reevaluation.
@@ -413,6 +494,16 @@ class Hotel(Building):
         self.pos = pos
         self.cost_pp = cost_pp
         self.available = True
+        self.calculated_value = None
+    
+    def calc_cost(self, need, average_duration):
+        
+        hotel_cost = need*average_duration*self.cost_pp/30
+        self.calculated_value = need / hotel_cost
+        
+        
+        
+        
     
 class Empty(Building):
     '''
@@ -428,3 +519,9 @@ class Empty(Building):
         self.pos = pos
         self.convert_cost = self.capacity * 1000 * .80
         self.available = True
+        self.calculated_value = None
+        
+    def calc_cost(self, need, average_duration):
+        
+        self.calculated_value = need / self.convert_cost
+        
