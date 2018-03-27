@@ -1,7 +1,7 @@
 # server.py
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
-from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty
+from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty, AZC_Viz
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from mesa.visualization.ModularVisualization import VisualizationElement
@@ -57,23 +57,33 @@ def agent_portrayal(agent):
     portrayal = {}
     
     if type(agent) is Newcomer:
-
+        '''
         portrayal['Shape'] = "rect"
         portrayal['Filled'] = 'true'
         portrayal['Layer'] = 2
         portrayal['Color'] = 'red'
-        portrayal['w'] = 3
-        portrayal['h'] = 3
+        portrayal['w'] = 10
+        portrayal['h'] = 1
+        ''' 
+    elif type(agent) is AZC_Viz:
+        
+        portrayal['Shape'] = "rect"
+        portrayal['Filled'] = 'False'
+        portrayal['Layer'] = 1
+        portrayal['Color'] = 'red'
+        portrayal['w'] = 10
+        portrayal['h'] = agent.value
+    
 
     
     elif type(agent) is AZC:
         
-        portrayal['Shape'] = "circle"
+        portrayal['Shape'] = "rect"
         portrayal['Filled'] = 'False'
         portrayal['Layer'] = 0
         portrayal['Color'] = 'blue'
-        portrayal['r'] = 10
-        portrayal['text'] = agent.occupancy
+        portrayal['w'] = 10
+        portrayal['h'] = 20
         
     elif type(agent) is Hotel:
         

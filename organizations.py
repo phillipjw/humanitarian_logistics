@@ -3,6 +3,7 @@ from random import randrange
 from random import uniform
 from operator import attrgetter
 import numpy as np
+from viz import AZC_Viz
 
 class City(Agent):
     '''
@@ -16,6 +17,7 @@ class City(Agent):
         self.pos = pos
         self.social_housing = None
         self.coa = None
+        
         
         
 
@@ -50,6 +52,8 @@ class COA(Organization):
         self.shock_assessment_frequency = 10
         self.shock_threshold = 5
         self.capacity_threshold = .75
+        self.buildings_under_construction = set([])
+        
 
         self.shock = False                 # is current influx an anomoly 
         self.crisis = False                # is there sufficient housing 
@@ -79,61 +83,37 @@ class COA(Organization):
         destination = [azc for azc in self.azcs if
                        azc.occupant_type == newcomer.ls][0]
         
-        newcomer.loc.occupancy -= 1 
         
-        
-        #take first one, in future, evaluate buildings on some criteria
-        house_loc = destination.pos         #where is it
-        
-        #add noise so agents don't overlap
-        x = house_loc[0] + np.random.randint(-20,20)
-        y = house_loc[1] + np.random.randint(-20,20)
-        
-        self.model.grid.move_agent(newcomer, (x,y)) #place
-        
-        destination.occupants.add(newcomer) #add agent to building roster
-        newcomer.loc = destination #update agent location
-        
-        destination.occupancy += 1 #update occupancy    
+        self.move(newcomer, destination)
+          
         
     def social_house(self, newcomer):
         
-        newcomer.loc.occupancy -= 1  
         
         destination = self.city.social_housing
         
         
-        #take first one, in future, evaluate buildings on some criteria
-        house_loc = destination.pos         #where is it
-        
-        #add noise so agents don't overlap
-        x = house_loc[0] + np.random.randint(-20,20)
-        y = house_loc[1] + np.random.randint(-20,20)
-        
-        self.model.grid.move_agent(newcomer, (x,y)) #place
-        
-        destination.occupants.add(newcomer) #add agent to building roster
-        newcomer.loc = destination #update agent location
-        
-        destination.occupancy += 1 #update occupancy 
+        self.move(newcomer, destination)
     
     def move(self, newcomer, destination):
         
         newcomer.loc.occupancy -= 1 
+        destination.occupancy += 1 #update occupancy 
 
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
         
         #add noise so agents don't overlap
-        x = house_loc[0] + np.random.randint(-20,20)
-        y = house_loc[1] + np.random.randint(-20,20)
+        x = house_loc[0] #+ np.random.randint(-20,20)
+        y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
+        
         
         self.model.grid.move_agent(newcomer, (x,y)) #place
         
         destination.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = destination #update agent location
         
-        destination.occupancy += 1 #update occupancy 
+        
         
         
     def min_house(self, newcomer):
@@ -193,29 +173,8 @@ class COA(Organization):
             return building.convert_cost
         elif type(building) is Hotel:
             return need*building.cost_pp
-        
-    def get_buildings(self, available):
-        
-        '''
-        help function to get a list of buildings of a given type
-        '''
-        
-        if available == False:
-            
-            return self.city.buildings
-        else:
-            return [building for building in self.city.buildings
-                    if building.available]
-            
-
+          
     
-    def online_mean(self):
-        
-        for building,occupancy in self.capacities.items():
-                
-                self.average_capacities[building] += self.capacities[building] / self.occupancy_counter
-                
-        
         
     def online_variance_ta(self, building):
         
@@ -278,6 +237,12 @@ class COA(Organization):
 
         
         total_need = 0
+        
+        #takes into account future capacities if building under construction
+        if self.buildings_under_construction:
+            total_need -= sum([x.capacity for x in
+                               self.buildings_under_construction])
+        
         for building, occupancy in self.capacities.items():
             
             #how many in 6 months
@@ -324,17 +289,23 @@ class COA(Organization):
         #remove
         new_azc = AZC(building.unique_id,building.model,
                       'as_ext', building.pos, self)
+        azc_viz = AZC_Viz(self.model, new_azc)
+        self.model.schedule.add(azc_viz)
+        self.model.grid.place_agent(azc_viz, azc_viz.pos)
         self.model.schedule.add(new_azc)
         self.model.grid.place_agent(new_azc, building.pos)
         self.city.buildings.add(new_azc)
         self.azcs.add(new_azc)
         self.city.buildings.remove(building)
+        self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+        
         
     def construct(self, building):
         
         building.under_construction = True
+        self.buildings_under_construction.add(building)
              
                 
         
@@ -423,18 +394,18 @@ class COA(Organization):
         
 
         
-        
+        self.ter_apel.occupancy += 1
         
         #add noise so agents don't overlap
-        x = house_loc[0] + np.random.randint(-20,20)
-        y = house_loc[1] + np.random.randint(-20,20)
+        x = house_loc[0] #+ np.random.randint(-20,20)
+        y = house_loc[1] - 10 + int(20*((1+self.ter_apel.occupancy) / self.ter_apel.capacity))
         
         self.model.grid.move_agent(newcomer, (x,y)) #place
         
         self.ter_apel.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = self.ter_apel #update agent location
         
-        self.ter_apel.occupancy += 1 #update occupancy           
+         #update occupancy           
             
         
 class NGO(Organization):

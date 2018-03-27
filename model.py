@@ -14,6 +14,7 @@ import numpy as np
 
 from newcomer import Newcomer
 from organizations import AZC, City, Hotel, Empty, COA
+from viz import AZC_Viz
 
     
 
@@ -124,6 +125,11 @@ class HumanitarianLogistics(Model):
                     current_coa.ter_apel = a
                 if a.occupant_type == 'tr':
                     current_city.social_housing = a
+                    
+                #add viz
+                v = AZC_Viz(self,a)
+                self.schedule.add(v)
+                self.grid.place_agent(v, v.pos)
                 
                     
                 
@@ -148,23 +154,7 @@ class HumanitarianLogistics(Model):
                     empty.city = current_city
                     self.grid.place_agent(empty, (x,y))
                     self.schedule.add(empty)
-                    
-            
-                    
-                    
-                
-                
-            
-            
-            
-            
-            
-        
-            
-            
-       
-    
-    
+                        
     
 
     def house(self,newcomer):
