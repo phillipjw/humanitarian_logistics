@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from organizations import AZC, City, Hotel, Empty, COA
+from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
 
     
@@ -66,8 +66,8 @@ class HumanitarianLogistics(Model):
         
         
         self.country_list = ['Syria', 'Eritrea', 'Iraq', 'Afghanistan']
-        self.country_count = np.zeros(4) #keeps track of how many applicants from each country
-        
+        self.country_count = np.zeros(len(self.country_list)) #keeps track of how many applicants from each country
+        self.country_success = np.zeros(len(self.country_list))
 
         
         #records capacitiy of each AZC type
@@ -82,16 +82,25 @@ class HumanitarianLogistics(Model):
                               'Eritrea' : sr_eritrea,
                               'Afghanistan' : sr_afgh})
         
+        self.capacity_dc = DataCollector(
+                model_reporters = {
+                        'Current Capacity' : coa_occ,
+                        'Projected Capacity' : coa_proj})
+        
         
         
         for city in range(self.num_cities):
             
             pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
-            
+            #add COA
             current_coa = COA(city, self, current_city)
             current_city.coa = current_coa
             self.schedule.add(current_coa)
+            current_ind = IND(city, self, current_city)
+            self.schedule.add(current_ind)
+            current_coa.IND = current_ind
+            current_ind.coa = current_coa
             #adds city to schedule n grid
             self.schedule.add(current_city) 
             self.grid.place_agent(current_city, (current_city.pos))
@@ -253,6 +262,7 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         self.datacollector.collect(self) #collects occupancy data
         self.sr.collect(self)            #collects success rate data
+        self.capacity_dc.collect(self)
         
         
         
@@ -279,7 +289,7 @@ class HumanitarianLogistics(Model):
                 self.shock = False
                 self._shock_duration = self.shock_duration
                 self.number_added = 1
-                print(self.shock_counter)
+                
                 self.shock_counter = 0
                 self.shock_rate = self.shock_rate*self.shock_growth
         else:
@@ -349,19 +359,11 @@ def sr_eritrea(model):
 
 def sr_iraq(model):
     
-    newcomers = [agent for agent in model.schedule.agents if
-                 type(agent) is Newcomer]
-    
-    
-    syrians = [agent for agent in newcomers if
-               agent.coo == 'Iraq']
-    
-    
-    status = [agent for agent in syrians if
-              agent.ls == 'tr']
+    country = model.country_list.index('Iraq')
+    status = model.country_success[country]
     
       
-    return 1.0*len(status) / (model.country_count[2] + 1)
+    return 1.0*status / (model.country_count[2] + 1)
 
 def sr_afgh(model):
     
@@ -378,3 +380,15 @@ def sr_afgh(model):
     
       
     return 1.0*len(status) / (model.country_count[3] + 1)
+
+def coa_occ(model):
+    coa = [agent for agent in model.schedule.agents if 
+           type(agent) is COA][0]
+    return coa.get_occupancy_pct()
+
+def coa_proj(model):
+    coa = [agent for agent in model.schedule.agents if 
+           type(agent) is COA][0]
+    return coa.project_dc()
+    
+    

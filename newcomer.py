@@ -28,7 +28,7 @@ class Newcomer(Agent):
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
                 
-        self.decision_time = 28 #28 days is the length of the general asylum procedure
+        self.decision_time = 8 #28 days is the length of the general asylum procedure
         self.intake_time = 4 #time until transfer out of ter apel
               
         self.coo = country_of_origin
@@ -56,6 +56,7 @@ class Newcomer(Agent):
                 
                 self.ls = 'as'
                 self.coa.policy(self)
+                self.coa.IND.set_time(self)
         
         
         
@@ -69,11 +70,14 @@ class Newcomer(Agent):
                 if self.coa.decide(True, self):
                     self.ls = 'tr'
                     self.coa.social_house(self)
+                    country = self.model.country_list.index(self.coo)
+                    self.model.country_success[country] += 1
                     self.model.Remove(self)
                 else:
                     
                     self.ls = 'as_ext'
                     self.coa.policy(self)
+                    self.coa.IND.set_time(self)
                     
                     #draws decision outcome from bernoulli distribution based on attributes
                     self.second = bernoulli.rvs(self.specs[1], size = 1)[0]
@@ -83,15 +87,17 @@ class Newcomer(Agent):
         # Extended Procedure to TR or Repatriation
         
         elif self.ls == 'as_ext':
-            self.ext_time -= 1
+            self.decision_time -= 1
             
-            if self.ext_time == 0:
+            if self.decision_time == 0:
             
                 if self.second == 0:
                     self.model.Remove(self)
                 else:
                     self.ls = 'tr'
                     self.coa.social_house(self)
+                    country = self.model.country_list.index(self.coo)
+                    self.model.country_success[country] += 1
                     self.model.Remove(self)      #temporary just to speed things up
          
        

@@ -4,6 +4,8 @@ from random import uniform
 from operator import attrgetter
 import numpy as np
 from viz import AZC_Viz
+from mesa.datacollection import DataCollector
+
 
 class City(Agent):
     '''
@@ -59,6 +61,7 @@ class COA(Organization):
         self.crisis = False                # is there sufficient housing 
                                            # for current influx
         self.problematic = False           # is change in policy required
+        self.shock_reference = None
         
         #ter apel shock check
         self.sum_ta = 0 
@@ -70,6 +73,10 @@ class COA(Organization):
         
         #policies
         self.policy = self.house
+        
+        self.IND = None
+        
+        
     
     def decide(self, first, newcomer):
         
@@ -130,6 +137,10 @@ class COA(Organization):
     def get_total_occupancy(self):
         
         return sum([azc.occupancy for azc in self.azcs])
+    
+    def get_occupancy_pct(self):
+        
+        return self.get_total_occupancy() / (self.get_total_cap() + 1)
         
     def hotel_house(self, newcomer):
         '''
@@ -158,6 +169,27 @@ class COA(Organization):
         '''
         
         return projection - building.capacity
+    
+    def project_dc(self):
+        
+        total = 0
+        for azc in self.azcs:
+            
+            if self.shock:
+                total += self.project_2(azc)[0]
+            else:
+                total += self.project(azc)[0]
+        return max(0,total / self.get_total_cap())
+    
+    def project_2(self, building):
+        
+        difference = building.occupancy - self.capacities[building]
+        time_diff = self.model.schedule.steps - self.shock_reference
+        delta = difference / self.assessment_frequency #assuming monthly assessment
+        
+        return self.capacities[building] + delta*(time_diff + 50), delta
+    
+    
     
     def project(self, building):
         
@@ -252,6 +284,8 @@ class COA(Organization):
             total_need += self.evaluate_need(building, project[0])
             
         return (total_need > 0, total_need)
+    
+    
         
         
             
@@ -285,7 +319,7 @@ class COA(Organization):
      
         
     def convert(self, building):
-        
+        print('azc added!')
         #remove
         new_azc = AZC(building.unique_id,building.model,
                       'as_ext', building.pos, self)
@@ -296,6 +330,7 @@ class COA(Organization):
         self.model.grid.place_agent(new_azc, building.pos)
         self.city.buildings.add(new_azc)
         self.azcs.add(new_azc)
+        self.capacities[new_azc] = new_azc.occupancy
         self.city.buildings.remove(building)
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
@@ -306,6 +341,7 @@ class COA(Organization):
         
         building.under_construction = True
         self.buildings_under_construction.add(building)
+        print('begin construction!')
              
                 
         
@@ -316,6 +352,7 @@ class COA(Organization):
         If detected, inspects the gravity of the anomoly and acts
         accordingly
         '''
+        
         
         
         #gives the model time to build of a distribution of normal flow
@@ -335,6 +372,7 @@ class COA(Organization):
                 if self.shock_check(variance_ta):
                     print('shock')
                     self.shock = True
+                    self.shock_reference = self.model.schedule.steps
                     
                     
                 #if no anomoly add to normal flow distribution    
@@ -422,10 +460,24 @@ class NGO(Organization):
         
 class IND(Organization):
     
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model, city):
         super().__init__(unique_id, model)
         
         self.processing_rate = None
+        self.max_time = 270
+        self.min_time = 8
+        self.coa = None
+        self.city = city
+        
+    def set_time(self, newcomer):
+        if newcomer.ls == 'as':
+            capacity = self.coa.get_occupancy_pct()
+            time = 90*capacity + 8
+            newcomer.decision_time = int(time)
+        elif newcomer.ls == 'as_ext':
+            newcomer.decision_time = 90
+        
+    
                            
                     
                     
@@ -450,6 +502,7 @@ class AZC(Building):
         self.occupant_type = occupant_type
         self.pos = pos
         self.available = False
+        self.occupancy = 0
         
         self.coa = coa
         

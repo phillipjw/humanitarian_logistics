@@ -7,18 +7,18 @@ from mesa.visualization.UserParam import UserSettableParameter
 from mesa.visualization.ModularVisualization import VisualizationElement
 import numpy as np
 
-canvas_width = 500
-canvas_height = 300
+canvas_width = 600
+canvas_height = 400
 
-grid_width = int(canvas_width / 3)
-grid_height = int(canvas_height / 3)
+grid_width = int(canvas_width / 5)
+grid_height = int(canvas_height / 5)
 
 num_azc = 4
 num_cities = 1
 
 shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
 shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
-shock_rate = UserSettableParameter('slider', "Shock Growth", .025, 0, 1, .001)
+shock_rate = UserSettableParameter('slider', "Shock Growth", .019, 0, 1, .001)
 
 
 nc_rate = UserSettableParameter('slider', "In-Flow", .8, 0, 1, .1)
@@ -84,11 +84,12 @@ def agent_portrayal(agent):
         portrayal['Color'] = 'blue'
         portrayal['w'] = 10
         portrayal['h'] = 20
+        portrayal['text'] = 5
         
     elif type(agent) is Hotel:
         
         portrayal['Shape'] = "circle"
-        portrayal['Filled'] = 'true'
+        portrayal['Filled'] = 'false'
         portrayal['Layer'] = 0
         portrayal['Color'] = 'green'
         portrayal['r'] = 10
@@ -98,8 +99,14 @@ def agent_portrayal(agent):
         portrayal['Shape'] = "circle"
         portrayal['Filled'] = 'true'
         portrayal['Layer'] = 0
-        portrayal['Color'] = 'Black'
+        if agent.under_construction == False:
+            portrayal['Color'] = 'Black'
+        else:
+            portrayal['Color'] = 'Blue'
+        
+        
         portrayal['r'] = 10
+        
         
         
     
@@ -128,12 +135,18 @@ chart_suces = ChartModule([{'Label' : 'Syria',
                             'Color' : 'yellow'},],
                           data_collector_name = 'sr')
 
+chart_cap = ChartModule([{'Label' : 'Current Capacity',
+                          'Color' : 'Black'},
+                         {'Label' : 'Projected Capacity',
+                          'Color' : 'Red'}],
+                         data_collector_name = 'capacity_dc')
+
 
 
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [grid,chart, chart_suces],
+                       [grid,chart_cap,chart, chart_suces],
                        "Humanitarian Logistics",
                        {"shock_period" : shock_period, "shock_duration" : shock_duration,
                         "shock_rate" : shock_rate, "N_cities": num_cities, "N_a": num_azc,

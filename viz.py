@@ -28,10 +28,8 @@ class AZC_Viz(Agent):
         raw_value = self.azc.occupancy / self.azc.capacity
         value = int(self.display_height * raw_value)
         self.value = value
-        print(value)
         
         height = int(-10*raw_value + 10)
         self.height_adjust = height 
-        print(height)
         self.pos = (self.azc.pos[0], self.azc.pos[1] - self.height_adjust)
         
