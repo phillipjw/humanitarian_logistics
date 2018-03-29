@@ -1,7 +1,7 @@
 # server.py
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
-from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty, AZC_Viz
+from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty, AZC_Viz, COA
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from mesa.visualization.ModularVisualization import VisualizationElement
@@ -10,15 +10,15 @@ import numpy as np
 canvas_width = 600
 canvas_height = 400
 
-grid_width = int(canvas_width / 5)
-grid_height = int(canvas_height / 5)
+grid_width = int(canvas_width / 7)
+grid_height = int(canvas_height / 7)
 
 num_azc = 4
 num_cities = 1
 
 shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
 shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
-shock_rate = UserSettableParameter('slider', "Shock Growth", .019, 0, 1, .001)
+shock_rate = UserSettableParameter('slider', "Shock Growth", .05, 0, 1, .001)
 
 
 nc_rate = UserSettableParameter('slider', "In-Flow", .8, 0, 1, .1)
@@ -73,6 +73,27 @@ def agent_portrayal(agent):
         portrayal['Color'] = 'red'
         portrayal['w'] = 10
         portrayal['h'] = agent.value
+        
+    elif type(agent) is COA:
+        
+        portrayal['Shape'] = "rect"
+        portrayal['Filled'] = 'true'
+        portrayal['Layer'] = 1
+        portrayal['Color'] = 'yellow'
+        portrayal['w'] = 10
+        portrayal['h'] = 10
+        portrayal['text'] = 'NORMAL'
+        
+        
+        if agent.crisis:
+            portrayal['text'] = 'SHOCK : CRISIS'
+        elif agent.problematic:
+            portrayal['text'] = 'SHOCK : PROBLEMATIC'
+        elif agent.shock:
+            portrayal['text'] = 'SHOCK : MANAGEABLE'
+        
+        portrayal['text_color'] = 'blue'
+        
     
 
     
@@ -90,9 +111,12 @@ def agent_portrayal(agent):
         
         portrayal['Shape'] = "circle"
         portrayal['Filled'] = 'false'
-        portrayal['Layer'] = 0
+        portrayal['Layer'] = 3
         portrayal['Color'] = 'green'
         portrayal['r'] = 10
+        portrayal['text'] = agent.occupancy
+        portrayal['text_color'] = 'black'
+        
         
     elif type(agent) is Empty:
         
@@ -103,6 +127,8 @@ def agent_portrayal(agent):
             portrayal['Color'] = 'Black'
         else:
             portrayal['Color'] = 'Blue'
+            portrayal['text'] = 'UNDER CONSTRUCTION'
+            portrayal['text_color'] = 'black'
         
         
         portrayal['r'] = 10

@@ -46,9 +46,9 @@ class COA(Organization):
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
-        self.assessment_frequency = 15      #monthly checks
-        self.projection_time = 180          #6 month conditions, given 5 month construction time
-        self.budget = 10000                 #arbitrary and to be replaced
+        self.assessment_frequency = 30      #monthly checks
+        self.projection_time = 180          #6 month construction time
+        self.budget = 300000                 #arbitrary and to be replaced
         self.city = city
         self.newcomers = set([])
         self.shock_assessment_frequency = 10
@@ -62,6 +62,7 @@ class COA(Organization):
                                            # for current influx
         self.problematic = False           # is change in policy required
         self.shock_reference = None
+        self.delta = None                  #rate of change
         
         #ter apel shock check
         self.sum_ta = 0 
@@ -71,19 +72,13 @@ class COA(Organization):
         self.var_copy_ta = None
         self.ter_apel = None
         
+        
         #policies
         self.policy = self.house
-        
+        self.collection_fee = 194
         self.IND = None
         
         
-    
-    def decide(self, first, newcomer):
-        
-        if first:
-            return newcomer.first == 1
-        else:
-            return newcomer.second == 1
         
     def house(self, newcomer):
         
@@ -95,25 +90,30 @@ class COA(Organization):
           
         
     def social_house(self, newcomer):
-        
+        '''
+        Add newcomer to TR housing
+        '''        
         
         destination = self.city.social_housing
-        
         
         self.move(newcomer, destination)
     
     def move(self, newcomer, destination):
+        '''
+        moves newcomer to a destination
+        updates occupancies of previous and new destinations
+        '''
         
         newcomer.loc.occupancy -= 1 
         destination.occupancy += 1 #update occupancy 
 
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
-        
+    
         #add noise so agents don't overlap
         x = house_loc[0] #+ np.random.randint(-20,20)
         y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
-        
+       
         
         self.model.grid.move_agent(newcomer, (x,y)) #place
         
@@ -124,6 +124,9 @@ class COA(Organization):
         
         
     def min_house(self, newcomer):
+        '''COA policy houses newcomer
+        in the most empty AZC
+        '''
         
         destination = min(self.azcs, key = attrgetter('occupancy'))
         
@@ -131,14 +134,17 @@ class COA(Organization):
         
     
     def get_total_cap(self):
+        '''total available room'''
         
         return sum([azc.capacity for azc in self.azcs])
     
     def get_total_occupancy(self):
+        '''total occupied space'''
         
         return sum([azc.occupancy for azc in self.azcs])
     
     def get_occupancy_pct(self):
+        '''room to space ratio'''
         
         return self.get_total_occupancy() / (self.get_total_cap() + 1)
         
@@ -156,6 +162,7 @@ class COA(Organization):
                            type(x) is Hotel][0]
             
             self.move(newcomer, destination)
+            self.budget -= destination.cost_pp
             
             
                 
@@ -173,15 +180,28 @@ class COA(Organization):
     def project_dc(self):
         
         total = 0
-        for azc in self.azcs:
+        
+        #delta begins as null bc it requires a shock to be activated
+        if not self.delta:
+            total = self.get_total_occupancy()
+        else:
             
-            if self.shock:
-                total += self.project_2(azc)[0]
-            else:
-                total += self.project(azc)[0]
+            for azc in self.azcs:
+
+                total += self.delta*180
+                
+                '''
+                if self.shock:
+                    total += self.project_2(azc)[0]
+                else:
+                    total += self.project(azc)[0]
+                '''
         return max(0,total / self.get_total_cap())
     
     def project_2(self, building):
+        '''
+        variation on project function
+        '''
         
         difference = building.occupancy - self.capacities[building]
         time_diff = self.model.schedule.steps - self.shock_reference
@@ -193,13 +213,26 @@ class COA(Organization):
     
     def project(self, building):
         
+        '''
+        Calculates difference between current and previous occupancies
+        to get a rate of change, delta, uses that to estimate, project,
+        occupancy in 180 days time if the rate of change were to continue
+        '''
+        
         difference = building.occupancy - self.capacities[building]
         
         delta = difference / self.assessment_frequency #assuming monthly assessment
         
+        self.delta = delta
+        
         return self.capacities[building] + delta*self.projection_time, delta
     
     def evaluate_cost(self, need, building):
+        
+        '''
+        returns hotel cost, per person per month
+        or conversion cost of an empty building
+        '''
         
         if type(building) is Empty:
             return building.convert_cost
@@ -231,9 +264,12 @@ class COA(Organization):
         
      
     def shock_check(self,variance_ta):
+        '''checks if current amount of arrivals is abnormal
+        '''
         return self.ter_apel.occupancy / variance_ta > self.shock_threshold
     
     def update_capacities(self):
+        
         #update monthly rate of change 
         for k,v in self.capacities.items():
             
@@ -257,6 +293,7 @@ class COA(Organization):
                 break                         
             else:
                 print('Manageable')
+                self.project(building)
                 #all must be manageable for normal housing policies
         return problematic
     
@@ -304,6 +341,8 @@ class COA(Organization):
                  if type(x) is Hotel][0]
         candidates = [x for x in self.city.buildings if
                    type(x) is Empty]
+        candidates = [x for x in candidates if
+                      self.budget > x.convert_cost]
         
         candidates.append(hotel)
         
@@ -342,7 +381,14 @@ class COA(Organization):
         building.under_construction = True
         self.buildings_under_construction.add(building)
         print('begin construction!')
-             
+        self.budget -= building.convert_cost
+    
+    def collect(self):
+        
+        self.budget += self.collection_fee*self.get_total_occupancy()
+        
+        
+        
                 
         
     def step(self):
@@ -355,8 +401,13 @@ class COA(Organization):
         
         
         
+        
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
+            
+            if self.model.schedule.steps % self.assessment_frequency == 0:
+                self.collect()
+                print(self.budget)
             
             # start calculting variances
             self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.ter_apel)
@@ -366,6 +417,11 @@ class COA(Organization):
             
             #only with a certain frequency so as not to slow it down
             if self.model.schedule.steps % self.assessment_frequency == 0:
+                
+                #also collects from residents
+                self.collect()
+                print(self.budget)
+                
                 #check variance of current point
                 
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
@@ -425,13 +481,15 @@ class COA(Organization):
             
    
 
-    def intake(self,newcomer):       
+    def intake(self,newcomer):     
+        '''Adds a newcomer to Ter Apel
+        '''
         
         #take first one, in future, evaluate buildings on some criteria
         house_loc = self.ter_apel.pos         #where is it
         
 
-        
+        #update occupancy
         self.ter_apel.occupancy += 1
         
         #add noise so agents don't overlap
@@ -443,7 +501,6 @@ class COA(Organization):
         self.ter_apel.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = self.ter_apel #update agent location
         
-         #update occupancy           
             
         
 class NGO(Organization):
@@ -476,6 +533,14 @@ class IND(Organization):
             newcomer.decision_time = int(time)
         elif newcomer.ls == 'as_ext':
             newcomer.decision_time = 90
+    
+    def decide(self, first, newcomer):
+        
+        
+        if first:
+            return newcomer.first == 1
+        else:
+            return newcomer.second == 1
         
     
                            

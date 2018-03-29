@@ -67,7 +67,7 @@ class Newcomer(Agent):
             self.decision_time -= 1
             
             if self.decision_time == 0:
-                if self.coa.decide(True, self):
+                if self.coa.IND.decide(True, self):
                     self.ls = 'tr'
                     self.coa.social_house(self)
                     country = self.model.country_list.index(self.coo)

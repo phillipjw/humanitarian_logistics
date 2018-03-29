@@ -97,6 +97,7 @@ class HumanitarianLogistics(Model):
             current_coa = COA(city, self, current_city)
             current_city.coa = current_coa
             self.schedule.add(current_coa)
+            self.grid.place_agent(current_coa, (int(self.width / 2), self.height - 10))
             current_ind = IND(city, self, current_city)
             self.schedule.add(current_ind)
             current_coa.IND = current_ind
@@ -327,59 +328,29 @@ def calc_as(model):
 
 def sr_syria(model):
     
-    newcomers = [agent for agent in model.schedule.agents if
-                 type(agent) is Newcomer]
-    
-    
-    syrians = [agent for agent in newcomers if
-               agent.coo == 'Syria']
-    
-    
-    status = [agent for agent in syrians if
-              agent.ls == 'tr']
-    
-      
-    return 1.0*len(status) / (model.country_count[0] + 1)
+    return success_counter(model,'Syria')
 
 def sr_eritrea(model):
     
-    newcomers = [agent for agent in model.schedule.agents if
-                 type(agent) is Newcomer]
-    
-    
-    syrians = [agent for agent in newcomers if
-               agent.coo == 'Eritrea']
-    
-    
-    status = [agent for agent in syrians if
-              agent.ls == 'tr']
-    
-      
-    return 1.0*len(status) / (model.country_count[1] + 1)
+    return success_counter(model,'Eritrea')
 
 def sr_iraq(model):
     
-    country = model.country_list.index('Iraq')
-    status = model.country_success[country]
-    
-      
-    return 1.0*status / (model.country_count[2] + 1)
+    return success_counter(model,'Iraq')
 
 def sr_afgh(model):
     
-    newcomers = [agent for agent in model.schedule.agents if
-                 type(agent) is Newcomer]
+    return success_counter(model,'Afghanistan')
+
+def success_counter(model,country):
     
+    '''
+    Tabulates how many of a given country get TR
+    '''
+    country = model.country_list.index(country)
+    status = model.country_success[country]
     
-    syrians = [agent for agent in newcomers if
-               agent.coo == 'Afghanistan']
-    
-    
-    status = [agent for agent in syrians if
-              agent.ls == 'tr']
-    
-      
-    return 1.0*len(status) / (model.country_count[3] + 1)
+    return 1.0*status / (model.country_count[country] + 1)
 
 def coa_occ(model):
     coa = [agent for agent in model.schedule.agents if 
