@@ -99,14 +99,16 @@ class HumanitarianLogistics(Model):
                         'Projected Capacity' : coa_proj})
 
         for city in range(self.num_cities):
-
-            pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
+            space_per_city = int(self.width / self.num_cities)
+            
+            orientation_x = int(space_per_city / 2 + city*space_per_city) #center point for city
+            pos = (orientation_x, int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
             #add COA
             current_coa = COA(city, self, current_city)
             current_city.coa = current_coa
             self.schedule.add(current_coa)
-            self.grid.place_agent(current_coa, (int(self.width / 2), self.height - 10))
+            self.grid.place_agent(current_coa, (pos[0], self.height - 10))
             current_ind = IND(city, self, current_city)
             self.schedule.add(current_ind)
             current_coa.IND = current_ind
@@ -114,8 +116,10 @@ class HumanitarianLogistics(Model):
             #adds city to schedule n grid
             self.schedule.add(current_city)
             self.grid.place_agent(current_city, (current_city.pos))
-
-
+            
+            #azc location essentials
+            space_per_azc = int(space_per_city / self.num_azc)
+            azc_starting_point = orientation_x - (.5*space_per_city)
             # Create AZCs
             for i in range(self.num_azc):
 
@@ -130,7 +134,7 @@ class HumanitarianLogistics(Model):
                     occupant_type = 'tr'    # 'Housing' for those with
 
                 #place evenly
-                x = int((self.width / self.num_azc) * (i+.5))
+                x = int(azc_starting_point + i*space_per_azc)
                 y = int(self.height * .5)
 
                 a = AZC(i, self, occupant_type, (x,y), current_coa) #instantiate
@@ -153,10 +157,11 @@ class HumanitarianLogistics(Model):
             #create civilian buildings
 
             y = int(self.height / 5)
+            space_per_building = space_per_city / self.num_buildings
+            row_size = 15
+            for bdg in range(city*self.num_buildings):
 
-            for bdg in range(self.num_buildings):
-
-                x = int((self.width / self.num_buildings) * (bdg+.5))
+                x = int(azc_starting_point + (bdg%3)*space_per_building)
 
                 if bdg == 0:
 
@@ -166,11 +171,12 @@ class HumanitarianLogistics(Model):
                     self.grid.place_agent(current, (x,y))
                     self.schedule.add(current)
                 else:
-                    empty = Empty(bdg, self, (x,y), 100*bdg)
+                    empty = Empty(bdg, self, (x,y - row_size * int(bdg/3)), 100*bdg)
                     current_city.buildings.add(empty)
                     empty.city = current_city
-                    self.grid.place_agent(empty, (x,y))
+                    self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
                     self.schedule.add(empty)
+                    print(x,y - row_size * int(bdg/3))
 
     def house(self,newcomer):
 

@@ -10,11 +10,11 @@ import numpy as np
 canvas_width = 600
 canvas_height = 400
 
-grid_width = int(canvas_width / 7)
-grid_height = int(canvas_height / 7)
+grid_width = int(canvas_width / 4)
+grid_height = int(canvas_height / 4)
 
 num_azc = 4
-num_cities = 1
+num_cities = 3
 
 shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
 shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
@@ -71,7 +71,7 @@ def agent_portrayal(agent):
         portrayal['Filled'] = 'False'
         portrayal['Layer'] = 1
         portrayal['Color'] = 'red'
-        portrayal['w'] = 10
+        portrayal['w'] = 2
         portrayal['h'] = agent.value
         
     elif type(agent) is COA:
@@ -103,7 +103,7 @@ def agent_portrayal(agent):
         portrayal['Filled'] = 'False'
         portrayal['Layer'] = 0
         portrayal['Color'] = 'blue'
-        portrayal['w'] = 10
+        portrayal['w'] = 2
         portrayal['h'] = 20
         portrayal['text'] = 5
         
