@@ -97,18 +97,38 @@ class HumanitarianLogistics(Model):
                 model_reporters = {
                         'Current Capacity' : coa_occ,
                         'Projected Capacity' : coa_proj})
+    
+    
+        #Ter apel
+        ta_pos = (int(self.width/2), int(self.height/6*5))
+        ta_id = self.num_cities + 1
+        ter_apel = City(self.num_cities + 1,self, ta_pos)
+        ta_coa = COA(ta_id, self, ter_apel)
+        ta_coa.ta = True
+        self.schedule.add(ta_coa)
+        ta_ind = IND(ta_id, self, ter_apel)
+        self.schedule.add(ta_ind)
+        ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa)
+        ta_coa.azcs.add(ta_azc) 
+        ta_coa.capacities[ta_azc] = ta_azc.occupancy
+        self.schedule.add(ta_azc)                   
+        self.grid.place_agent(ta_azc, ta_pos)
+        self.ter_apel = ta_azc
+        
+        
+        
 
         for city in range(self.num_cities):
             space_per_city = int(self.width / self.num_cities)
             
-            orientation_x = int(space_per_city / 2 + city*space_per_city) #center point for city
+            orientation_x = int(space_per_city / 2 + city*space_per_city + int(space_per_city / self.num_azc / 2)) #center point for city
             pos = (orientation_x, int(self.height / 2)) #placeholder position
             current_city = City(city, self, pos) #instantiates city
             #add COA
             current_coa = COA(city, self, current_city)
             current_city.coa = current_coa
             self.schedule.add(current_coa)
-            self.grid.place_agent(current_coa, (pos[0], self.height - 10))
+            self.grid.place_agent(current_coa, (pos[0], int(self.height/3*2)))
             current_ind = IND(city, self, current_city)
             self.schedule.add(current_ind)
             current_coa.IND = current_ind
@@ -122,11 +142,11 @@ class HumanitarianLogistics(Model):
             azc_starting_point = orientation_x - (.5*space_per_city)
             # Create AZCs
             for i in range(self.num_azc):
-
+                '''
                 if i == 0:
                     occupant_type = 'edp'   # ter apel
-
-                elif i < self.num_azc - 2:
+                '''
+                if i < self.num_azc - 2:
                     occupant_type = 'as'    # standard AZC
                 elif i == self.num_azc - 2:
                     occupant_type = 'as_ext'# extended procedure AZC
@@ -144,8 +164,7 @@ class HumanitarianLogistics(Model):
                 if a.occupant_type != 'tr':
                     current_coa.azcs.add(a)
                     current_coa.capacities[a] = a.occupancy
-                if a.occupant_type == 'edp':
-                    current_coa.ter_apel = a
+                
                 if a.occupant_type == 'tr':
                     current_city.social_housing = a
 
@@ -159,6 +178,21 @@ class HumanitarianLogistics(Model):
             y = int(self.height / 5)
             space_per_building = space_per_city / self.num_buildings
             row_size = 15
+            
+            if city == 0:
+                x = int(azc_starting_point + .5*space_per_building)
+                current = Hotel(self.num_buildings + 1, self, (x,y),1000)
+                current_city.buildings.add(current)
+                current.city = current_city
+                self.grid.place_agent(current, (x,y))
+                self.schedule.add(current)
+                
+                empty = Empty(self.num_buildings + 1, self, (int(x + space_per_building),y), 100)
+                current_city.buildings.add(empty)
+                empty.city = current_city
+                self.grid.place_agent(empty, (int(x + space_per_building),y))
+                self.schedule.add(empty)
+            
             for bdg in range(city*self.num_buildings):
 
                 x = int(azc_starting_point + (bdg%3)*space_per_building)
@@ -176,7 +210,7 @@ class HumanitarianLogistics(Model):
                     empty.city = current_city
                     self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
                     self.schedule.add(empty)
-                    print(x,y - row_size * int(bdg/3))
+                    
 
     def house(self,newcomer):
 

@@ -13,12 +13,12 @@ canvas_height = 400
 grid_width = int(canvas_width / 4)
 grid_height = int(canvas_height / 4)
 
-num_azc = 4
+num_azc = 3
 num_cities = 3
 
 shock_duration = UserSettableParameter('slider', "Shock Duration", 100, 0, 600, 20)
 shock_period = UserSettableParameter('slider', "Shock Period", 200, 0, 600, 20)
-shock_rate = UserSettableParameter('slider', "Shock Growth", .05, 0, 1, .001)
+shock_rate = UserSettableParameter('slider', "Shock Growth", .5, 0, 1, .001)
 
 
 nc_rate = UserSettableParameter('slider', "In-Flow", .8, 0, 1, .1)
