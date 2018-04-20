@@ -12,14 +12,25 @@ class City(Agent):
     A city contains buildings
     '''
     
-    def __init__(self, unique_id, model, pos):
+    def __init__(self, unique_id, model, pos, is_big=False):
         super().__init__(unique_id, model)
         
         self.buildings = set([])
         self.pos = pos
         self.social_housing = None
         self.coa = None
-        
+        self.big_city = is_big
+        if self.big_city == True:
+            self.resources = 100
+        else:
+            self.resources = 50      
+
+    def step(self):
+        for i in self.buildings:
+            if i.health < 100:
+                if self.resources > 0:
+                    i.health = i.health+1
+                    self.resources = self.resources -1
         
         
 
@@ -79,7 +90,35 @@ class COA(Organization):
         
         self.ta = False
         
+        # coa values
         
+        # self_enhancement actions actions increase available capital, 
+        # such as consolidation which involves transferring newcomers
+        # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
+        # operated at minimal cost until required. During shock periods, 
+        # COA can satisfy SE by requesting additional government funding.
+        self.self_enhancement = 0
+        
+        # COA satisfies ST by investing its available capital to improve living
+        # conditions for its residents. Available capital is invested facilities, 
+        # which are a generic building which can host activities, aimed at satisfying 
+        # newcomer values. During shock periods, providing housing to newcomers over 
+        # the current capacity satisfies ST.
+        self.self_transcendence = 0
+        
+        # COA satisfies C by employing "safe but segregated" policies. That is,
+        # separating newcomers by legal status and targeting service delivery on 
+        # those who will likely receive status. During shock-periods, C is satisfied 
+        # by building robust facilities. That is, favoring AZC developments with a 
+        # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
+        self.conservatism = 0
+        
+        # COA satisfies OTC by employing integration policies which are available
+        # to all AS newcomers, regardless of the likelihood of their final status. 
+        # During shock periods periods, OTC is satisfied by the construction of 
+        # flexible housing. Flexibility, here, means ability to serve multiple functions. 
+        # Such housing could serve local populations post shock.
+        self.openness_to_change = 0
         
     def house(self, newcomer):
         
@@ -598,8 +637,10 @@ class Building(Agent):
         self.occupants = set([])
         
         self.occupancy = 0
+        self.health = 0
         
-
+        def step(self):
+            self.health = self.health - 1
 
 class AZC(Building):
     def __init__(self, unique_id, model, occupant_type, pos, coa):
@@ -613,12 +654,13 @@ class AZC(Building):
         self.occupancy = 0
         
         self.coa = coa
-        
+        self.activities_available = set([])
 
 
     def step(self):
-        
+        super().step()
         pass
+
             
 
 class Hotel(Building):
@@ -671,7 +713,7 @@ class Empty(Building):
         
         self.calculated_value = need / self.convert_cost
     def step(self):
-        
+        super().step()
         if self.under_construction == True:
             self.construction_time -= 1
         if self.construction_time == 0:

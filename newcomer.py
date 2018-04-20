@@ -40,8 +40,22 @@ class Newcomer(Agent):
         #second decision outcome not drawn unless necessary
         self.second = None   
                                   
+        # new comer values
         
+        # SE corresponds to their betterment of one’s own attributes through either enhancement
+        # of already owned resources, corresponding to achievement, or the enhanced control of resource
+        # acquisition, corresponding to power
+        self.self_enhancement = 0
         
+        # ST satisfaction involves the betterment of
+        # another agent’s attributes, as per its component values, benevolence and universalism
+        self.self_transcendence = 0
+        
+        # C, which is defined by tradition, conformity and security.
+        self.conservatism = 0
+        
+        # OTC is composed of stimulation and hedonism
+        self.openness_to_change = 0
         
         
             
