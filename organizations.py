@@ -5,7 +5,7 @@ from operator import attrgetter
 import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
-
+from Values import Values
 
 class City(Agent):
     '''
@@ -122,6 +122,11 @@ class COA(Organization):
         
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change)
+        
+        
+        #####ACTIONS######
+        
+        
         
     def house(self, newcomer):
         

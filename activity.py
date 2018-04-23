@@ -2,6 +2,25 @@ import mesa
 import numpy as np
 from mesa import Agent, Model
 
+class Action():
+    
+    def __init__(self,name, agent, se=0, st=0, c=0, otc=0):
+        
+        '''
+        generic action class, similar to activity but not of agent type
+        '''
+        self.name = name
+        self.agent = agent            #tie it to a given agent
+        self.v_sat = np.array([se,st,c,otc])
+        self.effect = None
+        self.counter = 0              #for histogramming purposes
+        
+    def satisfaction(self, participant):
+        
+        participant.values.val_t += self.v_sat
+        
+        
+
 class Activity(Agent):
     
     def __init__(self, unique_id, model, frequency=1, se=0, st=0, c=0, otc=0):
