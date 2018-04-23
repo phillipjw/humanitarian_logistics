@@ -98,7 +98,7 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 60
+        self.self_enhancement = 30
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
@@ -508,7 +508,6 @@ class COA(Organization):
         
         #prioritize
         priority = self.values.prioritize()
-        print(priority)
         
         #act
         #find action that corresponds to priority
