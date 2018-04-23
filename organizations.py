@@ -97,28 +97,31 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 0
+        self.self_enhancement = 60
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 0
+        self.self_transcendence = 60
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
         # those who will likely receive status. During shock-periods, C is satisfied 
         # by building robust facilities. That is, favoring AZC developments with a 
         # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
-        self.conservatism = 0
+        self.conservatism = 70
         
         # COA satisfies OTC by employing integration policies which are available
         # to all AS newcomers, regardless of the likelihood of their final status. 
         # During shock periods periods, OTC is satisfied by the construction of 
         # flexible housing. Flexibility, here, means ability to serve multiple functions. 
         # Such housing could serve local populations post shock.
-        self.openness_to_change = 0
+        self.openness_to_change = 30
+        
+        self.values = Values(10, self.self_enhancement, self.self_transcendence,
+                             self.conservatism, self.openness_to_change)
         
     def house(self, newcomer):
         

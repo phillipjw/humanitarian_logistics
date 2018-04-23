@@ -48,4 +48,4 @@ class Football(Activity):
         
     def satisfaction(self, participant):
         
-        participant.val_t += self.v_sat
+        participant.values.val_t += self.v_sat

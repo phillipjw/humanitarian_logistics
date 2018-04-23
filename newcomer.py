@@ -2,6 +2,7 @@ import mesa
 from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
+from Values import Values
 
 
 
@@ -41,7 +42,8 @@ class Newcomer(Agent):
         self.second = None   
                                   
         # new comer values
-        
+        self.values = Values(10, 70, 30, 70, 50)
+        '''
         # SE corresponds to their betterment of one’s own attributes through either enhancement
         # of already owned resources, corresponding to achievement, or the enhanced control of resource
         # acquisition, corresponding to power
@@ -69,32 +71,28 @@ class Newcomer(Agent):
         
         #val_decay
         self.val_decay = np.repeat(10, 4)
-        
-        
-        
-        
-        
-        
-        
-    def decay_val(self):
         '''
-        Reduce val by some amount each day
-        '''
-        self.val_t -= self.val_decay
+        
+        
+        
+        
+        
+        
+
         
         
     def step(self):
         
         #decay
-        self.decay_val()
+        self.values.decay_val()
         
         #check if test activity is occuring today
         day = self.model.schedule.steps % 7
         if self.model.test_activity.frequency == day:
             print('partaking!')
-            print(self.val_t)
+            print(self.values.val_t)
             self.model.test_activity.effect(self)
-            print(self.val_t)
+            print(self.values.val_t)
         
         
         #EDP to AZ
