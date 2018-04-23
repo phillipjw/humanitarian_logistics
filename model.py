@@ -15,6 +15,7 @@ import numpy as np
 from newcomer import Newcomer
 from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
+from Activities import Activity, Football
 
     
 
@@ -88,7 +89,11 @@ class HumanitarianLogistics(Model):
                         'Projected Capacity' : coa_proj})
         
         
+        #add activities
+        self.test_activity = Football(0, self, 4)
+        self.schedule.add(self.test_activity)
         
+        #generate cities
         for city in range(self.num_cities):
             
             pos = (int(self.width / 2), int(self.height / 2)) #placeholder position
