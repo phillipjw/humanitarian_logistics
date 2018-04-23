@@ -43,56 +43,25 @@ class Newcomer(Agent):
                                   
         # new comer values
         self.values = Values(10, 70, 30, 70, 50)
-        '''
-        # SE corresponds to their betterment of one’s own attributes through either enhancement
-        # of already owned resources, corresponding to achievement, or the enhanced control of resource
-        # acquisition, corresponding to power
-        self.self_enhancement = 70
-        
-        # ST satisfaction involves the betterment of
-        # another agent’s attributes, as per its component values, benevolence and universalism
-        self.self_transcendence = 30
-        
-        # C, which is defined by tradition, conformity and security.
-        self.conservatism = 70
-        
-        # OTC is composed of stimulation and hedonism
-        self.openness_to_change = 60
-        
-        #Value Thresholds
-        self.val_tau = np.array([self.self_enhancement, self.self_transcendence,
-                                 self.conservatism, self.openness_to_change])
-    
-        #Value satisfaction
-        self.val_sat = np.repeat(100, 4) - self.val_tau
-        
-        #current value satisfaction level at time t
-        self.val_t = np.repeat(60, 4)
-        
-        #val_decay
-        self.val_decay = np.repeat(10, 4)
-        '''
-        
-        
-        
-        
-        
+             
+        self.testing_activities = False
         
 
         
         
     def step(self):
         
-        #decay
-        self.values.decay_val()
-        
-        #check if test activity is occuring today
-        day = self.model.schedule.steps % 7
-        if self.model.test_activity.frequency == day:
-            print('partaking!')
-            print(self.values.val_t)
-            self.model.test_activity.effect(self)
-            print(self.values.val_t)
+        if self.testing_activities:
+            #decay
+            self.values.decay_val()
+            
+            #check if test activity is occuring today
+            day = self.model.schedule.steps % 7
+            if self.model.test_activity.frequency == day:
+                print('partaking!')
+                print(self.values.val_t)
+                self.model.test_activity.effect(self)
+                print(self.values.val_t)
         
         
         #EDP to AZ

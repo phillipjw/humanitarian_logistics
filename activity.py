@@ -4,21 +4,21 @@ from mesa import Agent, Model
 
 class Action():
     
-    def __init__(self,name, agent, se=0, st=0, c=0, otc=0):
+    def __init__(self,name, agent, v_index):
         
         '''
         generic action class, similar to activity but not of agent type
         '''
         self.name = name
         self.agent = agent            #tie it to a given agent
-        self.v_sat = np.array([se,st,c,otc])
-        self.effect = None
+        self.v_index = v_index          #index of value to be satisfied
+        self.effect = self.satisfaction
         self.counter = 0              #for histogramming purposes
         
     def satisfaction(self, participant):
         
-        participant.values.val_t += self.v_sat
-        
+        participant.values.val_t[self.v_index] += participant.values.val_sat[self.v_index]
+        self.counter += 1
         
 
 class Activity(Agent):

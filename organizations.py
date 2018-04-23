@@ -6,6 +6,7 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
+from activity import Action
 
 class City(Agent):
     '''
@@ -125,8 +126,17 @@ class COA(Organization):
         
         
         #####ACTIONS######
+        self.actions = set([])
+        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
         
-        
+        #add actions to action set
+        for action in range(len(self.action_names)):
+            
+            #make action w a name, actor, and index of value to be satisfied
+            current_action = Action(self.action_names[action], self,action)
+            self.actions.add(current_action)
+            
+            
         
     def house(self, newcomer):
         
@@ -483,6 +493,7 @@ class COA(Organization):
         
     def step(self):
         
+        
         '''
         COA is essentially checking for anomalies in the 'Ter Apel'
         If detected, inspects the gravity of the anomoly and acts
@@ -490,14 +501,31 @@ class COA(Organization):
         '''
         
         
+        ########Actions###########
         
+        #decay
+        self.values.decay_val()
         
+        #prioritize
+        priority = self.values.prioritize()
+        print(priority)
+        
+        #act
+        #find action that corresponds to priority
+        current = None
+        for action in self.actions:
+            if priority == action.v_index:
+                current = action
+        
+        #update v_sat
+        if current != None:
+            current.effect(self)
+
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
             if self.model.schedule.steps % self.assessment_frequency == 0:
                 self.collect()
-                print(self.budget)
             
             # start calculting variances
             self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.model.ter_apel)

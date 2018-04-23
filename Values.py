@@ -52,7 +52,7 @@ class Values():
         priorities = self.v_tau - self.val_t
         
         #get index of value w highest priority
-        priority = max(enumerate(priorities), key = operator.itemgetter(1))
+        priority = max(enumerate(priorities), key = operator.itemgetter(1))[0]
         
         return priority
         
