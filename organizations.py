@@ -70,7 +70,6 @@ class COA(Organization):
         self.counter_ta = 1
         self.variance_ta = None
         self.var_copy_ta = None
-        self.ter_apel = None
         
         
         #policies
@@ -78,14 +77,33 @@ class COA(Organization):
         self.collection_fee = 194
         self.IND = None
         
+        self.ta = False
+        
         
         
     def house(self, newcomer):
         
-        destination = [azc for azc in self.azcs if
-                       azc.occupant_type == newcomer.ls][0]
+        #candidates
+        candidates = []
         
+        #find all coas
+        coas = [coa for coa in self.model.schedule.agents if
+                type(coa) is COA]
         
+        #not ter appel 
+        coas = [coa for coa in
+                coas if
+                not coa.ta]
+        
+        #only relevant azcs
+        for coa in coas:
+            for azc in coa.azcs:
+                if azc.occupant_type == newcomer.ls:
+                    candidates.append(azc)
+     
+        destination = min(candidates, key = attrgetter('occupancy'))
+        
+  
         self.move(newcomer, destination)
           
         
@@ -120,6 +138,11 @@ class COA(Organization):
         destination.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = destination #update agent location
         
+        if type(destination) is Hotel:
+            newcomer.coa = destination.city.coa
+        else:
+            newcomer.coa = destination.coa
+        
         
         
         
@@ -128,7 +151,27 @@ class COA(Organization):
         in the most empty AZC
         '''
         
-        destination = min(self.azcs, key = attrgetter('occupancy'))
+        #candidates
+        candidates = []
+        
+        #find all coas
+        coas = [coa for coa in self.model.schedule.agents if
+                type(coa) is COA]
+        
+        #not ter appel 
+        coas = [coa for coa in
+                coas if
+                not coa.ta]
+        
+        #only relevant azcs
+        for coa in coas:
+            for azc in coa.azcs:
+                candidates.append(azc)
+     
+        destination = min(candidates, key = attrgetter('occupancy'))
+        
+  
+        self.move(newcomer, destination)
         
         self.move(newcomer, destination)
         
@@ -266,7 +309,7 @@ class COA(Organization):
     def shock_check(self,variance_ta):
         '''checks if current amount of arrivals is abnormal
         '''
-        return self.ter_apel.occupancy / variance_ta > self.shock_threshold
+        return self.model.ter_apel.occupancy / variance_ta > self.shock_threshold
     
     def update_capacities(self):
         
@@ -410,7 +453,7 @@ class COA(Organization):
                 print(self.budget)
             
             # start calculting variances
-            self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.ter_apel)
+            self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self.model.ter_apel)
         
         #starts checking for anamolies
         else:
@@ -423,14 +466,12 @@ class COA(Organization):
                 print(self.budget)
                 
                 #check variance of current point
-                
-                variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.ter_apel)
+                variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.model.ter_apel)
                 if self.shock_check(variance_ta):
                     print('shock')
                     self.shock = True
                     self.shock_reference = self.model.schedule.steps
-                    
-                    
+                       
                 #if no anomoly add to normal flow distribution    
                 else:
                     print('no shock')
@@ -450,15 +491,17 @@ class COA(Organization):
                     if cc[0]:
                         self.crisis = True
                         print('Crisis')
-                        
-                        decision = self.evaluate_options(cc[1])
-                        if type(decision) is Hotel:
-                            self.policy = self.hotel_house
+                        if self.ta:
+                            pass
                         else:
-                            self.policy = self.hotel_house
-                            #convert decision
-                            
-                            self.construct(decision)
+                            decision = self.evaluate_options(cc[1])
+                            if type(decision) is Hotel:
+                                self.policy = self.hotel_house
+                            else:
+                                self.policy = self.hotel_house
+                                #convert decision
+                                
+                                self.construct(decision)
                          
                     else:
                         self.crisis = False
@@ -486,20 +529,20 @@ class COA(Organization):
         '''
         
         #take first one, in future, evaluate buildings on some criteria
-        house_loc = self.ter_apel.pos         #where is it
+        house_loc = self.model.ter_apel.pos         #where is it
         
 
         #update occupancy
-        self.ter_apel.occupancy += 1
+        self.model.ter_apel.occupancy += 1
         
         #add noise so agents don't overlap
         x = house_loc[0] #+ np.random.randint(-20,20)
-        y = house_loc[1] - 10 + int(20*((1+self.ter_apel.occupancy) / self.ter_apel.capacity))
+        y = house_loc[1] - 10 + int(20*((1+self.model.ter_apel.occupancy) / self.model.ter_apel.capacity))
         
         self.model.grid.move_agent(newcomer, (x,y)) #place
         
-        self.ter_apel.occupants.add(newcomer) #add agent to building roster
-        newcomer.loc = self.ter_apel #update agent location
+        self.model.ter_apel.occupants.add(newcomer) #add agent to building roster
+        newcomer.loc = self.model.ter_apel #update agent location
         
             
         

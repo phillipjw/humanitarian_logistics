@@ -1,0 +1,5 @@
+Country,DecisionA,DecisionB,Multinomial,ShockDist
+Syria,0.97,0.96,0.50,1.00
+Eritrea,0.96,0.89,0.30,0.00
+Iraq,0.482,0.611,0.10,0.00
+Afghanistan,0.518,0.52,0.10,0.00
