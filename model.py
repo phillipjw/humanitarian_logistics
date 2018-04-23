@@ -13,10 +13,10 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from activity import Activity
+from activity import Activity, Football
 from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
-from Activities import Activity, Football
+#from Activities import Activity, Football
 
 
 
@@ -120,14 +120,12 @@ class HumanitarianLogistics(Model):
         
         
         #add activities
-        self.test_activity = Football(0, self, 4)
+        self.test_activity = Football(0, self, 5)
         self.schedule.add(self.test_activity)
         
-<<<<<<< HEAD
-        #generate cities
-=======
 
->>>>>>> 9a827f987cb22711c22f581ef3d6e7f04942827c
+        #generate cities
+
         for city in range(self.num_cities):
             space_per_city = int(self.width / self.num_cities)
             
