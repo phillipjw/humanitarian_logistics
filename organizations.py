@@ -135,8 +135,58 @@ class COA(Organization):
             #make action w a name, actor, and index of value to be satisfied
             current_action = Action(self.action_names[action], self,action)
             self.actions.add(current_action)
-            
-            
+    
+    def act(self, action_to_take):
+        if action_to_take.name == "Consolidate":
+            self.consolidate()
+        if action_to_take.name == "Invest":
+            self.invest()
+        if action_to_take.name == "Segregate":
+            self.segregate()
+        if action_to_take.name == "Integrate":
+            self.integrate()
+    
+   
+    def consolidate(self):
+        for azc in self.azcs:
+            azc.occupants = set([])
+        temp_list_of_newcomers = list(self.newcomers)
+        newcomers_index = 0
+        for azc in self.azcs:
+            while (len(azc.occupants) < azc.capacity & newcomers_index < len(temp_list_of_newcomers)):
+                self.move(temp_list_of_newcomers[newcomers_index], azc)
+                newcomers_index = newcomers_index + 1
+
+    def invest(self):
+        print("this is a stub for the invest action")        
+
+
+    # Segregate is modeled after Vivien Coulier’s description of COA policies to come.
+    # Essentially COA identifies those AS which are unlikely to achieve status and separates them from
+    # those who will. The unlikely to achieve status ones are placed in the cheapest to maintain AZC.
+    def segregate(self):
+        cheapest_azc_to_maintain = None
+        cost_to_maintain = 100
+        for azc in self.azcs:
+            if (100-azc.health) < cost_to_maintain:
+                cheapest_azc_to_maintain = azc
+                cost_to_maintain = 100-azc.health
+        if cheapest_azc_to_maintain != None:
+            for newcomer in self.newcomers:
+                # defining an unlikely new comer as one with a first value = 0
+                # and a legal status of edp
+                if newcomer.first == 0:
+                    if newcomer.ls == "edp":
+                        self.move(newcomer, cheapest_azc_to_maintain)
+                       
+    # COA integrates by setting activity permissions to setting activity permissions to
+    # all legal statuses. That way all AS can participate in the same activities. It also obliges transfer
+    # requests and will subsidize travel to participate in activities for AS that live far from activity
+    # centers.
+  
+    def integrate(self):
+         print("this is a stub for the integrate action")  
+        
         
     def house(self, newcomer):
         
@@ -263,12 +313,6 @@ class COA(Organization):
             
             self.move(newcomer, destination)
             self.budget -= destination.cost_pp
-            
-            
-                
-        
-        
-        
         
     def evaluate_need(self,building, projection):
         '''
@@ -520,6 +564,7 @@ class COA(Organization):
         if current != None:
             current.effect(self)
 
+        self.act(current)
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
