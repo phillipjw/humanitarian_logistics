@@ -45,7 +45,6 @@ class Activity(Agent):
         #putting the above together into one array
         self.v_sat = np.array([se,st,c,otc])
         
-        
         self.effect = None
     
         

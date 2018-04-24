@@ -6,7 +6,7 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-from activity import Action
+from activity import Action, Activity, Football
 
 class City(Agent):
     '''
@@ -55,6 +55,7 @@ class COA(Organization):
         super().__init__(unique_id, model)
         
         self.azcs = set([])
+        self.activity_centers = set([])
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
@@ -138,16 +139,16 @@ class COA(Organization):
     
     def act(self, action_to_take):
         if action_to_take.name == "Consolidate":
-            self.consolidate()
+            self.consolidate(action_to_take)
         if action_to_take.name == "Invest":
-            self.invest()
+            self.invest(action_to_take)
         if action_to_take.name == "Segregate":
-            self.segregate()
+            self.segregate(action_to_take)
         if action_to_take.name == "Integrate":
-            self.integrate()
+            self.integrate(action_to_take)
     
    
-    def consolidate(self):
+    def consolidate(self, action_to_take):
         for azc in self.azcs:
             azc.occupants = set([])
         temp_list_of_newcomers = list(self.newcomers)
@@ -156,15 +157,43 @@ class COA(Organization):
             while (len(azc.occupants) < azc.capacity & newcomers_index < len(temp_list_of_newcomers)):
                 self.move(temp_list_of_newcomers[newcomers_index], azc)
                 newcomers_index = newcomers_index + 1
+                action_to_take.satisfaction(newcomer)
+                
+        action_to_take.satisfaction(self)
 
-    def invest(self):
-        print("this is a stub for the invest action")        
-
-
+    #During a non-shock period, COA satisfies ST by investing in the quality of life of its
+    #residents by constructing an activity center (AC). The AC has a cost significantly less than an
+    #entire building, as it may simply be a room in another building. The AC hosts activities, which
+    #are period events satisfying a certain criteria of a newcomer. Currently, we just add an activities
+    # to aczs that are less than half full and where the ls == as. However, there is functionality in the
+    # code to convert empty buildings to ActivityCenter buildings.
+    
+    def invest(self, action_to_take):
+       max_num_activity_centers = 2
+       max_num_activities_per_center = 2 
+       num_activity_centers_added = 0       
+       for azc in self.azcs:
+            if (len(azc.occupants)/azc.capacity) < 0.5:
+                if (num_activity_centers_added < max_num_activity_centers):
+                    activities = set([])
+                    for j in range(max_num_activities_per_center):
+                        generated_activity = Football(num_activity_centers_added, self, 1)
+                        activities.add(generated_activity)
+                           
+                    azc.activities_available = activities
+                    num_activity_centers_added = num_activity_centers_added + 1
+       for azc in self.azcs:
+            if len(azc.activities_available)>0:
+                for newcomer in azc.occupants:
+                    if newcomer.ls == "as":
+                        action_to_take.satisfaction(newcomer)
+                    
+       action_to_take.satisfaction(self)
+        
     # Segregate is modeled after Vivien Coulier’s description of COA policies to come.
     # Essentially COA identifies those AS which are unlikely to achieve status and separates them from
     # those who will. The unlikely to achieve status ones are placed in the cheapest to maintain AZC.
-    def segregate(self):
+    def segregate(self, action_to_take):
         cheapest_azc_to_maintain = None
         cost_to_maintain = 100
         for azc in self.azcs:
@@ -178,14 +207,22 @@ class COA(Organization):
                 if newcomer.first == 0:
                     if newcomer.ls == "edp":
                         self.move(newcomer, cheapest_azc_to_maintain)
-                       
-    # COA integrates by setting activity permissions to setting activity permissions to
-    # all legal statuses. That way all AS can participate in the same activities. It also obliges transfer
+                        action_to_take.satisfaction(newcomer)
+        
+        action_to_take.satisfaction(self)
+        
+    # COA integrates by setting activity permissions to all legal statuses. 
+    # That way all AS can participate in the same activities. It also obliges transfer
     # requests and will subsidize travel to participate in activities for AS that live far from activity
     # centers.
   
-    def integrate(self):
-         print("this is a stub for the integrate action")  
+    def integrate(self, action_to_take):
+         for azc in self.azcs:
+             if len(azc.activities_available)>1:
+                 for newcomer in azc.occupants:
+                    action_to_take.satisfaction(newcomer)
+                    
+         action_to_take.satisfaction(self)  
         
         
     def house(self, newcomer):
@@ -518,6 +555,25 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+
+# I set this up so we'd have a framework to convert empty buildings into activity centers 
+# but currently it is not being used.      
+    def convertToActivityCenter(self, building):
+        #remove
+        new_activity_center = ActivityCenter(building.unique_id,building.model,
+                      'as', building.pos, self)
+        activity_center_viz = ActivityCenter_Viz(self.model, new_activity_center)
+        self.model.schedule.add(activity_center_viz)
+        self.model.grid.place_agent(activity_center_viz, activity_center_viz.pos)
+        self.model.schedule.add(new_activity_center)
+        self.model.grid.place_agent(new_activity_center, building.pos)
+        self.city.buildings.add(new_activity_center)
+        self.activity_centers.add(new_activity_center)
+        self.capacities[new_activity_center] = new_activity_center.participants
+        self.city.buildings.remove(building)
+        self.buildings_under_construction.remove(building)
+        self.model.schedule.remove(building)
+        self.model.grid.remove_agent(building)
         
         
     def construct(self, building):
@@ -718,6 +774,7 @@ class Building(Agent):
         
         self.occupancy = 0
         self.health = 0
+        self.activities_available = set([])
         
         def step(self):
             self.health = self.health - 1
@@ -734,6 +791,26 @@ class AZC(Building):
         self.occupancy = 0
         
         self.coa = coa
+
+
+    def step(self):
+        super().step()
+        pass
+
+# I set this up so we'd have a framework to have buildings that were
+# solely activity centers but currently it is not being used.              
+class ActivityCenter(Building):
+    def __init__(self, unique_id, model, occupant_type, pos, coa):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 400
+        self.participants = set([])
+        self.participant_type = occupant_type
+        self.pos = pos
+        self.available = False
+        self.occupancy = 0
+        
+        self.coa = coa
         self.activities_available = set([])
 
 
@@ -741,7 +818,7 @@ class AZC(Building):
         super().step()
         pass
 
-            
+         
 
 class Hotel(Building):
     '''
