@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from activity import Activity, Football
+from activity import Activity, Football, Action, Consolidate
 from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
 #from Activities import Activity, Football
@@ -112,6 +112,7 @@ class HumanitarianLogistics(Model):
         ta_ind = IND(ta_id, self, ter_apel)
         self.schedule.add(ta_ind)
         ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa)
+        ta_azc.ta = True
         ta_coa.azcs.add(ta_azc) 
         ta_coa.capacities[ta_azc] = ta_azc.occupancy
         self.schedule.add(ta_azc)                   

@@ -6,7 +6,7 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-from activity import Action
+from activity import Action, Consolidate
 
 class City(Agent):
     '''
@@ -98,21 +98,21 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 30
+        self.self_enhancement = 70
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 60
+        self.self_transcendence = 30
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
         # those who will likely receive status. During shock-periods, C is satisfied 
         # by building robust facilities. That is, favoring AZC developments with a 
         # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
-        self.conservatism = 70
+        self.conservatism = 30
         
         # COA satisfies OTC by employing integration policies which are available
         # to all AS newcomers, regardless of the likelihood of their final status. 
@@ -133,6 +133,10 @@ class COA(Organization):
         for action in range(len(self.action_names)):
             
             #make action w a name, actor, and index of value to be satisfied
+            if action == 0:
+                current_action = Consolidate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+                
             current_action = Action(self.action_names[action], self,action)
             self.actions.add(current_action)
             
@@ -388,11 +392,9 @@ class COA(Organization):
             self.capacities[building] = building.occupancy
             
             if project[0] > building.capacity*self.capacity_threshold:
-                print('Problematic')
                 problematic = True
                 break                         
             else:
-                print('Manageable')
                 self.project(building)
                 #all must be manageable for normal housing policies
         return problematic
@@ -458,7 +460,6 @@ class COA(Organization):
      
         
     def convert(self, building):
-        print('azc added!')
         #remove
         new_azc = AZC(building.unique_id,building.model,
                       'as_ext', building.pos, self)
@@ -480,7 +481,6 @@ class COA(Organization):
         
         building.under_construction = True
         self.buildings_under_construction.add(building)
-        print('begin construction!')
         self.budget -= building.convert_cost
     
     def collect(self):
@@ -518,7 +518,7 @@ class COA(Organization):
         
         #update v_sat
         if current != None:
-            current.effect(self)
+            current.do()
 
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
@@ -537,18 +537,15 @@ class COA(Organization):
                 
                 #also collects from residents
                 self.collect()
-                print(self.budget)
                 
                 #check variance of current point
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.model.ter_apel)
                 if self.shock_check(variance_ta):
-                    print('shock')
                     self.shock = True
                     self.shock_reference = self.model.schedule.steps
                        
                 #if no anomoly add to normal flow distribution    
                 else:
-                    print('no shock')
                     self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                     self.shock = False
                     self.policy = self.house
@@ -564,7 +561,6 @@ class COA(Organization):
                     cc = self.crisis_check()
                     if cc[0]:
                         self.crisis = True
-                        print('Crisis')
                         if self.ta:
                             pass
                         else:
@@ -690,6 +686,7 @@ class AZC(Building):
         
         self.coa = coa
         self.activities_available = set([])
+        self.ta = False
 
 
     def step(self):

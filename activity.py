@@ -1,6 +1,7 @@
 import mesa
 import numpy as np
 from mesa import Agent, Model
+from organizations import AZC
 
 class Action():
     
@@ -12,13 +13,89 @@ class Action():
         self.name = name
         self.agent = agent            #tie it to a given agent
         self.v_index = v_index          #index of value to be satisfied
-        self.effect = self.satisfaction
         self.counter = 0              #for histogramming purposes
         
-    def satisfaction(self, participant):
+    def do(self):
         
-        participant.values.val_t[self.v_index] += participant.values.val_sat[self.v_index]
+        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
+        
+class Consolidate(Action):
+    
+    def __init__(self, name, agent, v_index):
+        
+        '''
+        Consolidate is a self-enhancement action
+        It involves moving newcomers from multiple dispersed AZCs
+        into fewer, centralized AZCs
+        It frees up available capital for COA
+        '''
+        
+        super().__init__(name, agent, v_index)
+        self.name = name
+        self.agent = agent            #tie it to a given agent
+        self.v_index = v_index          #index of value to be satisfied
+        self.effect = self.do
+        self.counter = 0              #for histogramming purposes
+        
+    def satisfaction(self):
+        
+        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
+        self.counter += 1
+        
+    def precondition(self):
+        
+        ''''
+        check if action is feasible in the first place
+        by ensuring that azcs's are non-empty
+        '''
+        
+        return sum([azc.occupancy for azc in
+                    self.agent.azcs]) > 0
+    
+    def do(self):
+        
+        #this is placeholder and should go outisde the function
+        if not self.precondition():
+            print('Cannot Consolidate')
+            pass
+        
+        #get all non-empty AZCs
+        azcs = [azc for azc in self.agent.model.schedule.agents if
+                type(azc) is AZC and not azc.ta and
+                azc.occupancy > 0]
+        print('a')
+        print('num opties', len(azcs))
+        
+        #Order non-empty Azcs by occupancy
+        azcs.sort(key = lambda x: x.occupancy)
+        
+        
+        #move occupants to central location
+        for current in self.agent.azcs:
+            
+            #take lowest capacity AZC and move its occupants to highest
+            #capacity AZC that can fit them
+            
+            amount = current.occupancy
+            
+            if amount > 0:
+                print('init')
+            
+                for other_azc in reversed(azcs):
+                    
+                    if other_azc.capacity - other_azc.occupancy > amount:
+                        #move occupants
+                        print('enough room!')
+                        for occupant in current:
+                            current.coa.move(occupant, other_azc)
+                        
+                        break
+        
+        #update values
+        self.satisfaction()
+            
+
         
 
 class Activity(Agent):
