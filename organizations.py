@@ -6,7 +6,12 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
+
 import activity
+
+
+
+
 
 class City(Agent):
     '''
@@ -55,6 +60,7 @@ class COA(Organization):
         super().__init__(unique_id, model)
         
         self.azcs = set([])
+        self.activity_centers = set([])
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
@@ -133,6 +139,7 @@ class COA(Organization):
         for action in range(len(self.action_names)):
             
             #make action w a name, actor, and index of value to be satisfied
+
             if action == 0:
                 current_action = activity.Consolidate(self.action_names[action], self,action)
                 self.actions.add(current_action)
@@ -149,6 +156,7 @@ class COA(Organization):
             
             
             
+
         
     def house(self, newcomer):
         
@@ -278,12 +286,6 @@ class COA(Organization):
             
             self.move(newcomer, destination)
             self.budget -= destination.cost_pp
-            
-            
-                
-        
-        
-        
         
     def evaluate_need(self,building, projection):
         '''
@@ -486,7 +488,10 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
-    
+
+
+# I set this up so we'd have a framework to convert empty buildings into activity centers 
+# but currently it is not being used.      
     def convertToActivityCenter(self, building):
         #remove
         new_activity_center = ActivityCenter(building.unique_id,building.model,
@@ -503,6 +508,7 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+
         
         
     def construct(self, building):
@@ -549,6 +555,7 @@ class COA(Organization):
             #print(current.name)
             current.do()
 
+        self.act(current)
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
@@ -696,6 +703,7 @@ class Building(Agent):
         
         self.occupancy = 0
         self.health = 0
+        self.activities_available = set([])
         
         def step(self):
             self.health = self.health - 1
@@ -712,6 +720,26 @@ class AZC(Building):
         self.occupancy = 0
         
         self.coa = coa
+
+
+    def step(self):
+        super().step()
+        pass
+
+# I set this up so we'd have a framework to have buildings that were
+# solely activity centers but currently it is not being used.              
+class ActivityCenter(Building):
+    def __init__(self, unique_id, model, occupant_type, pos, coa):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 400
+        self.participants = set([])
+        self.participant_type = occupant_type
+        self.pos = pos
+        self.available = False
+        self.occupancy = 0
+        
+        self.coa = coa
         self.activities_available = set([])
         self.ta = False
 
@@ -720,7 +748,7 @@ class AZC(Building):
         super().step()
         pass
 
-            
+         
 
 class Hotel(Building):
     '''

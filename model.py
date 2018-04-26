@@ -47,9 +47,14 @@ class HumanitarianLogistics(Model):
         self.nc_rate = nc_rate #rate of inflow of newcomers
         self.num_cities = N_cities #number of cities in sim
         self.num_buildings = 3
+
         self.num_activity_centers = 2
         self.num_activities_per_center = 2
         self.num_per_step = 10
+
+        self.num_activity_centers = 2
+        self.num_activities_per_center = 2
+
         #initialize shock values
         self.shock_period = shock_period       #how often does shock occur
         self.shock_duration = shock_duration   #how long does shock last
@@ -174,18 +179,6 @@ class HumanitarianLogistics(Model):
                 
 
                 a = AZC(i, self, occupant_type, (x,y), current_coa) #instantiate
-                if (num_activity_centers_added < self.num_activity_centers):
-                    activities = set([])
-                    for j in range(self.num_activities_per_center):
-                        activity_se  = np.random.uniform(low=0, high=1)
-                        activity_st  = np.random.uniform(low=0, high=1)
-                        activity_c   = np.random.uniform(low=0, high=1)
-                        activity_opc = np.random.uniform(low=0, high=1) 
-                        generated_activity = Activity(i, self, 1, activity_se, activity_st, activity_c, activity_opc)
-                        activities.add(generated_activity)
-                        
-                a.activities_available = activities
-                num_activity_centers_added = num_activity_centers_added + 1
                 self.schedule.add(a)                   #add in time
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
