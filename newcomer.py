@@ -59,9 +59,9 @@ class Newcomer(Agent):
             day = self.model.schedule.steps % 7
             if self.model.test_activity.frequency == day:
                 print('partaking!')
-                print(self.values.val_t)
+
                 self.model.test_activity.effect(self)
-                print(self.values.val_t)
+
         
         
         #EDP to AZ
