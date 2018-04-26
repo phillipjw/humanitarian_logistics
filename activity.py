@@ -62,7 +62,7 @@ class Consolidate(Action):
         
         #get all non-empty AZCs
         azcs = [azc for azc in self.agent.model.schedule.agents if
-                type(azc) is organizations.AZC and not azc.ta and
+                type(azc) is organizations.AZC and not azc.coa.ta and
                 azc.occupancy > 0]
 
         

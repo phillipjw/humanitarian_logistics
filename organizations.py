@@ -546,7 +546,8 @@ class COA(Organization):
         #act
         #find action that corresponds to priority
         current = None
-        for action in self.actions:
+        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+        for action in possible_actions:
             if priority == action.v_index:
                 current = action
         
@@ -555,7 +556,6 @@ class COA(Organization):
             #print(current.name)
             current.do()
 
-        self.act(current)
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
