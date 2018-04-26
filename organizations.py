@@ -542,14 +542,20 @@ class COA(Organization):
         
         #prioritize
         priority = self.values.prioritize()
+        print(priority)
         
         #act
         #find action that corresponds to priority
         current = None
         possible_actions = set(filter(lambda x: x.precondition(), self.actions))
-        for action in possible_actions:
-            if priority == action.v_index:
-                current = action
+        for value in priority:
+            for action in possible_actions:
+                if value == action.v_index:
+                    current = action
+                    break
+            if current != None:
+                break
+        
         
         #update v_sat
         if current != None:

@@ -35,8 +35,6 @@ class Values():
         #val_decay
         self.val_decay = np.repeat(decay, 4)
         
-        #list of available actions
-        self.actions = []
         
     def decay_val(self):
         
@@ -51,8 +49,13 @@ class Values():
         #get difference between thresholds and current satisfaction
         priorities = self.v_tau - self.val_t
         
-        #get index of value w highest priority
-        priority = max(enumerate(priorities), key = operator.itemgetter(1))[0]
+        #Ordered priorities
+        priority_indices = priorities.argsort()
+        sorted_priorities = priorities[priority_indices[::-1]]
+        sorted_priority_indices = np.array([
+                np.where(priorities == x)[0][0] for x in
+                         sorted_priorities])
         
-        return priority
+        
+        return sorted_priority_indices
         
