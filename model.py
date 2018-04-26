@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from activity import Activity, Football, Action, Consolidate
+from activity import Activity, Football
 from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
 #from Activities import Activity, Football
@@ -49,6 +49,7 @@ class HumanitarianLogistics(Model):
         self.num_buildings = 3
         self.num_activity_centers = 2
         self.num_activities_per_center = 2
+        self.num_per_step = 10
         #initialize shock values
         self.shock_period = shock_period       #how often does shock occur
         self.shock_duration = shock_duration   #how long does shock last
@@ -272,6 +273,7 @@ class HumanitarianLogistics(Model):
     def Remove(self, agent):
 
         agent.loc.occupancy -= 1 #reduce occupancy of building
+        agent.loc.occupants.remove(agent)
 
         #remove from time n space
         self.schedule.remove(agent)
@@ -369,7 +371,9 @@ class HumanitarianLogistics(Model):
 
             #adds newcomers to simuluation at a given rate
             if uniform(0,1) < self.nc_rate:
-                self.addNewcomer(False, None)
+                for i in range(self.num_per_step):
+                
+                    self.addNewcomer(False, None)
 
 def calc_extended_as(model):
 

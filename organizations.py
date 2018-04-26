@@ -6,7 +6,7 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-from activity import Action, Consolidate
+import activity
 
 class City(Agent):
     '''
@@ -98,21 +98,21 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 70
+        self.self_enhancement = 60
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 30
+        self.self_transcendence = 70
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
         # those who will likely receive status. During shock-periods, C is satisfied 
         # by building robust facilities. That is, favoring AZC developments with a 
         # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
-        self.conservatism = 30
+        self.conservatism = 60
         
         # COA satisfies OTC by employing integration policies which are available
         # to all AS newcomers, regardless of the likelihood of their final status. 
@@ -134,11 +134,19 @@ class COA(Organization):
             
             #make action w a name, actor, and index of value to be satisfied
             if action == 0:
-                current_action = Consolidate(self.action_names[action], self,action)
+                current_action = activity.Consolidate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 1:
+                current_action = activity.Invest(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 2:
+                current_action = activity.Segregate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 3:
+                current_action = activity.Integrate(self.action_names[action], self,action)
                 self.actions.add(current_action)
                 
-            current_action = Action(self.action_names[action], self,action)
-            self.actions.add(current_action)
+            
             
             
         
@@ -164,7 +172,8 @@ class COA(Organization):
      
         destination = min(candidates, key = attrgetter('occupancy'))
         
-  
+        
+
         self.move(newcomer, destination)
           
         
@@ -182,21 +191,25 @@ class COA(Organization):
         moves newcomer to a destination
         updates occupancies of previous and new destinations
         '''
-        
-        newcomer.loc.occupancy -= 1 
-        destination.occupancy += 1 #update occupancy 
 
+        newcomer.loc.occupancy -= 1 
+        if newcomer in newcomer.loc.occupants:
+            
+            newcomer.loc.occupants.remove(newcomer)
+        destination.occupancy += 1 #update occupancy 
+        
+        
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
     
         #add noise so agents don't overlap
-        x = house_loc[0] #+ np.random.randint(-20,20)
-        y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
-       
+        #x = house_loc[0] #+ np.random.randint(-20,20)
+        #y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
         
-        self.model.grid.move_agent(newcomer, (x,y)) #place
-        
+        self.model.grid.move_agent(newcomer, house_loc) #place
+
         destination.occupants.add(newcomer) #add agent to building roster
+
         newcomer.loc = destination #update agent location
         
         if type(destination) is Hotel:
@@ -233,9 +246,7 @@ class COA(Organization):
         
   
         self.move(newcomer, destination)
-        
-        self.move(newcomer, destination)
-        
+                
     
     def get_total_cap(self):
         '''total available room'''
@@ -475,6 +486,23 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+    
+    def convertToActivityCenter(self, building):
+        #remove
+        new_activity_center = ActivityCenter(building.unique_id,building.model,
+                      'as', building.pos, self)
+        activity_center_viz = ActivityCenter_Viz(self.model, new_activity_center)
+        self.model.schedule.add(activity_center_viz)
+        self.model.grid.place_agent(activity_center_viz, activity_center_viz.pos)
+        self.model.schedule.add(new_activity_center)
+        self.model.grid.place_agent(new_activity_center, building.pos)
+        self.city.buildings.add(new_activity_center)
+        self.activity_centers.add(new_activity_center)
+        self.capacities[new_activity_center] = new_activity_center.participants
+        self.city.buildings.remove(building)
+        self.buildings_under_construction.remove(building)
+        self.model.schedule.remove(building)
+        self.model.grid.remove_agent(building)
         
         
     def construct(self, building):
@@ -518,6 +546,7 @@ class COA(Organization):
         
         #update v_sat
         if current != None:
+            #print(current.name)
             current.do()
 
         #gives the model time to build of a distribution of normal flow
@@ -608,9 +637,7 @@ class COA(Organization):
         #add noise so agents don't overlap
         x = house_loc[0] #+ np.random.randint(-20,20)
         y = house_loc[1] - 10 + int(20*((1+self.model.ter_apel.occupancy) / self.model.ter_apel.capacity))
-        
         self.model.grid.move_agent(newcomer, (x,y)) #place
-        
         self.model.ter_apel.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = self.model.ter_apel #update agent location
         
