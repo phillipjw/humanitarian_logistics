@@ -203,7 +203,7 @@ class Segregate(Action):
                 # defining an unlikely new comer as one with a first value = 0
                 # and a legal status of edp
                 if newcomer.first == 0:
-                    if newcomer.ls == "edp":
+                    if newcomer.ls == "as_ext":
                         self.move(newcomer, cheapest_azc_to_maintain)
                         action_to_take.satisfaction(newcomer)
         
