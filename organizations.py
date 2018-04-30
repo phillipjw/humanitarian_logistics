@@ -21,7 +21,8 @@ class City(Agent):
     
     def __init__(self, unique_id, model, pos, is_big=False):
         super().__init__(unique_id, model)
-        
+        self.cost_of_bus_within_city = 4
+        self.cost_of_bus_to_another_city = 18.50
         self.buildings = set([])
         self.pos = pos
         self.social_housing = None

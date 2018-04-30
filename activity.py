@@ -138,10 +138,10 @@ class Invest(Action):
     def __init__(self, name, agent, v_index):
         
         '''
-        Consolidate is a self-enhancement action
-        It involves moving newcomers from multiple dispersed AZCs
-        into fewer, centralized AZCs
-        It frees up available capital for COA
+        Invest is a self-transcendence action
+        It involves constructing activity centers in a AZC to fill the needs of 
+        newcomers 
+        Money is spent from the COA to accomplish this.
         '''
         
         super().__init__(name, agent, v_index)
@@ -195,17 +195,6 @@ class Invest(Action):
                     
              azc.activities_available = activities
              num_activity_centers_added = num_activity_centers_added + 1
-        '''
-        unsure about this bit of code below:
-        Is this satisfaction to the newcomer whose doing the action?
-        
-        
-        for azc in self.agent.azcs:
-             if len(azc.activities_available)>0:
-                 for newcomer in azc.occupants:
-                     if newcomer.ls == "as":
-                         action_to_take.satisfaction(newcomer)
-        '''
                 
         self.satisfaction()
 
@@ -214,10 +203,9 @@ class Segregate(Action):
     def __init__(self, name, agent, v_index):
         
         '''
-        Consolidate is a self-enhancement action
-        It involves moving newcomers from multiple dispersed AZCs
-        into fewer, centralized AZCs
-        It frees up available capital for COA
+      Segregate is modeled after Vivien Coulier’s description of COA policies to come.
+      Essentially COA identifies those AS which are unlikely to achieve status and separates them from
+      those who will. The unlikely to achieve status ones are placed in the cheapest to maintain AZC.
         '''
         
         super().__init__(name, agent, v_index)
@@ -238,7 +226,7 @@ class Segregate(Action):
         return not self.agent.shock
         
     
-    def segregate(self, action_to_take):
+    def do(self):
         cheapest_azc_to_maintain = None
         
         #gets a cost per azc from health + occupancy + activities + proximity
@@ -253,7 +241,7 @@ class Segregate(Action):
                 # and a legal status of edp
                 if newcomer.first == 0:
                     if newcomer.ls == "as_ext" and newcomer.second == 0:
-                        self.move(newcomer, cheapest_azc_to_maintain)
+                        cheapest_azc_to_maintain.coa.move(newcomer, cheapest_azc_to_maintain)
                         
         self.satisfaction()
         
@@ -262,10 +250,10 @@ class Integrate(Action):
     def __init__(self, name, agent, v_index):
         
         '''
-        Consolidate is a self-enhancement action
-        It involves moving newcomers from multiple dispersed AZCs
-        into fewer, centralized AZCs
-        It frees up available capital for COA
+        COA integrates by setting activity permissions to setting activity permissions to
+        all legal statuses. That way all AS can participate in the same activities. It also obliges transfer
+        requests and will subsidize travel to participate in activities for AS that live far from activity
+        centers.
         '''
         
         super().__init__(name, agent, v_index)
@@ -286,13 +274,14 @@ class Integrate(Action):
         return not self.agent.shock
     
     def do(self):
-        '''
-        Not yet sold on this one
+        between_city_travel = True # we will want to parameterize this somehow
+        travel_voucher = self.agent.city.cost_of_bus_within_city 
+        if not between_city_travel:
+            travel_voucher = self.agent.city.cost_of_bus_to_another_city 
+        
         for azc in self.agent.azcs:
-             if len(azc.activities_available)>1:
                  for newcomer in azc.occupants:
-                    action_to_take.satisfaction(newcomer)
-        '''
+                     newcomer.budget = newcomer.budget + travel_voucher
                     
         self.satisfaction()  
         

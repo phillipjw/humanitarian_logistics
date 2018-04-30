@@ -3,8 +3,9 @@ from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
 from Values import Values
-
-
+import math
+from organizations import City
+from random import randrange
 
 class Newcomer(Agent):
     
@@ -46,7 +47,6 @@ class Newcomer(Agent):
              
         self.testing_activities = False
         self.budget = 0
-        
 
         
         
@@ -57,7 +57,7 @@ class Newcomer(Agent):
         #Allowance payment
         if day == self.coa.newcomer_payday:
             self.budget += self.coa.newcomer_allowance
-        
+      
         if self.testing_activities:
             #decay
             self.values.decay_val()
@@ -70,7 +70,41 @@ class Newcomer(Agent):
                 self.model.test_activity.effect(self)
                 print(self.values.val_t)
         
+        else:
+            #decay
+            self.values.decay_val()
+            
+            # get the day of the week
+            day = self.model.schedule.steps % 7
+            
+            my_possible_activities = []
+            activity_travel_costs  = []
+            
+            if self.budget > self.coa.city.cost_of_bus_within_city:
+                # other within city azcs
+                for azc in self.coa.azcs:
+                    for activity in azc.activities_available:
+                        my_possible_activities.append(activity)
+                        activity_travel_costs.append(self.coa.city.cost_of_bus_within_city)
+            
+            if self.budget > self.coa.city.cost_of_bus_to_another_city:
+                # other city azcs
+                cities = set ([city for city in self.model.schedule.agents if type(city) is City])
+                cities = cities - set([self.coa.city])
+                for city in cities:
+                    for azc in city.coa.azcs:
+                        for activity in azc.activities_available:
+                             my_possible_activities.append(activity)
+                             activity_travel_costs.append(self.coa.city.cost_of_bus_to_another_city)
         
+            # add logic to identify the activity that provides the best value payoff that the agent can afford
+            # for now just pick one at random
+            if (len(my_possible_activities) > 0):
+                random_index = randrange(0,len(my_possible_activities))
+                activity_to_do = my_possible_activities[random_index]
+                activity_to_do.effect(self)
+                self.budget = self.budget - activity_travel_costs[random_index]
+            
         #EDP to AZ
         
         if self.ls == 'edp':
