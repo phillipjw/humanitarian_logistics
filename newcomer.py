@@ -100,10 +100,23 @@ class Newcomer(Agent):
             # add logic to identify the activity that provides the best value payoff that the agent can afford
             # for now just pick one at random
             if (len(my_possible_activities) > 0):
-                random_index = randrange(0,len(my_possible_activities))
-                activity_to_do = my_possible_activities[random_index]
+                
+                #prioritize my most important values and then find an activity that satisfies them
+                priority = self.values.prioritize()
+                possible_effects = []
+                for value in priority:
+                    possible_effects = []
+                    for index in range(0, len(my_possible_activities)):
+                        activity = my_possible_activities[index]
+                        possible_effects.append(activity.v_sat[value])
+                    if max(possible_effects) > 0:
+                        break;
+                
+                # get the max value in possible effects
+                index_of_activity = possible_effects.index(max(possible_effects))
+                activity_to_do = my_possible_activities[index_of_activity]
                 activity_to_do.effect(self)
-                self.budget = self.budget - activity_travel_costs[random_index]
+                self.budget = self.budget - activity_travel_costs[index_of_activity]
             
         #EDP to AZ
         
