@@ -117,7 +117,7 @@ class COA(Organization):
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 30
+        self.self_transcendence = 70
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
@@ -781,6 +781,22 @@ class ActivityCenter(Building):
         self.activities_available = set([])
         
         self.ta = False
+        
+    def identify_need(self):
+        
+        '''
+        Surveys residents of an AZC
+        identifies the chief unmet need
+        '''
+        
+        totals = np.array([0,0,0,0])
+        
+        for newcomer in self.azc.occupants:
+            totals += newcomer.v_tau - newcomer.val_t
+        
+        return np.where(totals == max(totals))[0][0]
+        
+        
 
 
 
