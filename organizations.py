@@ -715,7 +715,7 @@ class Building(Agent):
             self.health = self.health - 1
 
 class AZC(Building):
-    def __init__(self, unique_id, model, occupant_type, pos, coa):
+    def __init__(self, unique_id, model, occupant_type, pos, coa, proximity):
         super().__init__(unique_id, model)
         
         self.capacity = 400
@@ -724,6 +724,7 @@ class AZC(Building):
         self.pos = pos
         self.available = False
         self.occupancy = 0
+        self.proximity = proximity
         
         self.coa = coa
 
@@ -789,18 +790,22 @@ class Empty(Building):
     and can be converted into AZCs
     '''
     def __init__(self, unique_id, model,
-                 pos, capacity):
+                 pos, capacity, proximity):
         super().__init__(unique_id, model)
         
+        self.proximity = proximity
         self.capacity = capacity
         self.occupants = set([])
         self.pos = pos
-        self.convert_cost = self.capacity * 1000 * .80
+        
+        #cost now depends on proximity and capacity
+        self.convert_cost = self.capacity * 1000 * self.proximity
         self.available = True
         self.calculated_value = None
         self.under_construction = False
         self.construction_time = 180
         self.city = None
+        
         
     def calc_cost(self, need, average_duration):
         

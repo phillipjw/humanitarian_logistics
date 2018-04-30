@@ -117,7 +117,7 @@ class HumanitarianLogistics(Model):
         self.schedule.add(ta_coa)
         ta_ind = IND(ta_id, self, ter_apel)
         self.schedule.add(ta_ind)
-        ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa)
+        ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa, .2)
         ta_azc.ta = True
         ta_coa.azcs.add(ta_azc) 
         ta_coa.capacities[ta_azc] = ta_azc.occupancy
@@ -178,7 +178,8 @@ class HumanitarianLogistics(Model):
                 y = int(self.height * .5)
                 
 
-                a = AZC(i, self, occupant_type, (x,y), current_coa) #instantiate
+                a = AZC(i, self, occupant_type, (x,y), current_coa,
+                        np.random.uniform(0,1)) #instantiate
                 self.schedule.add(a)                   #add in time
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
@@ -208,7 +209,7 @@ class HumanitarianLogistics(Model):
                 self.grid.place_agent(current, (x,y))
                 self.schedule.add(current)
                 
-                empty = Empty(self.num_buildings + 1, self, (int(x + space_per_building),y), 100)
+                empty = Empty(self.num_buildings + 1, self, (int(x + space_per_building),y), 100, .4)
                 current_city.buildings.add(empty)
                 empty.city = current_city
                 self.grid.place_agent(empty, (int(x + space_per_building),y))
@@ -226,11 +227,14 @@ class HumanitarianLogistics(Model):
                     self.grid.place_agent(current, (x,y))
                     self.schedule.add(current)
                 else:
-                    empty = Empty(bdg, self, (x,y - row_size * int(bdg/3)), 100*bdg)
-                    current_city.buildings.add(empty)
-                    empty.city = current_city
-                    self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
-                    self.schedule.add(empty)
+                    
+                    for proximity in [1,.4]:
+                        empty = Empty(bdg, self, (x,y - row_size * int(bdg/3)),
+                                      100*bdg, proximity)
+                        current_city.buildings.add(empty)
+                        empty.city = current_city
+                        self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
+                        self.schedule.add(empty)
                     
 
     def house(self,newcomer):
