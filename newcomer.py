@@ -45,11 +45,18 @@ class Newcomer(Agent):
         self.values = Values(10, 70, 30, 70, 50)
              
         self.testing_activities = False
+        self.budget = 0
         
 
         
         
     def step(self):
+        
+        day = self.model.schedule.steps % 7
+        
+        #Allowance payment
+        if day == self.coa.newcomer_payday:
+            self.budget += self.coa.newcomer_allowance
         
         if self.testing_activities:
             #decay
@@ -70,7 +77,7 @@ class Newcomer(Agent):
             self.intake_time -= 1
             
             if self.intake_time == 0:
-                
+
                 self.ls = 'as'
                 self.coa.policy(self)
                 self.coa.IND.set_time(self)
@@ -82,6 +89,7 @@ class Newcomer(Agent):
         elif self.ls == 'as':
         
             self.decision_time -= 1
+
             
             if self.decision_time == 0:
                 if self.coa.IND.decide(True, self):
@@ -91,11 +99,11 @@ class Newcomer(Agent):
                     self.model.country_success[country] += 1
                     self.model.Remove(self)
                 else:
-                    
+
                     self.ls = 'as_ext'
                     self.coa.policy(self)
                     self.coa.IND.set_time(self)
-                    
+
                     #draws decision outcome from bernoulli distribution based on attributes
                     self.second = bernoulli.rvs(self.specs[1], size = 1)[0]
                     

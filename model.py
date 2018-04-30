@@ -47,6 +47,14 @@ class HumanitarianLogistics(Model):
         self.nc_rate = nc_rate #rate of inflow of newcomers
         self.num_cities = N_cities #number of cities in sim
         self.num_buildings = 3
+
+        self.num_activity_centers = 2
+        self.num_activities_per_center = 2
+        self.num_per_step = 10
+
+        self.num_activity_centers = 2
+        self.num_activities_per_center = 2
+
         #initialize shock values
         self.shock_period = shock_period       #how often does shock occur
         self.shock_duration = shock_duration   #how long does shock last
@@ -109,7 +117,8 @@ class HumanitarianLogistics(Model):
         self.schedule.add(ta_coa)
         ta_ind = IND(ta_id, self, ter_apel)
         self.schedule.add(ta_ind)
-        ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa)
+        ta_azc = AZC(ta_id, self, 'edp', ta_pos, ta_coa, .2)
+        ta_azc.ta = True
         ta_coa.azcs.add(ta_azc) 
         ta_coa.capacities[ta_azc] = ta_azc.occupancy
         self.schedule.add(ta_azc)                   
@@ -169,7 +178,8 @@ class HumanitarianLogistics(Model):
                 y = int(self.height * .5)
                 
 
-                a = AZC(i, self, occupant_type, (x,y), current_coa) #instantiate
+                a = AZC(i, self, occupant_type, (x,y), current_coa,
+                        np.random.uniform(0,1)) #instantiate
                 self.schedule.add(a)                   #add in time
                 self.grid.place_agent(a, (x, y))       #add in spaace
                 current_city.buildings.add(a)
@@ -199,7 +209,7 @@ class HumanitarianLogistics(Model):
                 self.grid.place_agent(current, (x,y))
                 self.schedule.add(current)
                 
-                empty = Empty(self.num_buildings + 1, self, (int(x + space_per_building),y), 100)
+                empty = Empty(self.num_buildings + 1, self, (int(x + space_per_building),y), 100, .4)
                 current_city.buildings.add(empty)
                 empty.city = current_city
                 self.grid.place_agent(empty, (int(x + space_per_building),y))
@@ -217,11 +227,14 @@ class HumanitarianLogistics(Model):
                     self.grid.place_agent(current, (x,y))
                     self.schedule.add(current)
                 else:
-                    empty = Empty(bdg, self, (x,y - row_size * int(bdg/3)), 100*bdg)
-                    current_city.buildings.add(empty)
-                    empty.city = current_city
-                    self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
-                    self.schedule.add(empty)
+                    
+                    for proximity in [1,.4]:
+                        empty = Empty(bdg, self, (x,y - row_size * int(bdg/3)),
+                                      100*bdg, proximity)
+                        current_city.buildings.add(empty)
+                        empty.city = current_city
+                        self.grid.place_agent(empty, (x,y - row_size * int(bdg/3)))
+                        self.schedule.add(empty)
                     
 
     def house(self,newcomer):
@@ -257,6 +270,7 @@ class HumanitarianLogistics(Model):
     def Remove(self, agent):
 
         agent.loc.occupancy -= 1 #reduce occupancy of building
+        agent.loc.occupants.remove(agent)
 
         #remove from time n space
         self.schedule.remove(agent)
@@ -354,7 +368,9 @@ class HumanitarianLogistics(Model):
 
             #adds newcomers to simuluation at a given rate
             if uniform(0,1) < self.nc_rate:
-                self.addNewcomer(False, None)
+                for i in range(self.num_per_step):
+                
+                    self.addNewcomer(False, None)
 
 def calc_extended_as(model):
 

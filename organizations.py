@@ -6,7 +6,12 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-from activity import Action, Activity, Football
+
+import activity
+
+
+
+
 
 class City(Agent):
     '''
@@ -56,6 +61,9 @@ class COA(Organization):
         
         self.azcs = set([])
         self.activity_centers = set([])
+        self.activity_cost = 5000
+        self.activity_budget = 30000
+        self.activity_center_cost = 20000 #abitrary and to be replaced
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
@@ -69,6 +77,9 @@ class COA(Organization):
         self.capacity_threshold = .75
         self.buildings_under_construction = set([])
         
+        #newcomer pay params
+        self.newcomer_allowance = 50
+        self.newcomer_payday = 0
 
         self.shock = False                 # is current influx an anomoly 
         self.crisis = False                # is there sufficient housing 
@@ -106,7 +117,7 @@ class COA(Organization):
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 60
+        self.self_transcendence = 70
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
@@ -134,96 +145,24 @@ class COA(Organization):
         for action in range(len(self.action_names)):
             
             #make action w a name, actor, and index of value to be satisfied
-            current_action = Action(self.action_names[action], self,action)
-            self.actions.add(current_action)
-    
-    def act(self, action_to_take):
-        if action_to_take.name == "Consolidate":
-            self.consolidate(action_to_take)
-        if action_to_take.name == "Invest":
-            self.invest(action_to_take)
-        if action_to_take.name == "Segregate":
-            self.segregate(action_to_take)
-        if action_to_take.name == "Integrate":
-            self.integrate(action_to_take)
-    
-   
-    def consolidate(self, action_to_take):
-        for azc in self.azcs:
-            azc.occupants = set([])
-        temp_list_of_newcomers = list(self.newcomers)
-        newcomers_index = 0
-        for azc in self.azcs:
-            while (len(azc.occupants) < azc.capacity & newcomers_index < len(temp_list_of_newcomers)):
-                self.move(temp_list_of_newcomers[newcomers_index], azc)
-                newcomers_index = newcomers_index + 1
-                action_to_take.satisfaction(newcomer)
-                
-        action_to_take.satisfaction(self)
 
-    #During a non-shock period, COA satisfies ST by investing in the quality of life of its
-    #residents by constructing an activity center (AC). The AC has a cost significantly less than an
-    #entire building, as it may simply be a room in another building. The AC hosts activities, which
-    #are period events satisfying a certain criteria of a newcomer. Currently, we just add an activities
-    # to aczs that are less than half full and where the ls == as. However, there is functionality in the
-    # code to convert empty buildings to ActivityCenter buildings.
-    
-    def invest(self, action_to_take):
-       max_num_activity_centers = 2
-       max_num_activities_per_center = 2 
-       num_activity_centers_added = 0       
-       for azc in self.azcs:
-            if (len(azc.occupants)/azc.capacity) < 0.5:
-                if (num_activity_centers_added < max_num_activity_centers):
-                    activities = set([])
-                    for j in range(max_num_activities_per_center):
-                        generated_activity = Football(num_activity_centers_added, self, 1)
-                        activities.add(generated_activity)
-                           
-                    azc.activities_available = activities
-                    num_activity_centers_added = num_activity_centers_added + 1
-       for azc in self.azcs:
-            if len(azc.activities_available)>0:
-                for newcomer in azc.occupants:
-                    if newcomer.ls == "as":
-                        action_to_take.satisfaction(newcomer)
-                    
-       action_to_take.satisfaction(self)
-        
-    # Segregate is modeled after Vivien Coulier’s description of COA policies to come.
-    # Essentially COA identifies those AS which are unlikely to achieve status and separates them from
-    # those who will. The unlikely to achieve status ones are placed in the cheapest to maintain AZC.
-    def segregate(self, action_to_take):
-        cheapest_azc_to_maintain = None
-        cost_to_maintain = 100
-        for azc in self.azcs:
-            if (100-azc.health) < cost_to_maintain:
-                cheapest_azc_to_maintain = azc
-                cost_to_maintain = 100-azc.health
-        if cheapest_azc_to_maintain != None:
-            for newcomer in self.newcomers:
-                # defining an unlikely new comer as one with a first value = 0
-                # and a legal status of edp
-                if newcomer.first == 0:
-                    if newcomer.ls == "edp":
-                        self.move(newcomer, cheapest_azc_to_maintain)
-                        action_to_take.satisfaction(newcomer)
-        
-        action_to_take.satisfaction(self)
-        
-    # COA integrates by setting activity permissions to all legal statuses. 
-    # That way all AS can participate in the same activities. It also obliges transfer
-    # requests and will subsidize travel to participate in activities for AS that live far from activity
-    # centers.
-  
-    def integrate(self, action_to_take):
-         for azc in self.azcs:
-             if len(azc.activities_available)>1:
-                 for newcomer in azc.occupants:
-                    action_to_take.satisfaction(newcomer)
-                    
-         action_to_take.satisfaction(self)  
-        
+            if action == 0:
+                current_action = activity.Consolidate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 1:
+                current_action = activity.Invest(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 2:
+                current_action = activity.Segregate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 3:
+                current_action = activity.Integrate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+                
+            
+            
+            
+
         
     def house(self, newcomer):
         
@@ -247,8 +186,13 @@ class COA(Organization):
      
         destination = min(candidates, key = attrgetter('occupancy'))
         
-  
+        
+
         self.move(newcomer, destination)
+    
+    def pay_allowance(self, newcomer):
+        
+        newcomer.budget += self.newcomer_allowance
           
         
     def social_house(self, newcomer):
@@ -265,21 +209,25 @@ class COA(Organization):
         moves newcomer to a destination
         updates occupancies of previous and new destinations
         '''
-        
-        newcomer.loc.occupancy -= 1 
-        destination.occupancy += 1 #update occupancy 
 
+        newcomer.loc.occupancy -= 1 
+        if newcomer in newcomer.loc.occupants:
+            
+            newcomer.loc.occupants.remove(newcomer)
+        destination.occupancy += 1 #update occupancy 
+        
+        
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
     
         #add noise so agents don't overlap
-        x = house_loc[0] #+ np.random.randint(-20,20)
-        y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
-       
+        #x = house_loc[0] #+ np.random.randint(-20,20)
+        #y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
         
-        self.model.grid.move_agent(newcomer, (x,y)) #place
-        
+        self.model.grid.move_agent(newcomer, house_loc) #place
+
         destination.occupants.add(newcomer) #add agent to building roster
+
         newcomer.loc = destination #update agent location
         
         if type(destination) is Hotel:
@@ -316,9 +264,7 @@ class COA(Organization):
         
   
         self.move(newcomer, destination)
-        
-        self.move(newcomer, destination)
-        
+                
     
     def get_total_cap(self):
         '''total available room'''
@@ -469,11 +415,9 @@ class COA(Organization):
             self.capacities[building] = building.occupancy
             
             if project[0] > building.capacity*self.capacity_threshold:
-                print('Problematic')
                 problematic = True
                 break                         
             else:
-                print('Manageable')
                 self.project(building)
                 #all must be manageable for normal housing policies
         return problematic
@@ -539,10 +483,9 @@ class COA(Organization):
      
         
     def convert(self, building):
-        print('azc added!')
         #remove
         new_azc = AZC(building.unique_id,building.model,
-                      'as_ext', building.pos, self)
+                      'as_ext', building.pos, self, building.proximity)
         azc_viz = AZC_Viz(self.model, new_azc)
         self.model.schedule.add(azc_viz)
         self.model.grid.place_agent(azc_viz, azc_viz.pos)
@@ -555,6 +498,7 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+
 
 # I set this up so we'd have a framework to convert empty buildings into activity centers 
 # but currently it is not being used.      
@@ -574,13 +518,13 @@ class COA(Organization):
         self.buildings_under_construction.remove(building)
         self.model.schedule.remove(building)
         self.model.grid.remove_agent(building)
+
         
         
     def construct(self, building):
         
         building.under_construction = True
         self.buildings_under_construction.add(building)
-        print('begin construction!')
         self.budget -= building.convert_cost
     
     def collect(self):
@@ -612,15 +556,21 @@ class COA(Organization):
         #act
         #find action that corresponds to priority
         current = None
-        for action in self.actions:
-            if priority == action.v_index:
-                current = action
+        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+        for value in priority:
+            for action in possible_actions:
+                if value == action.v_index:
+                    current = action
+                    break
+            if current != None:
+                break
+        
         
         #update v_sat
         if current != None:
-            current.effect(self)
+            print(current.name)
+            current.do()
 
-        self.act(current)
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
@@ -638,18 +588,15 @@ class COA(Organization):
                 
                 #also collects from residents
                 self.collect()
-                print(self.budget)
                 
                 #check variance of current point
                 variance_ta, squared_ta, sum_ta = self.online_variance_ta(self.model.ter_apel)
                 if self.shock_check(variance_ta):
-                    print('shock')
                     self.shock = True
                     self.shock_reference = self.model.schedule.steps
                        
                 #if no anomoly add to normal flow distribution    
                 else:
-                    print('no shock')
                     self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                     self.shock = False
                     self.policy = self.house
@@ -665,7 +612,6 @@ class COA(Organization):
                     cc = self.crisis_check()
                     if cc[0]:
                         self.crisis = True
-                        print('Crisis')
                         if self.ta:
                             pass
                         else:
@@ -713,9 +659,7 @@ class COA(Organization):
         #add noise so agents don't overlap
         x = house_loc[0] #+ np.random.randint(-20,20)
         y = house_loc[1] - 10 + int(20*((1+self.model.ter_apel.occupancy) / self.model.ter_apel.capacity))
-        
         self.model.grid.move_agent(newcomer, (x,y)) #place
-        
         self.model.ter_apel.occupants.add(newcomer) #add agent to building roster
         newcomer.loc = self.model.ter_apel #update agent location
         
@@ -780,7 +724,7 @@ class Building(Agent):
             self.health = self.health - 1
 
 class AZC(Building):
-    def __init__(self, unique_id, model, occupant_type, pos, coa):
+    def __init__(self, unique_id, model, occupant_type, pos, coa, proximity):
         super().__init__(unique_id, model)
         
         self.capacity = 400
@@ -789,18 +733,38 @@ class AZC(Building):
         self.pos = pos
         self.available = False
         self.occupancy = 0
+        self.proximity = proximity
+        self.operational_cost = None
+        self.activity_center = None
+        self.health = 0 
         
         self.coa = coa
+    
+    def get_operational_cost(self):
+        
+        #should combine capacity, activities and proximity
+        #is an evaluation, not a specific monetary amount
+        occupancy = self.occupancy / self.capacity
+        activity = 0
+        if self.activity_center != None:
+            if self.activity_center.activities_available:
+                activity += len(self.activity_center.activities_available)
+                    
+        activity = activity / 6 #6 possible activities. should be un-hardcoded as activitys change.
+        health = (100 - self.health) / 100
+        
+        self.operational_cost = health + occupancy + activity + self.proximity
 
 
     def step(self):
+        
         super().step()
         pass
 
 # I set this up so we'd have a framework to have buildings that were
 # solely activity centers but currently it is not being used.              
 class ActivityCenter(Building):
-    def __init__(self, unique_id, model, occupant_type, pos, coa):
+    def __init__(self, unique_id, model, occupant_type, pos, azc):
         super().__init__(unique_id, model)
         
         self.capacity = 400
@@ -810,8 +774,30 @@ class ActivityCenter(Building):
         self.available = False
         self.occupancy = 0
         
-        self.coa = coa
+        #switched from self.coa to self.azc, bc you can get the coa from the azc
+        # Also we're trying to calculte cost per Azc not cost p COA
+        self.azc = azc
+        self.azc.activity_center = self
         self.activities_available = set([])
+        
+        self.ta = False
+        
+    def identify_need(self):
+        
+        '''
+        Surveys residents of an AZC
+        identifies the chief unmet need
+        '''
+        
+        totals = np.array([0,0,0,0])
+        
+        for newcomer in self.azc.occupants:
+            totals += newcomer.v_tau - newcomer.val_t
+        
+        return np.where(totals == max(totals))[0][0]
+        
+        
+
 
 
     def step(self):
@@ -853,18 +839,22 @@ class Empty(Building):
     and can be converted into AZCs
     '''
     def __init__(self, unique_id, model,
-                 pos, capacity):
+                 pos, capacity, proximity):
         super().__init__(unique_id, model)
         
+        self.proximity = proximity
         self.capacity = capacity
         self.occupants = set([])
         self.pos = pos
-        self.convert_cost = self.capacity * 1000 * .80
+        
+        #cost now depends on proximity and capacity
+        self.convert_cost = self.capacity * 1000 * self.proximity
         self.available = True
         self.calculated_value = None
         self.under_construction = False
         self.construction_time = 180
         self.city = None
+        
         
     def calc_cost(self, need, average_duration):
         
