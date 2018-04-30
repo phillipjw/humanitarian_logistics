@@ -194,17 +194,6 @@ class Invest(Action):
                     
              azc.activities_available = activities
              num_activity_centers_added = num_activity_centers_added + 1
-        '''
-        unsure about this bit of code below:
-        Is this satisfaction to the newcomer whose doing the action?
-        
-        
-        for azc in self.agent.azcs:
-             if len(azc.activities_available)>0:
-                 for newcomer in azc.occupants:
-                     if newcomer.ls == "as":
-                         action_to_take.satisfaction(newcomer)
-        '''
                 
         self.satisfaction()
 
@@ -249,7 +238,7 @@ class Segregate(Action):
         if cheapest_azc_to_maintain != None:
             for newcomer in self.agent.newcomers:
                 # defining an unlikely new comer as one with a first value = 0
-                # and a legal status of edp
+                # and a legal status != as_ext
                 if newcomer.first == 0:
                     if newcomer.ls == "as_ext" and newcomer.second == 0:
                         self.move(newcomer, cheapest_azc_to_maintain)
@@ -261,7 +250,7 @@ class Integrate(Action):
     def __init__(self, name, agent, v_index):
         
         '''
-        Consolidate is a self-enhancement action
+        Integrate allows people from other AZCs is a self-enhancement action
         It involves moving newcomers from multiple dispersed AZCs
         into fewer, centralized AZCs
         It frees up available capital for COA

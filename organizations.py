@@ -3,10 +3,11 @@ from random import randrange
 from random import uniform
 from operator import attrgetter
 import numpy as np
+import statistics
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-
+from diversity import Diversity
 import activity
 
 
@@ -63,7 +64,7 @@ class COA(Organization):
         self.activity_centers = set([])
         self.activity_cost = 5000
         self.activity_budget = 30000
-        self.activity_center_cost = 20000 #abitrary and to be replaced
+        self.activity_center_cost = 20000  #abitrary and to be replaced
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
@@ -158,12 +159,7 @@ class COA(Organization):
             elif action == 3:
                 current_action = activity.Integrate(self.action_names[action], self,action)
                 self.actions.add(current_action)
-                
-            
-            
-            
 
-        
     def house(self, newcomer):
         
         #candidates
@@ -264,8 +260,25 @@ class COA(Organization):
         
   
         self.move(newcomer, destination)
-                
     
+    def get_country_diversity(self):
+        '''country diversity for coa'''
+        d =  Diversity(self.azcs)
+        results = d.country()
+        if (results is not None) and (len(results) > 0):
+            return statistics.median(results)
+        else:
+            return 0
+
+    def get_legal_status_diversity(self):
+        '''legal status diversity for coa'''
+        d =  Diversity(self.azcs)
+        results = d.legalStatus()
+        if (results is not None) and (len(results) > 0):
+            return statistics.median(results)
+        else:
+            return 0        
+           
     def get_total_cap(self):
         '''total available room'''
         
@@ -552,6 +565,9 @@ class COA(Organization):
         
         #prioritize
         priority = self.values.prioritize()
+        
+        print("Median Country Diversity of AZCs for COA: " + str(self.get_country_diversity()))
+        print("Median Legal Status Diversity of AZCs for COA: " +str(self.get_legal_status_diversity()))
         
         #act
         #find action that corresponds to priority
