@@ -45,11 +45,18 @@ class Newcomer(Agent):
         self.values = Values(10, 70, 30, 70, 50)
              
         self.testing_activities = False
+        self.budget = 0
         
 
         
         
     def step(self):
+        
+        day = self.model.schedule.steps % 7
+        
+        #Allowance payment
+        if day == self.coa.newcomer_payday:
+            self.budget += self.coa.newcomer_allowance
         
         if self.testing_activities:
             #decay

@@ -2,6 +2,8 @@ import mesa
 import numpy as np
 from mesa import Agent, Model
 import organizations
+from operator import attrgetter
+
 
 class Action():
     
@@ -19,6 +21,39 @@ class Action():
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
+        
+class RequestFunds(Action):
+    
+    def __init__(self, name, agent, v_index):
+        '''
+        Request Funds is a self-enhancement action
+        it involves petitioning the government for increased funding
+        '''
+        super().__init__(name, agent, v_index)
+        self.name = name
+        self.agent = agent            #tie it to a given agent
+        self.v_index = v_index          #index of value to be satisfied
+        self.effect = self.do
+        self.counter = 0              #for histogramming purposes
+        self.request_amount = 10000
+        
+    def satisfaction(self):
+        
+        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
+        self.counter += 1
+        
+    def precondition(self):
+        
+        return self.agent.shock
+    
+    def do(self):
+        
+        #increase budget
+        self.agent.budget += self.request_amount
+        
+        #satisfy values
+        self.satisfaction()
+        
         
 class Consolidate(Action):
     
@@ -123,7 +158,18 @@ class Invest(Action):
     def precondition(self):
         
         #check if Balance enough to invest and not shock
-        return not self.agent.shock
+        shock = not self.agent.shock
+        finances = None
+        
+        #if no activity center already
+        #check if enough funds to build one
+        if self.agent.activity_centers:
+            finances = self.agent.activity_budget > self.agent.activity_cost
+        
+        #otherwise, check if enough funds to add an activity
+        else:
+            finances = self.agent.budget > self.agent.activity_center_cost
+        return shock and finances
     
     def do(self):
         
@@ -139,15 +185,15 @@ class Invest(Action):
         num_activity_centers_added = 0       
         for azc in self.agent.azcs:
        
-         if (len(azc.occupants)/azc.capacity) < 0.5:
-             if (num_activity_centers_added < max_num_activity_centers):
-                 activities = set([])
-                 for j in range(max_num_activities_per_center):
-                     generated_activity = Football(num_activity_centers_added, self, 1)
-                     activities.add(generated_activity)
-                        
-                 azc.activities_available = activities
-                 num_activity_centers_added = num_activity_centers_added + 1
+
+         if (num_activity_centers_added < max_num_activity_centers):
+             activities = set([])
+             for j in range(max_num_activities_per_center):
+                 generated_activity = Football(num_activity_centers_added, self, 1)
+                 activities.add(generated_activity)
+                    
+             azc.activities_available = activities
+             num_activity_centers_added = num_activity_centers_added + 1
         '''
         unsure about this bit of code below:
         Is this satisfaction to the newcomer whose doing the action?
@@ -193,20 +239,21 @@ class Segregate(Action):
     
     def segregate(self, action_to_take):
         cheapest_azc_to_maintain = None
-        cost_to_maintain = 100
-        for azc in self.agent.azcs:
-            if (100-azc.health) < cost_to_maintain:
-                cheapest_azc_to_maintain = azc
-                cost_to_maintain = 100-azc.health
+        
+        #gets a cost per azc from health + occupancy + activities + proximity
+        [azc.get_operational_cost() for azc in 
+         self.agent.azcs]
+        
+        cheapest_azc_to_maintain = min([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
+        
         if cheapest_azc_to_maintain != None:
             for newcomer in self.agent.newcomers:
                 # defining an unlikely new comer as one with a first value = 0
                 # and a legal status of edp
                 if newcomer.first == 0:
-                    if newcomer.ls == "as_ext":
+                    if newcomer.ls == "as_ext" and newcomer.second == 0:
                         self.move(newcomer, cheapest_azc_to_maintain)
-                        action_to_take.satisfaction(newcomer)
-        
+                        
         self.satisfaction()
         
 class Integrate(Action):
@@ -287,7 +334,7 @@ class Football(Activity):
         super().__init__(unique_id, model, frequency)
         
         self.effect = self.satisfaction
-        self.frequency == frequency
+        self.frequency = frequency
         
         #satisfies OTC
         self.v_sat = np.array([10,10,10,70])  #staves off decay for se,st,c
@@ -297,3 +344,4 @@ class Football(Activity):
     def satisfaction(self, participant):
         
         participant.values.val_t += self.v_sat
+    

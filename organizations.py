@@ -61,6 +61,9 @@ class COA(Organization):
         
         self.azcs = set([])
         self.activity_centers = set([])
+        self.activity_cost = 5000
+        self.activity_budget = 30000
+        self.activity_center_cost = 20000 #abitrary and to be replaced
         self.capacities = dict()
         self.average_capacities = self.capacities
         self.model = model
@@ -74,6 +77,9 @@ class COA(Organization):
         self.capacity_threshold = .75
         self.buildings_under_construction = set([])
         
+        #newcomer pay params
+        self.newcomer_allowance = 50
+        self.newcomer_payday = 0
 
         self.shock = False                 # is current influx an anomoly 
         self.crisis = False                # is there sufficient housing 
@@ -104,21 +110,21 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 60
+        self.self_enhancement = 30
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
         # which are a generic building which can host activities, aimed at satisfying 
         # newcomer values. During shock periods, providing housing to newcomers over 
         # the current capacity satisfies ST.
-        self.self_transcendence = 70
+        self.self_transcendence = 30
         
         # COA satisfies C by employing "safe but segregated" policies. That is,
         # separating newcomers by legal status and targeting service delivery on 
         # those who will likely receive status. During shock-periods, C is satisfied 
         # by building robust facilities. That is, favoring AZC developments with a 
         # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
-        self.conservatism = 60
+        self.conservatism = 70
         
         # COA satisfies OTC by employing integration policies which are available
         # to all AS newcomers, regardless of the likelihood of their final status. 
@@ -183,6 +189,10 @@ class COA(Organization):
         
 
         self.move(newcomer, destination)
+    
+    def pay_allowance(self, newcomer):
+        
+        newcomer.budget += self.newcomer_allowance
           
         
     def social_house(self, newcomer):
@@ -475,7 +485,7 @@ class COA(Organization):
     def convert(self, building):
         #remove
         new_azc = AZC(building.unique_id,building.model,
-                      'as_ext', building.pos, self)
+                      'as_ext', building.pos, self, building.proximity)
         azc_viz = AZC_Viz(self.model, new_azc)
         self.model.schedule.add(azc_viz)
         self.model.grid.place_agent(azc_viz, azc_viz.pos)
@@ -542,7 +552,6 @@ class COA(Organization):
         
         #prioritize
         priority = self.values.prioritize()
-        print(priority)
         
         #act
         #find action that corresponds to priority
@@ -559,7 +568,7 @@ class COA(Organization):
         
         #update v_sat
         if current != None:
-            #print(current.name)
+            print(current.name)
             current.do()
 
         #gives the model time to build of a distribution of normal flow
@@ -725,18 +734,37 @@ class AZC(Building):
         self.available = False
         self.occupancy = 0
         self.proximity = proximity
+        self.operational_cost = None
+        self.activity_center = None
+        self.health = 0 
         
         self.coa = coa
+    
+    def get_operational_cost(self):
+        
+        #should combine capacity, activities and proximity
+        #is an evaluation, not a specific monetary amount
+        occupancy = self.occupancy / self.capacity
+        activity = 0
+        if self.activity_center != None:
+            if self.activity_center.activities_available:
+                activity += len(self.activity_center.activities_available)
+                    
+        activity = activity / 6 #6 possible activities. should be un-hardcoded as activitys change.
+        health = (100 - self.health) / 100
+        
+        self.operational_cost = health + occupancy + activity + self.proximity
 
 
     def step(self):
+        
         super().step()
         pass
 
 # I set this up so we'd have a framework to have buildings that were
 # solely activity centers but currently it is not being used.              
 class ActivityCenter(Building):
-    def __init__(self, unique_id, model, occupant_type, pos, coa):
+    def __init__(self, unique_id, model, occupant_type, pos, azc):
         super().__init__(unique_id, model)
         
         self.capacity = 400
@@ -746,9 +774,14 @@ class ActivityCenter(Building):
         self.available = False
         self.occupancy = 0
         
-        self.coa = coa
+        #switched from self.coa to self.azc, bc you can get the coa from the azc
+        # Also we're trying to calculte cost per Azc not cost p COA
+        self.azc = azc
+        self.azc.activity_center = self
         self.activities_available = set([])
+        
         self.ta = False
+
 
 
     def step(self):
