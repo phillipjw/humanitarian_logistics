@@ -194,17 +194,7 @@ class Invest(Action):
                     
              azc.activities_available = activities
              num_activity_centers_added = num_activity_centers_added + 1
-        '''
-        unsure about this bit of code below:
-        Is this satisfaction to the newcomer whose doing the action?
-        
-        
-        for azc in self.agent.azcs:
-             if len(azc.activities_available)>0:
-                 for newcomer in azc.occupants:
-                     if newcomer.ls == "as":
-                         action_to_take.satisfaction(newcomer)
-        '''
+
                 
         self.satisfaction()
 

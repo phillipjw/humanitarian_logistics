@@ -24,6 +24,8 @@ class City(Agent):
         self.buildings = set([])
         self.pos = pos
         self.social_housing = None
+        self.cost_of_bus_within_city = 4
+        self.cost_of_bus_to_another_city = 18.50
         self.coa = None
         self.big_city = is_big
         if self.big_city == True:

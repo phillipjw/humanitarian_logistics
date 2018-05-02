@@ -3,6 +3,7 @@ from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
 from Values import Values
+from organizations import AZC
 
 
 
@@ -47,6 +48,48 @@ class Newcomer(Agent):
         self.testing_activities = False
         self.budget = 0
         
+    def get_activities(self, day):
+        
+        '''
+        Given budget of newcomer, searches through reachable AZCs
+        and returns the activities doable there.
+        '''
+        
+        #Add default activities such as work once written
+        possible_activities = []
+        
+        #check if enough for intercity
+        if self.budget > self.coa.city.cost_of_bus_to_another_city:
+            
+            azcs = [azc for azc in self.model.schedule.agents if
+                    type(azc) is AZC and not azc.ta and
+                    azc.activity_center != None and
+                    azc.activity_center.available_activities]
+            
+            
+        
+        #check if enough for intracity
+        elif self.budget > self.coa.city.cost_of_bus_within_city:
+            
+            azcs = [azc for azc in self.coa.azcs if
+                    not azc.ta and azc.activity_center != None and
+                    azc.activity_center.available_activities]
+            
+        #local
+        else:
+            azcs = [self.loc]
+        
+        if len(azcs) > 0:
+            
+            #add activities in selected AZCs to possible activity list
+            for azc in azcs:
+                for activity in azc.activity_center.available_activities:
+                    #if occuring today
+                    if day in activity.frequency:
+                    
+                        possible_activities.append(activity)
+        
+        return possible_activities
 
         
         
