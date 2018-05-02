@@ -179,16 +179,17 @@ class Invest(Action):
     # to aczs that are less than half full and where the ls == as. However, there is functionality in the
     # code to convert empty buildings to ActivityCenter buildings.
         
-        max_num_activity_centers = 2
-        max_num_activities_per_center = 2 
+        max_num_activity_centers = 1
+        max_num_activities_per_center = 3 
         num_activity_centers_added = 0       
         for azc in self.agent.azcs:
        
 
          if (num_activity_centers_added < max_num_activity_centers):
              activities = set([])
+             azc.activity_center = organizations.ActivityCenter(num_activity_centers_added, self.agent.model,'as', azc.pos, azc)
              for j in range(max_num_activities_per_center):
-                 generated_activity = Football(num_activity_centers_added, self, {1,2,3,4},1)
+                 generated_activity = Activity(num_activity_centers_added, self, {1,2,3,4},azc.activity_center.identify_need())
                  activities.add(generated_activity)
                     
              azc.activities_available = activities

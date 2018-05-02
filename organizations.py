@@ -112,7 +112,7 @@ class COA(Organization):
         # from low capacity AZCs into a few high capacity AZC. Empty AZCs can either be sold off or
         # operated at minimal cost until required. During shock periods, 
         # COA can satisfy SE by requesting additional government funding.
-        self.self_enhancement = 30
+        self.self_enhancement = 20
         
         # COA satisfies ST by investing its available capital to improve living
         # conditions for its residents. Available capital is invested facilities, 
@@ -126,14 +126,14 @@ class COA(Organization):
         # those who will likely receive status. During shock-periods, C is satisfied 
         # by building robust facilities. That is, favoring AZC developments with a 
         # degree of redundancy; two 100 capacity AZCs instead of one 200, for example.
-        self.conservatism = 70
+        self.conservatism = 30
         
         # COA satisfies OTC by employing integration policies which are available
         # to all AS newcomers, regardless of the likelihood of their final status. 
         # During shock periods periods, OTC is satisfied by the construction of 
         # flexible housing. Flexibility, here, means ability to serve multiple functions. 
         # Such housing could serve local populations post shock.
-        self.openness_to_change = 30
+        self.openness_to_change = 70
         
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change)
@@ -789,7 +789,7 @@ class ActivityCenter(Building):
         totals = np.array([0,0,0,0])
         
         for newcomer in self.azc.occupants:
-            totals += newcomer.v_tau - newcomer.val_t
+            totals += newcomer.values.v_tau - newcomer.values.val_t
         
         return np.where(totals == max(totals))[0][0]
         

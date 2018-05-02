@@ -64,7 +64,7 @@ class Newcomer(Agent):
             azcs = [azc for azc in self.model.schedule.agents if
                     type(azc) is AZC and not azc.ta and
                     azc.activity_center != None and
-                    azc.activity_center.available_activities != None]
+                    azc.activity_center.activities_available != None]
             
             
         
@@ -73,7 +73,7 @@ class Newcomer(Agent):
             
             azcs = [azc for azc in self.coa.azcs if
                     not azc.ta and azc.activity_center != None and
-                    azc.activity_center.available_activities != None]
+                    azc.activity_center.activities_available != None]
             
         #local
         else:
@@ -83,7 +83,7 @@ class Newcomer(Agent):
             
             #add activities in selected AZCs to possible activity list
             for azc in azcs:
-                for activity in azc.activity_center.available_activities:
+                for activity in azc.activity_center.activities_available:
                     #if occuring today
                     if day in activity.frequency:
                     
