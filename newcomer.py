@@ -91,28 +91,9 @@ class Newcomer(Agent):
         
         return possible_activities
 
+    def COA_Interaction(self):
         
-        
-    def step(self):
-        
-        day = self.model.schedule.steps % 7
-        
-        #Allowance payment
-        if day == self.coa.newcomer_payday:
-            self.budget += self.coa.newcomer_allowance
-        
-        if self.testing_activities:
-            #decay
-            self.values.decay_val()
-            
-            #check if test activity is occuring today
-            day = self.model.schedule.steps % 7
-            if self.model.test_activity.frequency == day:
-                print('partaking!')
-                print(self.values.val_t)
-                self.model.test_activity.effect(self)
-                print(self.values.val_t)
-        
+        #decision procedure for interacting with COA
         
         #EDP to AZ
         
@@ -124,16 +105,11 @@ class Newcomer(Agent):
                 self.ls = 'as'
                 self.coa.policy(self)
                 self.coa.IND.set_time(self)
-        
-        
-        
         #AZ to TR
-        
         elif self.ls == 'as':
         
             self.decision_time -= 1
 
-            
             if self.decision_time == 0:
                 if self.coa.IND.decide(True, self):
                     self.ls = 'tr'
@@ -172,3 +148,35 @@ class Newcomer(Agent):
         # Agent Temporary Resident            
         elif self.ls == 'tr':
             pass
+        
+    def step(self):
+        
+        day = self.model.schedule.steps % 7
+        
+        #Allowance payment
+        if day == self.coa.newcomer_payday:
+            self.budget += self.coa.newcomer_allowance
+            
+        #select actions
+        possible_actions = self.get_activities(day)
+        
+        #prioritize values
+        priority = self.values.prioritize()
+        
+        #find action that corresponds to priority
+        current = None
+        for value in priority:
+            for action in possible_actions:
+                if value == action.v_index:
+                    current = action
+                    break
+            if current != None:
+                break
+        
+        #update v_sat
+        if current != None:
+            current.do(self)
+        
+
+        #COA interaction
+        self.COA_Interaction()

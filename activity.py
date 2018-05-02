@@ -290,7 +290,7 @@ class Integrate(Action):
 
 class Activity(Agent):
     
-    def __init__(self, unique_id, model, frequency=1, se=0, st=0, c=0, otc=0):
+    def __init__(self, unique_id, model, frequency=1, v_index):
        
     
         '''
@@ -310,28 +310,41 @@ class Activity(Agent):
         # OTC is an activity providing stimulation and hedonism
         
         #putting the above together into one array
-        self.v_sat = np.array([se,st,c,otc])
+        self.v_index = v_index
         
         self.effect = None
     
+    def satisfaction(self, agent):
         
+        agent.values.val_t[self.v_index] += agent.values.val_sat[self.v_index]
+        
+    def do(self, agent):
+        '''
+        Do is separate from satisfaction bc there may be
+        extra changes in state that are activity specific
+        '''
+        
+        self.satisfaction(agent)
+        
+        
+
 
         
 class Football(Activity):
     
-    def __init__(self, unique_id, model, frequency):
+    def __init__(self, unique_id, model, frequency,v_index):
         
-        super().__init__(unique_id, model, frequency)
+        super().__init__(unique_id, model, frequency, v_index)
         
         self.effect = self.satisfaction
         self.frequency = frequency
         
-        #satisfies OTC
-        self.v_sat = np.array([10,10,10,70])  #staves off decay for se,st,c
+        self.v_index = v_index
+         
+    def satisfaction(self, agent):
         
-        
-        
-    def satisfaction(self, participant):
-        
-        participant.values.val_t += self.v_sat
+        super().satisfaction(agent)
     
+    def do(self, agent):
+        
+        super().satisfaction(agent)
