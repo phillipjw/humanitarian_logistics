@@ -334,6 +334,13 @@ class Football(Activity):
     
     def __init__(self, unique_id, model, frequency,v_index):
         
+        '''
+        more male oriented, 
+        should be male specific pre-conditions re 
+        Vivien's comments on men's tendency to cross cultural boundaries
+        though football
+        '''
+        
         super().__init__(unique_id, model, frequency, v_index)
         
         self.effect = self.satisfaction
@@ -348,3 +355,100 @@ class Football(Activity):
     def do(self, agent):
         
         super().satisfaction(agent)
+        
+        #possible additions: SOCIALIZE or HEALTH++
+        
+class Craft(Activity):
+    
+    def __init__(self, unique_id, model, frequency,v_index):
+        
+        '''
+        More female oriented re Vivien Coulier's comments on
+        women participating in women's only activities
+        and guaging willingness to participate based on
+        ethnic homogenaeity. 
+        '''
+        
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        self.v_index = v_index
+         
+    def satisfaction(self, agent):
+        
+        super().satisfaction(agent)
+    
+    def do(self, agent):
+        
+        super().satisfaction(agent)
+        
+        #possible additions: SOCIALIZE or HEALTH++
+
+class Language_Class(Activity):
+    
+    def __init__(self, unique_id, model, frequency,v_index):
+        
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        self.v_index = v_index
+         
+    def satisfaction(self, agent):
+        
+        super().satisfaction(agent)
+    
+    def do(self, agent):
+        
+        super().satisfaction(agent)
+        
+        #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
+
+class Volunteer(Activity):
+    
+    def __init__(self, unique_id, model, frequency,v_index):
+        
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        self.v_index = v_index
+         
+    def satisfaction(self, agent):
+        
+        super().satisfaction(agent)
+    
+    def do(self, agent):
+        
+        super().satisfaction(agent)
+        
+        #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
+        
+class Work(Activity):
+    
+    def __init__(self, unique_id, model, frequency,v_index):
+        
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        self.v_index = v_index
+         
+    def satisfaction(self, agent):
+        
+        super().satisfaction(agent)
+    
+    def do(self, agent):
+        
+        super().satisfaction(agent)
+        
+        #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
+        # Also agent.budget++
+        
+        
+        
