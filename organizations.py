@@ -78,6 +78,8 @@ class COA(Organization):
         self.shock_threshold = 5
         self.capacity_threshold = .75
         self.buildings_under_construction = set([])
+        self.check_diversity_of_coa_residents = True
+        self.check_diversity_of_coa_activities = True
         
         #newcomer pay params
         self.newcomer_allowance = 50
@@ -267,19 +269,19 @@ class COA(Organization):
   
         self.move(newcomer, destination)
                 
-    def get_country_diversity(self):
+    def get_country_diversity(self, activity=False):
         '''country diversity for coa'''
         d =  Diversity(self.azcs)
-        results = d.country()
+        results = d.country(activity)
         if (results is not None) and (len(results) > 0):
             return statistics.median(results)
         else:
             return 0
 
-    def get_legal_status_diversity(self):
+    def get_legal_status_diversity(self, activity=False):
         '''legal status diversity for coa'''
         d =  Diversity(self.azcs)
-        results = d.legalStatus()
+        results = d.legalStatus(activity)
         if (results is not None) and (len(results) > 0):
             return statistics.median(results)
         else:
@@ -385,7 +387,10 @@ class COA(Organization):
         elif type(building) is Hotel:
             return need*building.cost_pp
           
-    
+    def reset_activity_participants(self):
+        for azc in self.azcs:
+            for activity in azc.activities_available:
+                activity.participants = []
         
     def online_variance_ta(self, building):
         
@@ -466,9 +471,6 @@ class COA(Organization):
             
         return (total_need > 0, total_need)
     
-    
-        
-        
             
     def evaluate_options(self, need):
         
@@ -572,8 +574,13 @@ class COA(Organization):
         #prioritize
         priority = self.values.prioritize()
 		
-        print("Median Country Diversity of AZCs for COA: " + str(self.get_country_diversity()))
-        print("Median Legal Status Diversity of AZCs for COA: " +str(self.get_legal_status_diversity()))
+        if self.check_diversity_of_coa_residents:
+            print("Median Country Diversity of AZCs for COA residents: " + str(self.get_country_diversity()))
+            print("Median Legal Status Diversity of AZCs for COA residents: " +str(self.get_legal_status_diversity()))
+        
+        if self.check_diversity_of_coa_activities:
+            print("Median Country Diversity of AZCs for COA residents: " + str(self.get_country_diversity(True)))
+            print("Median Legal Status Diversity of AZCs for COA residents: " +str(self.get_legal_status_diversity(True)))
         
         #act
         #find action that corresponds to priority
@@ -661,7 +668,7 @@ class COA(Organization):
                         self.problematic = False
             
                 
-                        
+        self.reset_activity_participants()           
                         
 
             

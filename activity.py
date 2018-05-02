@@ -4,7 +4,7 @@ import numpy as np
 from mesa import Agent, Model
 import organizations
 from operator import attrgetter
-
+import statistics
 
 class Action():
     
@@ -235,13 +235,14 @@ class Segregate(Action):
         
         cheapest_azc_to_maintain = min([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
         
-        if cheapest_azc_to_maintain != None:
+        if cheapest_azc_to_maintain != None and cheapest_azc_to_maintain.pos != None:
             for newcomer in self.agent.newcomers:
                 # defining an unlikely new comer as one with a first value = 0
                 # and a legal status of edp
                 if newcomer.first == 0:
                     if newcomer.ls == "as_ext" and newcomer.second == 0:
-                        cheapest_azc_to_maintain.coa.move(newcomer, cheapest_azc_to_maintain)
+                        if (newcomer.pos != None):
+                            cheapest_azc_to_maintain.coa.move(newcomer, cheapest_azc_to_maintain)
                         
         self.satisfaction()
         
@@ -313,7 +314,7 @@ class Activity(Agent):
         self.v_sat = np.array([se,st,c,otc])
         
         self.effect = None
-    
+        self.participants =[]
         
 
         

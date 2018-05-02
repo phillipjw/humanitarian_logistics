@@ -116,6 +116,7 @@ class Newcomer(Agent):
                 index_of_activity = possible_effects.index(max(possible_effects))
                 activity_to_do = my_possible_activities[index_of_activity]
                 activity_to_do.effect(self)
+                activity_to_do.participants.append(self)
                 self.budget = self.budget - activity_travel_costs[index_of_activity]
             
         #EDP to AZ
