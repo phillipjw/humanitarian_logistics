@@ -125,11 +125,6 @@ class HumanitarianLogistics(Model):
         self.grid.place_agent(ta_azc, ta_pos)
         self.ter_apel = ta_azc
         
-        
-        #add activities
-        self.test_activity = Football(0, self, 5)
-        self.schedule.add(self.test_activity)
-        
 
         #generate cities
 

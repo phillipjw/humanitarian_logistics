@@ -112,8 +112,7 @@ class Consolidate(Action):
             #capacity AZC that can fit them
             
             amount = current.occupancy
-            print('amount:', amount)
-            print('test:', len(current.occupants))
+
            
             if current.occupants:
             
@@ -189,7 +188,7 @@ class Invest(Action):
          if (num_activity_centers_added < max_num_activity_centers):
              activities = set([])
              for j in range(max_num_activities_per_center):
-                 generated_activity = Football(num_activity_centers_added, self, 1)
+                 generated_activity = Football(num_activity_centers_added, self, {1,2,3,4},1)
                  activities.add(generated_activity)
                     
              azc.activities_available = activities
@@ -227,7 +226,7 @@ class Segregate(Action):
         return not self.agent.shock
         
     
-    def segregate(self, action_to_take):
+    def do(self):
         cheapest_azc_to_maintain = None
         
         #gets a cost per azc from health + occupancy + activities + proximity
@@ -237,13 +236,22 @@ class Segregate(Action):
         cheapest_azc_to_maintain = min([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
         
         if cheapest_azc_to_maintain != None:
-            for newcomer in self.agent.newcomers:
-                # defining an unlikely new comer as one with a first value = 0
-                # and a legal status of edp
-                if newcomer.first == 0:
-                    if newcomer.ls == "as_ext" and newcomer.second == 0:
-                        self.move(newcomer, cheapest_azc_to_maintain)
-                        
+            
+            unlikely_status_holders = [newcomer for newcomer in self.agent.newcomers if
+                                       newcomer.ls == 'as_ext' and
+                                       newcomer.second == 0]
+            
+            count = 0
+            
+            while count < len(unlikely_status_holders):
+                newcomer = self.agent.newcomers.pop()
+                if newcomer.ls == "as_ext" and newcomer.second == 0:
+                    self.agent.move(newcomer, cheapest_azc_to_maintain)
+                    count += 1
+                else:
+                    self.agent.newcomers.add(newcomer)
+                
+           
         self.satisfaction()
         
 class Integrate(Action):
@@ -251,10 +259,10 @@ class Integrate(Action):
     def __init__(self, name, agent, v_index):
         
         '''
-        Consolidate is a self-enhancement action
-        It involves moving newcomers from multiple dispersed AZCs
-        into fewer, centralized AZCs
-        It frees up available capital for COA
+        COA integrates by setting activity permissions to setting activity permissions to
+        all legal statuses. That way all AS can participate in the same activities. It also obliges transfer
+        requests and will subsidize travel to participate in activities for AS that live far from activity
+        centers.
         '''
         
         super().__init__(name, agent, v_index)
@@ -275,22 +283,23 @@ class Integrate(Action):
         return not self.agent.shock
     
     def do(self):
-        '''
-        Not yet sold on this one
+        between_city_travel = True # we will want to parameterize this somehow
+        travel_voucher = self.agent.city.cost_of_bus_within_city 
+        if not between_city_travel:
+            travel_voucher = self.agent.city.cost_of_bus_to_another_city 
+        
         for azc in self.agent.azcs:
-             if len(azc.activities_available)>1:
                  for newcomer in azc.occupants:
-                    action_to_take.satisfaction(newcomer)
-        '''
+                     newcomer.budget = newcomer.budget + travel_voucher
                     
-        self.satisfaction()  
+        self.satisfaction() 
         
 
         
 
 class Activity(Agent):
     
-    def __init__(self, unique_id, model, frequency=1, v_index):
+    def __init__(self, unique_id, model, frequency, v_index):
        
     
         '''

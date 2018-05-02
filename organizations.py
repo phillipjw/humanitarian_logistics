@@ -214,7 +214,6 @@ class COA(Organization):
 
         newcomer.loc.occupancy -= 1 
         if newcomer in newcomer.loc.occupants:
-            
             newcomer.loc.occupants.remove(newcomer)
         destination.occupancy += 1 #update occupancy 
         
@@ -222,10 +221,6 @@ class COA(Organization):
         #take first one, in future, evaluate buildings on some criteria
         house_loc = destination.pos         #where is it
     
-        #add noise so agents don't overlap
-        #x = house_loc[0] #+ np.random.randint(-20,20)
-        #y = house_loc[1] - 10 + int(20*((1+ destination.occupancy) / destination.capacity))
-        
         self.model.grid.move_agent(newcomer, house_loc) #place
 
         destination.occupants.add(newcomer) #add agent to building roster
@@ -739,7 +734,7 @@ class AZC(Building):
         self.operational_cost = None
         self.activity_center = None
         self.health = 0 
-        
+        self.ta = False
         self.coa = coa
     
     def get_operational_cost(self):
