@@ -565,7 +565,6 @@ class COA(Organization):
         
         #update v_sat
         if current != None:
-            print(current.name)
             current.do()
 
         #gives the model time to build of a distribution of normal flow

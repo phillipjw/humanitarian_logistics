@@ -191,8 +191,9 @@ class Invest(Action):
              for j in range(max_num_activities_per_center):
                  generated_activity = Activity(num_activity_centers_added, self, {1,2,3,4},azc.activity_center.identify_need())
                  activities.add(generated_activity)
+                 
                     
-             azc.activities_available = activities
+             azc.activity_center.activities_available = activities
              num_activity_centers_added = num_activity_centers_added + 1
 
                 
