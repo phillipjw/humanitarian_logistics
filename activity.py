@@ -17,7 +17,7 @@ class Action():
         self.agent = agent            #tie it to a given agent
         self.v_index = v_index          #index of value to be satisfied
         self.counter = 0              #for histogramming purposes
-        
+    
     def do(self):
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
@@ -190,13 +190,58 @@ class Invest(Action):
          if (num_activity_centers_added < max_num_activity_centers):
              activities = set([])
              for j in range(max_num_activities_per_center):
-                 generated_activity = Football(num_activity_centers_added, self, 1)
-                 activities.add(generated_activity)
-                    
+                 # only activities the coa can afford are chosen
+                 activity = self.choose_needed_activity(azc.coa)
+                 activities.add(activity)
+                 azc.coa.activity_budget = azc.coa.activity_budget - activity.cost
+                
              azc.activities_available = activities
              num_activity_centers_added = num_activity_centers_added + 1
                 
         self.satisfaction()
+    
+    def choose_needed_activity(self, coa, genereate_needed_activity=False, actCost=1000):
+        
+        coa_values = coa.values
+        if genereate_needed_activity:
+            needed_se  = 100-coa_values[0]
+            needed_st  = 100-coa_values[1]
+            needed_c   = 100-coa_values[2]
+            needed_otc = 100-coa_values[3]
+            # custom/generic activity that is high in cost due to the fact taht it can be ideal in nature
+            activity_to_return = Activity(0, self, 5, se=needed_se, st=needed_st, c=needed_c, otc=needed_otc, cost=actCost)
+            return activity_to_return
+            
+        else:
+            possible_activities = []
+            working_with_coa_activity = WorkingWithCOA(0, self, 5)
+            sports_activity = Sports(0, self, 5)
+            pre_integration_workshop_activity = PreIntegrationWorkshop(0, self, 5)
+            volunteer_with_ngo_activity = VolunteeringWithNGO(0, self, 5, coa.ngo)
+            language_course_activity = LanguageCourse(0, self, 5)
+            
+            list_of_all_activities = [working_with_coa_activity, sports_activity, volunteer_with_ngo_activity,
+                                     pre_integration_workshop_activity, language_course_activity]
+            for activity in list_of_all_activities:     
+                if coa.activity_budget > activity.cost:
+                    if (not activity.ngo_required) or (not coa.ngo is None):
+                        possible_activities.append(activity)
+                
+            priority = coa.values.prioritize()
+            #find action that corresponds to priority
+            for value in priority:
+                possible_effects = []
+                for index in range(0, len(possible_activities)):
+                    activity = possible_activities[index]
+                    possible_effects.append(activity.v_sat[value])
+                if max(possible_effects) > 0:
+                    break;
+            
+            # get the max value in possible effects
+            index_of_activity = possible_effects.index(max(possible_effects))
+            activity_to_return =  possible_activities[index_of_activity]
+            return activity_to_return
+    
 
 class Segregate(Action):
         
@@ -291,7 +336,7 @@ class Integrate(Action):
 
 class Activity(Agent):
     
-    def __init__(self, unique_id, model, frequency=1, se=0, st=0, c=0, otc=0):
+    def __init__(self, unique_id, model, frequency=1, se=0, st=0, c=0, otc=0, cost=0):
        
     
         '''
@@ -315,10 +360,11 @@ class Activity(Agent):
         
         self.effect = None
         self.participants =[]
+        self.cost = cost        
+        self.ngo_required = False        
         
-
         
-class Football(Activity):
+class Sports(Activity):
     
     def __init__(self, unique_id, model, frequency):
         
@@ -329,9 +375,72 @@ class Football(Activity):
         
         #satisfies OTC
         self.v_sat = np.array([10,10,10,70])  #staves off decay for se,st,c
-        
-        
-        
+        self.cost = 100
     def satisfaction(self, participant):
         
+        participant.values.val_t += self.v_sat
+
+class WorkingWithCOA(Activity):
+    
+    def __init__(self, unique_id, model, frequency):
+        
+        super().__init__(unique_id, model, frequency)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        #satisfies conservation? (should double check with phillip)
+        self.v_sat = np.array([10,10,70,10])  #staves off decay for se,st,otc
+        self.financial_payout = 10 # also should double check with phillip
+        self.cost = 0
+    def satisfaction(self, participant):
+        
+        participant.values.val_t += self.v_sat
+
+class VolunteeringWithNGO(Activity):
+    
+    def __init__(self, unique_id, model, frequency, ngo):
+        
+        super().__init__(unique_id, model, frequency)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        #satisfies self-transcendence? (should double check with phillip)
+        self.v_sat = np.array([10,70,10,10])  #staves off decay for se,c,otc
+        self.ngo = ngo
+        self.cost = 0
+        self.ngo_required = True
+    def satisfaction(self, participant):
+        if not self.ngo is None:
+            participant.values.val_t += self.v_sat
+
+class PreIntegrationWorkshop(Activity):
+    
+    def __init__(self, unique_id, model, frequency):
+        
+        super().__init__(unique_id, model, frequency)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        
+        #satisfies OTC and SE? (should double check with phillip)
+        self.v_sat = np.array([35,10,10,35])  #staves off decay for st,c
+        self.cost = 500
+    def satisfaction(self, participant):
+        participant.values.val_t += self.v_sat
+
+class LanguageCourse(Activity):
+    
+    def __init__(self, unique_id, model, frequency):
+        
+        super().__init__(unique_id, model, frequency)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        self.cost = 500
+        #satisfies OTC and SE? (should double check with phillip)
+        self.v_sat = np.array([35,10,10,35])  #staves off decay for st,c
+        
+    def satisfaction(self, participant):
         participant.values.val_t += self.v_sat

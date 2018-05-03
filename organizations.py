@@ -55,12 +55,24 @@ class Organization(Agent):
         """
         self.unique_id = unique_id
         self.model = model
+
+class NGO(Organization):
+    
+    def __init__(self, unique_id, model, coa):
+        super().__init__(unique_id, model)
+        self.coa = None
+        self.volunteers = []
+        self.volunteer_capactiy = 50
+        
+    def addVolunteer(self, newcomer):
+        if (len(self.volunteers) < self.volunteer_capactiy):
+            self.volunteers.append(newcomer) 
         
 class COA(Organization):
     
     def __init__(self, unique_id, model, city):
         super().__init__(unique_id, model)
-        
+        self.ngo = None
         self.azcs = set([])
         self.activity_centers = set([])
         self.activity_cost = 5000
@@ -579,8 +591,8 @@ class COA(Organization):
             print("Median Legal Status Diversity of AZCs for COA residents: " +str(self.get_legal_status_diversity()))
         
         if self.check_diversity_of_coa_activities:
-            print("Median Country Diversity of AZCs for COA residents: " + str(self.get_country_diversity(True)))
-            print("Median Legal Status Diversity of AZCs for COA residents: " +str(self.get_legal_status_diversity(True)))
+            print("Median Country Diversity of AZCs for COA activity participants: " + str(self.get_country_diversity(True)))
+            print("Median Legal Status Diversity of AZCs for COA activity participants: " +str(self.get_legal_status_diversity(True)))
         
         #act
         #find action that corresponds to priority

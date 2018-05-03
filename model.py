@@ -13,10 +13,9 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from activity import Activity, Football
+from activity import Activity, Sports
 from organizations import AZC, City, Hotel, Empty, COA, IND
 from viz import AZC_Viz
-#from Activities import Activity, Football
 
 
 
@@ -127,7 +126,7 @@ class HumanitarianLogistics(Model):
         
         
         #add activities
-        self.test_activity = Football(0, self, 5)
+        self.test_activity = Sports(0, self, 5)
         self.schedule.add(self.test_activity)
         
 
