@@ -85,7 +85,7 @@ class COA(Organization):
 
         self.shock = False                 # is current influx an anomoly 
         self.crisis = False                # is there sufficient housing 
-                                           # for current influx
+        self.need = None                   # for current influx
         self.problematic = False           # is change in policy required
         self.shock_reference = None
         self.delta = None                  #rate of change
@@ -133,7 +133,7 @@ class COA(Organization):
         # During shock periods periods, OTC is satisfied by the construction of 
         # flexible housing. Flexibility, here, means ability to serve multiple functions. 
         # Such housing could serve local populations post shock.
-        self.openness_to_change = 70
+        self.openness_to_change = 20
         
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change)
@@ -142,6 +142,7 @@ class COA(Organization):
         #####ACTIONS######
         self.actions = set([])
         self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
+        self.crisis_names = ['RequestFunds', 'BuildClose', 'BuildRobust', 'BuildFlex']
         
         #add actions to action set
         for action in range(len(self.action_names)):
@@ -151,14 +152,22 @@ class COA(Organization):
             if action == 0:
                 current_action = activity.Consolidate(self.action_names[action], self,action)
                 self.actions.add(current_action)
+                current_action = activity.RequestFunds(self.crisis_names[action], self,action)
+                self.actions.add(current_action)
             elif action == 1:
                 current_action = activity.Invest(self.action_names[action], self,action)
+                self.actions.add(current_action)
+                current_action = activity.BuildCentral(self.crisis_names[action], self,action)
                 self.actions.add(current_action)
             elif action == 2:
                 current_action = activity.Segregate(self.action_names[action], self,action)
                 self.actions.add(current_action)
+                current_action = activity.BuildCentral(self.crisis_names[action], self,action)
+                self.actions.add(current_action)
             elif action == 3:
                 current_action = activity.Integrate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+                current_action = activity.BuildCentral(self.crisis_names[action], self,action)
                 self.actions.add(current_action)
                 
             
@@ -441,7 +450,8 @@ class COA(Organization):
             
             #difference between that and occupancy
             total_need += self.evaluate_need(building, project[0])
-            
+        
+        self.need = total_need
         return (total_need > 0, total_need)
     
     
@@ -529,44 +539,11 @@ class COA(Organization):
         self.budget += self.collection_fee*self.get_total_occupancy()
         
         
-        
-                
-        
-    def step(self):
-        
-        
+    def get_state(self):
         '''
-        COA is essentially checking for anomalies in the 'Ter Apel'
-        If detected, inspects the gravity of the anomoly and acts
-        accordingly
+        Checks current state and sets policy accordingly
         '''
         
-        
-        ########Actions###########
-        
-        #decay
-        self.values.decay_val()
-        
-        #prioritize
-        priority = self.values.prioritize()
-        
-        #act
-        #find action that corresponds to priority
-        current = None
-        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
-        for value in priority:
-            for action in possible_actions:
-                if value == action.v_index:
-                    current = action
-                    break
-            if current != None:
-                break
-        
-        
-        #update v_sat
-        if current != None:
-            current.do()
-
         #gives the model time to build of a distribution of normal flow
         if self.model.schedule.steps < self.model.shock_period / 2:
             
@@ -611,14 +588,7 @@ class COA(Organization):
                         if self.ta:
                             pass
                         else:
-                            decision = self.evaluate_options(cc[1])
-                            if type(decision) is Hotel:
-                                self.policy = self.hotel_house
-                            else:
-                                self.policy = self.hotel_house
-                                #convert decision
-                                
-                                self.construct(decision)
+                            self.policy = self.hotel_house
                          
                     else:
                         self.crisis = False
@@ -633,13 +603,45 @@ class COA(Organization):
                     else:
                         self.policy = self.house
                         self.problematic = False
-            
                 
-                        
-                        
-
+        
+    def step(self):
+        
+        
+        '''
+        COA is essentially checking for anomalies in the 'Ter Apel'
+        If detected, inspects the gravity of the anomoly and acts
+        accordingly
+        '''
+        
+        #####Current State########
+        #Check State and Set Policy
+        self.get_state()
+        
+        ########Actions###########
+        if self.model.schedule.steps % self.assessment_frequency == 0:
+            #decay
+            self.values.decay_val()
             
-   
+            #prioritize
+            priority = self.values.prioritize()
+            
+            #find action that corresponds to priority
+            current = None
+            possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+            for value in priority:
+                for action in possible_actions:
+                    if value == action.v_index:
+                        current = action
+                        break
+                if current != None:
+                    break
+            
+            
+            #update v_sat
+            if current != None:
+                print(current.name)
+                current.do()
 
     def intake(self,newcomer):     
         '''Adds a newcomer to Ter Apel
@@ -819,6 +821,7 @@ class Hotel(Building):
         self.available = True
         self.calculated_value = None
         self.city = None
+        self.activity_center = None
     
     def calc_cost(self, need, average_duration):
         

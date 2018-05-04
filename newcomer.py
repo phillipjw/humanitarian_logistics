@@ -61,6 +61,7 @@ class Newcomer(Agent):
         #check if enough for intercity
         if self.budget > self.coa.city.cost_of_bus_to_another_city:
             
+            
             azcs = [azc for azc in self.model.schedule.agents if
                     type(azc) is AZC and not azc.ta and
                     azc.activity_center != None and
@@ -70,6 +71,7 @@ class Newcomer(Agent):
         
         #check if enough for intracity
         elif self.budget > self.coa.city.cost_of_bus_within_city:
+            
             
             azcs = [azc for azc in self.coa.azcs if
                     not azc.ta and azc.activity_center != None and

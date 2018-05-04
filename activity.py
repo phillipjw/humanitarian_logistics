@@ -22,6 +22,156 @@ class Action():
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
         
+
+class BuildCentral(Action):
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        
+    def precondition(self):
+        '''
+        check if agent in crisis
+        '''        
+        
+        return self.agent.crisis and not self.agent.ta
+    
+    def evaluate_options(self):
+        average_duration = 50
+        
+        ####Gather Buildings####
+        empties = [building for building in self.agent.city.buildings
+                   if type(building) is organizations.Empty and
+                   self.agent.budget > building.convert_cost]
+        
+        #gather candidates
+        candidates = [building for building in 
+                      empties if
+                      building.capacity > self.agent.need]
+        
+        hotel = [x for x in self.agent.city.buildings
+                 if type(x) is organizations.Hotel][0]
+        
+        candidates.append(hotel)
+        print(candidates)
+        for building in candidates:
+            building.calc_cost(self.agent.need, average_duration)
+        
+        #find max value, need:cost ratio
+        best = max(candidates, key = attrgetter('calculated_value'))
+
+        #return policy
+        return best
+    
+    def do(self):
+        super().do()
+        
+        decision = self.evaluate_options()
+        print(decision)
+        if type(decision) is not organizations.Hotel:
+            
+            self.agent.construct(decision)
+
+class BuildFlex(Action):
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        
+    def precondition(self):
+        '''
+        check if agent in crisis
+        '''        
+        
+        return self.agent.crisis and not self.agent.ta
+    
+    def evaluate_options(self):
+        average_duration = 50
+        
+        ####Gather Buildings####
+        empties = [building for building in self.agent.city.buildings
+                   if type(building) is organizations.Empty and
+                   self.agent.budget > building.convert_cost]
+        
+        #gather candidates
+        candidates = [building for building in 
+                      empties if
+                      building.capacity > self.agent.need]
+        
+        hotel = [x for x in self.agent.city.buildings
+                 if type(x) is organizations.Hotel][0]
+        
+        candidates.append(hotel)
+                      
+        for building in candidates:
+            building.calc_cost(self.agent.need, average_duration)
+        
+        #find max value, need:cost ratio
+        best = max(candidates, key = attrgetter('calculated_value'))
+
+        #return policy
+        return best
+    
+    def do(self):
+        super().do()
+        
+        decision = self.evaluate_options()
+        
+        if type(decision) is not organizations.Hotel:
+            
+            self.agent.construct(decision)
+            
+class BuildRobust(Action):
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        
+    def precondition(self):
+        '''
+        check if agent in crisis
+        '''        
+        
+        return self.agent.crisis and not self.agent.ta
+    
+    def evaluate_options(self):
+        average_duration = 50
+        
+        ####Gather Buildings####
+        empties = [building for building in self.agent.city.buildings
+                   if type(building) is organizations.Empty and
+                   self.agent.budget > building.convert_cost]
+        
+        #gather candidates
+        candidates = [building for building in 
+                      empties if
+                      building.capacity > self.agent.need]
+        
+        hotel = [x for x in self.agent.city.buildings
+                 if type(x) is organizations.Hotel][0]
+        
+        candidates.append(hotel)
+                      
+        for building in candidates:
+            building.calc_cost(self.agent.need, average_duration)
+        
+        #find max value, need:cost ratio
+        best = max(candidates, key = attrgetter('calculated_value'))
+
+        #return policy
+        return best
+    
+    def do(self):
+        super().do()
+        
+        decision = self.evaluate_options()
+        
+        if type(decision) is not organizations.Hotel:
+            
+            self.agent.construct(decision)
+        
+        
+
 class RequestFunds(Action):
     
     def __init__(self, name, agent, v_index):
@@ -85,7 +235,7 @@ class Consolidate(Action):
         by ensuring that azcs's are non-empty
         '''
         
-        return not self.agent.shock and sum([azc.occupancy for azc in
+        return not self.agent.crisis and sum([azc.occupancy for azc in
                                              self.agent.azcs]) > 0
     
     def do(self):
@@ -157,7 +307,7 @@ class Invest(Action):
     def precondition(self):
         
         #check if Balance enough to invest and not shock
-        shock = not self.agent.shock
+        shock = not self.agent.crisis
         finances = None
         
         #if no activity center already
@@ -216,6 +366,9 @@ class Segregate(Action):
         self.v_index = v_index          #index of value to be satisfied
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
+        self.unlikely_status_holders = [newcomer for newcomer in self.agent.newcomers if
+                                       newcomer.ls == 'as_ext' and
+                                       newcomer.second == 0]
         
     def satisfaction(self):
         
@@ -225,7 +378,7 @@ class Segregate(Action):
     def precondition(self):
         
         #check if not shock and check if feasible
-        return not self.agent.shock
+        return not self.agent.crisis and self.agent.newcomers
         
     
     def do(self):
@@ -239,13 +392,10 @@ class Segregate(Action):
         
         if cheapest_azc_to_maintain != None:
             
-            unlikely_status_holders = [newcomer for newcomer in self.agent.newcomers if
-                                       newcomer.ls == 'as_ext' and
-                                       newcomer.second == 0]
             
             count = 0
             
-            while count < len(unlikely_status_holders):
+            while count < len(self.unlikely_status_holders):
                 newcomer = self.agent.newcomers.pop()
                 if newcomer.ls == "as_ext" and newcomer.second == 0:
                     self.agent.move(newcomer, cheapest_azc_to_maintain)
@@ -282,7 +432,7 @@ class Integrate(Action):
     def precondition(self):
         
         #check if not shock and check if feasible
-        return not self.agent.shock
+        return not self.agent.crisis
     
     def do(self):
         between_city_travel = True # we will want to parameterize this somehow
