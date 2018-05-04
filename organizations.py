@@ -155,7 +155,8 @@ class COA(Organization):
         
         #####ACTIONS######
         self.actions = set([])
-        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
+        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate', 
+                             'RequestFunds', 'FlexibleConstruction', 'RobustConstruction']
         
         #add actions to action set
         for action in range(len(self.action_names)):
@@ -174,7 +175,15 @@ class COA(Organization):
             elif action == 3:
                 current_action = activity.Integrate(self.action_names[action], self,action)
                 self.actions.add(current_action)
-                
+            elif action == 4:
+                current_action = activity.RequestFunds(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 5:
+                current_action = activity.FlexibleConstruction(self.action_names[action], self,action)
+                self.actions.add(current_action) 
+            elif action == 6:
+                current_action = activity.RobustConstruction(self.action_names[action], self,action)
+                self.actions.add(current_action)   
             
             
             
@@ -554,11 +563,11 @@ class COA(Organization):
 
         
         
-    def construct(self, building):
+    def construct(self, building, additional_cost=0):
         
         building.under_construction = True
         self.buildings_under_construction.add(building)
-        self.budget -= building.convert_cost
+        self.budget -= (building.convert_cost + additional_cost)
     
     def collect(self):
         
@@ -744,12 +753,7 @@ class IND(Organization):
             return newcomer.first == 1
         else:
             return newcomer.second == 1
-        
-    
-                           
-                    
-                    
-                
+          
 class Building(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -763,6 +767,45 @@ class Building(Agent):
         
         def step(self):
             self.health = self.health - 1
+
+
+class FlexConstruction(Building):
+    def __init__(self, unique_id, model, occupant_type, pos, coa, proximity):
+        super().__init__(unique_id, model)
+        
+        self.capacity = 400
+        self.occupants = set([])
+        self.pos = pos
+        self.available = False
+        self.occupancy = 0
+        self.proximity = proximity
+        self.operational_cost = None
+        self.activity_center = None
+        self.health = 0 
+        
+        self.coa = coa
+    
+    def get_operational_cost(self):
+        
+        #should combine capacity, activities and proximity
+        #is an evaluation, not a specific monetary amount
+        occupancy = self.occupancy / self.capacity
+        activity = 0
+        if self.activity_center != None:
+            if self.activity_center.activities_available:
+                activity += len(self.activity_center.activities_available)
+                    
+        activity = activity / 6 #6 possible activities. should be un-hardcoded as activitys change.
+        health = (100 - self.health) / 100
+        
+        self.operational_cost = health + occupancy + activity + self.proximity
+
+
+    def step(self):
+        
+        super().step()
+        pass
+
 
 class AZC(Building):
     def __init__(self, unique_id, model, occupant_type, pos, coa, proximity):

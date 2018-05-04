@@ -22,7 +22,7 @@ class Action():
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
-        
+         
 class RequestFunds(Action):
     
     def __init__(self, name, agent, v_index):
@@ -132,6 +132,44 @@ class Consolidate(Action):
                         
         #update values
         self.satisfaction()
+        
+class FlexibleConstruction(Action):
+    
+    def __init__(self, name, agent, v_index):
+        '''
+        Flexible construction is that which can serve multiple purposes. It
+        will cost more to build, because it must serve other audiences than 
+        only AS, but it can be converted
+        into local resident social housing when a shock has passed. otc action during shock
+        '''
+        super().__init__(name, agent, v_index)
+        self.name = name
+        self.agent = agent            #tie it to a given agent
+        self.v_index = v_index          #index of value to be satisfied
+        self.effect = self.do
+        self.counter = 0              #for histogramming purposes
+        self.additional_cost_to_build = 1000
+        
+    def satisfaction(self):
+        
+        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
+        self.counter += 1
+        
+    def precondition(self):
+        
+        return self.agent.shock
+    
+    def do(self):
+        
+        # build the flexible construction building
+        # FlexConstruction class should be fleshed out more. Still not sure exactly how to position things.
+        # Using construct function makes sense to me. Does this seem right?
+        flex = FlexConstruction(0, self.agent.model, self.agent.city.pos, self.agent, np.random.uniform(0,1)) #instantiate
+        self.agent.construct(flex, self.additional_cost_to_build)
+        
+        #satisfy values
+        self.satisfaction()
+        
         
 class Invest(Action):
     
@@ -243,6 +281,51 @@ class Invest(Action):
             return activity_to_return
     
 
+class RobustConstruction(Action):
+    
+    def __init__(self, name, agent, v_index):
+        '''
+        Robust Construction Robust construction (RC) is that which allows for redundancy. That
+        is, Robustness prioritizes multiple smaller units over one large unit in case of maintenance issues. A
+        construction decision is first made by identifying the amount of unmet need. Rather than focusing
+        on only the cheapest option, RC identifies, from the set of buildings which meet the projected
+        need, the largest subset.
+        '''
+        super().__init__(name, agent, v_index)
+        self.name = name
+        self.agent = agent            #tie it to a given agent
+        self.v_index = v_index          #index of value to be satisfied
+        self.effect = self.do
+        self.counter = 0              #for histogramming purposes
+        self.construction_budget = 1000
+        self.maintenance_budget = 1000
+        
+    def satisfaction(self):
+        
+        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
+        self.counter += 1
+        
+    def precondition(self):
+        
+        return self.agent.shock
+    
+    def do(self):
+        
+        #order azcs in terms of length_of_occupants apply maintenance to each azc until out of funds
+        
+        #gets a cost per azc from health + occupancy + activities + proximity
+        [azc.get_operational_cost() for azc in self.agent.azcs]
+        list_of_azcs = sorted([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
+        if len(list_of_azcs) > 0:
+            index = 0
+            cur_azc = list_of_azcs[index]
+            while self.maintenance_budget >= (100-cur_azc.health):
+                cur_azc.health = 100-cur_azc.health
+                self.maintenance_budget = self.maintenance_budget - cur_azc.health
+                index = index + 1
+                cur_azc = list_of_azcs[index]
+                
+        #still not sure about how to see which buildings reflect which needs
 class Segregate(Action):
         
     def __init__(self, name, agent, v_index):
