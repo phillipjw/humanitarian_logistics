@@ -142,8 +142,8 @@ class Newcomer(Agent):
                     self.model.Remove(self)
                 else:
                     self.ls = 'tr'
-                    wait_time = int(self.coa.city.social_housing.occupancy / self.coa.city.social_housing.capacity)
-                    self.tr_time = 7 + wait_time
+                    self.coa.city.housing_supply = self.coa.city.social_housing.occupancy / self.coa.city.social_housing.capacity
+                    self.tr_time = 7 + self.coa.city.housing_supply*360
                     self.coa.social_house(self)
                     country = self.model.country_list.index(self.coo)
                     self.model.country_success[country] += 1
