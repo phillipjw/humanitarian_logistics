@@ -36,6 +36,7 @@ class Newcomer(Agent):
         self.coo = country_of_origin
         self.specs = self.model.specs[self.coo] #specs contains bournoulli distribution params
         self.ext_time = 90 #duration of extended procedure
+        self.tr_time = None
         
         #draw first decision outcome
         self.first = bernoulli.rvs(self.specs[0], size = 1)[0] 
@@ -141,15 +142,24 @@ class Newcomer(Agent):
                     self.model.Remove(self)
                 else:
                     self.ls = 'tr'
+                    wait_time = int(self.coa.city.social_housing.occupancy / self.coa.city.social_housing.capacity)
+                    self.tr_time = 7 + wait_time
                     self.coa.social_house(self)
                     country = self.model.country_list.index(self.coo)
                     self.model.country_success[country] += 1
-                    self.model.Remove(self)      #temporary just to speed things up
-         
        
         # Agent Temporary Resident            
+
         elif self.ls == 'tr':
-            pass
+             self.tr_time -= 1
+             
+             if self.tr_time == 0:
+                 
+                 #add function to calculte QOL outcome
+                 
+                 self.model.Remove(self) 
+                 
+
         
     def step(self):
         
