@@ -87,6 +87,7 @@ class BuildFlex(Action):
         return self.agent.crisis and not self.agent.ta
     
     def evaluate_options(self):
+        
         average_duration = 50
         
         ####Gather Buildings####
@@ -109,6 +110,9 @@ class BuildFlex(Action):
         
         #find max value, need:cost ratio
         best = max(candidates, key = attrgetter('calculated_value'))
+        
+        #increase supply of available housing
+        self.agent.city.aux_supply += .25
 
         #return policy
         return best

@@ -23,8 +23,7 @@ class City(Agent):
         
         self.buildings = set([])
         self.pos = pos
-        self.social_housing = None
-        self.social_housing_supply = None
+        self.aux_supply = 0
         self.cost_of_bus_within_city = 4
         self.cost_of_bus_to_another_city = 18.50
         self.coa = None
@@ -32,7 +31,11 @@ class City(Agent):
         if self.big_city == True:
             self.resources = 100
         else:
-            self.resources = 50      
+            self.resources = 50   
+    
+    def get_supply(self):
+        
+        return  max(0,self.social_housing.occupancy/self.social_housing.capacity - self.aux_supply)
 
     def step(self):
         for i in self.buildings:
