@@ -162,7 +162,7 @@ class COA(Organization):
             elif action == 2:
                 current_action = activity.Segregate(self.action_names[action], self,action)
                 self.actions.add(current_action)
-                current_action = activity.BuildCentral(self.crisis_names[action], self,action)
+                current_action = activity.BuildRobust(self.crisis_names[action], self,action)
                 self.actions.add(current_action)
             elif action == 3:
                 current_action = activity.Integrate(self.action_names[action], self,action)

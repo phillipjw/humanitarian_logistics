@@ -42,7 +42,8 @@ class BuildCentral(Action):
         ####Gather Buildings####
         empties = [building for building in self.agent.city.buildings
                    if type(building) is organizations.Empty and
-                   self.agent.budget > building.convert_cost]
+                   self.agent.budget > building.convert_cost
+                   and building.proximity > .7] #only gathers cental ones
         
         #gather candidates
         candidates = [building for building in 
@@ -151,9 +152,11 @@ class BuildRobust(Action):
                  if type(x) is organizations.Hotel][0]
         
         candidates.append(hotel)
+        
+        adjusted_need = int(self.agent.need + .25*self.agent.need)
                       
         for building in candidates:
-            building.calc_cost(self.agent.need, average_duration)
+            building.calc_cost(adjusted_need, average_duration)
         
         #find max value, need:cost ratio
         best = max(candidates, key = attrgetter('calculated_value'))
