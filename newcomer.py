@@ -9,7 +9,7 @@ from organizations import AZC
 
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model,country_of_origin, pos):
+    def __init__(self, unique_id, model,country_of_origin):
         
         '''
         
@@ -24,12 +24,13 @@ class Newcomer(Agent):
         '''
         super().__init__(unique_id, model)
         
-        self.pos = pos
         self.coa = None
         
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
-                
+         
+        self.current_procedure_time = None
+        
         self.decision_time = 8 #28 days is the length of the general asylum procedure
         self.intake_time = 4 #time until transfer out of ter apel
               
@@ -49,50 +50,7 @@ class Newcomer(Agent):
         self.testing_activities = False
         self.budget = 0
         
-    def get_activities(self, day):
-        
-        '''
-        Given budget of newcomer, searches through reachable AZCs
-        and returns the activities doable there.
-        '''
-        
-        #Add default activities such as work once written
-        possible_activities = []
-        
-        #check if enough for intercity
-        if self.budget > self.coa.city.cost_of_bus_to_another_city:
-            
-            
-            azcs = [azc for azc in self.model.schedule.agents if
-                    type(azc) is AZC and not azc.ta and
-                    azc.activity_center != None and
-                    azc.activity_center.activities_available != None]
-            
-            
-        
-        #check if enough for intracity
-        elif self.budget > self.coa.city.cost_of_bus_within_city:
-            
-            
-            azcs = [azc for azc in self.coa.azcs if
-                    not azc.ta and azc.activity_center != None and
-                    azc.activity_center.activities_available != None]
-            
-        #local
-        else:
-            azcs = [self.loc]
-        
-        if len(azcs) > 0 and azcs[0].activity_center != None:
-            
-            #add activities in selected AZCs to possible activity list
-            for azc in azcs:
-                for activity in azc.activity_center.activities_available:
-                    #if occuring today
-                    if day in activity.frequency:
-                    
-                        possible_activities.append(activity)
-        
-        return possible_activities
+    
 
     def COA_Interaction(self):
         
@@ -101,93 +59,47 @@ class Newcomer(Agent):
         #EDP to AZ
         
         if self.ls == 'edp':
-            self.intake_time -= 1
+            self.current_procedure_time -= 1
             
-            if self.intake_time == 0:
+            if self.current_procedure_time == 0:
 
                 self.ls = 'as'
-                self.coa.policy(self)
-                self.coa.IND.set_time(self)
+                self.coa.house(self)
+                self.coa.ind.set_time(self)
+                self.current_procedure_time = self.loc.procedure_duration
         #AZ to TR
         elif self.ls == 'as':
-        
-            self.decision_time -= 1
-
-            if self.decision_time == 0:
-                if self.coa.IND.decide(True, self):
+            self.current_procedure_time -= 1
+            if self.current_procedure_time == 0:
+                if self.coa.ind.decide(True, self):
                     self.ls = 'tr'
-                    self.coa.social_house(self)
-                    country = self.model.country_list.index(self.coo)
-                    self.model.country_success[country] += 1
-                    self.model.Remove(self)
                 else:
-
                     self.ls = 'as_ext'
-                    self.coa.policy(self)
-                    self.coa.IND.set_time(self)
-
-                    #draws decision outcome from bernoulli distribution based on attributes
-                    self.second = bernoulli.rvs(self.specs[1], size = 1)[0]
-                    
-
-                        
-        # Extended Procedure to TR or Repatriation
-        
+                self.coa.house(self)
+                self.current_procedure_time = self.loc.procedure_duration
         elif self.ls == 'as_ext':
-            self.decision_time -= 1
-            
-            if self.decision_time == 0:
-            
-                if self.second == 0:
-                    self.model.Remove(self)
-                else:
+            self.current_procedure_time -= 1
+            if self.current_procedure_time == 0:
+                if self.coa.ind.decide(False, self):
                     self.ls = 'tr'
-                    self.tr_time = int(7 + self.coa.city.get_supply()*360)
-                    self.coa.social_house(self)
-                    country = self.model.country_list.index(self.coo)
-                    self.model.country_success[country] += 1
-       
-        # Agent Temporary Resident            
-
+                    self.current_procedure_time = self.loc.procedure_duration
+                else:
+                    print('out')
+                    self.model.Remove(self)
         elif self.ls == 'tr':
-             self.tr_time -= 1
-             
-             if self.tr_time == 0:
-                 
-                 #add function to calculte QOL outcome
-                 
-                 self.model.Remove(self) 
+            self.current_procedure_time -= 1
+            if self.current_procedure_time == 0:
+                print('made it')
+                self.model.Remove(self)
+                
+            
+                
+        
                  
 
         
     def step(self):
         
-        day = self.model.schedule.steps % 7
-        
-        #Allowance payment
-        if day == self.coa.newcomer_payday:
-            self.budget += self.coa.newcomer_allowance
-            
-        #select actions
-        possible_actions = self.get_activities(day)
-        
-        #prioritize values
-        priority = self.values.prioritize()
-        
-        #find action that corresponds to priority
-        current = None
-        for value in priority:
-            for action in possible_actions:
-                if value == action.v_index:
-                    current = action
-                    break
-            if current != None:
-                break
-        
-        #update v_sat
-        if current != None:
-            current.do(self)
+        self.COA_Interaction()
         
 
-        #COA interaction
-        self.COA_Interaction()
