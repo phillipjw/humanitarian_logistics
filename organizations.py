@@ -231,6 +231,10 @@ class AZC(Building):
         self.var_copy_ta = None
         self.shock_threshold = 4
         
+        #non-TA shock check
+        self.occupancies = []
+        self.period = 3
+        
     def online_variance_ta(self, building):
         
         '''
@@ -258,6 +262,19 @@ class AZC(Building):
         '''
         return self.occupancy / variance_ta > self.shock_threshold
     
+    def estimate(self, period):
+        '''
+        given a length of time period, looks at occupanices from one period ago
+        to calculate occupanices one period in the future
+        '''
+        
+        current = self.occupancies[-1]
+        last = self.occupancies[- period]
+        rate = (current - last) / period
+        estimation = rate*period + current
+        return estimation
+        
+    
     def step(self):
         
         #just gathe variance data for the first 100 steps
@@ -279,6 +296,13 @@ class AZC(Building):
                     else:
                         self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                         print('noshock')
+        else:
+            if self.model.schedule.steps > 100:
+                if self.model.schedule.steps % self.coa.assessment_frequency == 0:
+                    self.occupancies.append(self.occupancy)
+                    if len(self.occupancies) > self.period:
+                        print(self.estimate(self.period))
+                    
                     
 
 
