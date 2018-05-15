@@ -6,7 +6,7 @@ import numpy as np
 from viz import AZC_Viz
 from mesa.datacollection import DataCollector
 from Values import Values
-
+from fractions import Fraction
 import activity
 
 
@@ -60,6 +60,10 @@ class COA(Organization):
         self.openness_to_change = 20
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change)
+        self.model.schedule.add(self)
+        
+        self.assessment_frequency = int(365/(self.openness_to_change*52/100))
+        
         
     def find_house(self, newcomer):
         '''finds min occupancy building for a given legal status
@@ -113,7 +117,8 @@ class COA(Organization):
       
     
     def step(self):
-        print(self.occupancy / self.capacity)
+        
+        pass
         
         
 
@@ -216,10 +221,65 @@ class AZC(Building):
         self.coa.pos = self.pos    
         self.model.schedule.add(self)
         self.model.grid.place_agent(self,self.pos)
+        
+        
+        #ter apel shock check
+        self.sum_ta = 0 
+        self.squared_ta =  0 
+        self.counter_ta = 1
+        self.variance_ta = None
+        self.var_copy_ta = None
+        self.shock_threshold = 4
+        
+    def online_variance_ta(self, building):
+        
+        '''
+        Calculates online variance for anomoly detection
+        '''
+        
+        self.counter_ta += 1
+        
+        sum_ta = self.sum_ta
+        squared_ta = self.squared_ta
+        variance_ta = self.variance_ta
+        
+        sum_ta += building.occupancy
+        squared_ta += building.occupancy**2
+        variance_ta = np.sqrt((self.counter_ta * 
+                                    self.squared_ta - 
+                                    self.sum_ta**2) / 
+                                    (self.counter_ta*(self.counter_ta - 1)))
+        print(variance_ta)
+        return (variance_ta, squared_ta, sum_ta) 
+        
+    
+    def shock_check(self,variance_ta):
+        '''checks if current amount of arrivals is abnormal
+        '''
+        return self.occupancy / variance_ta > self.shock_threshold
+    
     def step(self):
         
-        super().step()
-        pass
+        #just gathe variance data for the first 100 steps
+        if self.modality == 'COL':
+            if self.model.schedule.steps < 100:
+                self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self)             
+            #then start checking for anomalies
+            else:
+                
+                
+                if self.model.schedule.steps % self.coa.assessment_frequency == 0:
+                    
+                    #checks variance
+                    variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
+                    if self.shock_check(variance_ta):
+                        print(variance_ta)
+                        print('shock')
+                    #if no anomoly add to normal flow distribution    
+                    else:
+                        self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
+                        print('noshock')
+                    
 
 
          

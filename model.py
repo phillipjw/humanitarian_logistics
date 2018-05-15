@@ -117,7 +117,7 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        for i in range(self.in_rate):
+        for i in range(20):
             self.addNewcomer()
             
     

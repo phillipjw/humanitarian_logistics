@@ -86,12 +86,10 @@ class Newcomer(Agent):
                     self.ls = 'tr'
                     self.current_procedure_time = self.loc.procedure_duration
                 else:
-                    print('out')
                     self.model.Remove(self)
         elif self.ls == 'tr':
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:
-                print('made it')
                 self.model.Remove(self)
                 
             
