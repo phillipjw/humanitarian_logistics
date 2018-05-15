@@ -1,7 +1,7 @@
 import mesa
 import csv
 # model.py
-from mesa.space import MultiGrid
+from mesa.space import ContinuousSpace
 from mesa import Agent, Model
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
@@ -31,35 +31,41 @@ class HumanitarianLogistics(Model):
         #canvas info
         self.width = width
         self.height = height
+        self.number_pols = num_pols
+
+        
+
 
 
         #sim boilerplate
-        self.grid = MultiGrid(width, height, True)
+        self.grid = ContinuousSpace(width, height, True)
         self.schedule = RandomActivation(self)
         self.running = True
                 
         ####Generate COL
-        COL = AZC(0, self, {'edp'})
+        
         COL_coa = COA(0,self, None)
-        COL.coa = COL_coa
+        COL = AZC(0, self, {'edp'}, COL_coa, 'COL')
         COL.modality = 'COL'
         self.coa_ref = COL_coa
         self.ta = COL
         COL.procedure_duration = 2
-        self.schedule.add(COL)
+        
+        self.space_per_city = int(self.width / self.number_pols)
+        self.pol_to_azc_ratio = int(COL.coa.conservatism/10)
+        self.num_azc = self.number_pols * self.pol_to_azc_ratio
+        self.space_per_azc = int(self.width / self.num_azc)
+        
         
         #### Generate POLS
-        self.number_pols = num_pols
         pol_op_capacity = .75
         pol_size = 400
         pol_duration = 4
-        for i in range(self.number_pols):
+        for i in range(1,self.number_pols+1):
             city = City(i, self, None)
             POL_COA = COA(i, self, city)
-            POL = AZC(i, self, {'as'})
+            POL = AZC(i, self, {'as'}, POL_COA, 'POL')
             POL.procedure_duration = pol_duration
-            POL.coa = POL_COA
-            POL.modality = 'POL'
             POL.operating_capacity = pol_op_capacity
             self.schedule.add(POL)
             ind = IND(i, self, None, POL_COA)
@@ -68,14 +74,11 @@ class HumanitarianLogistics(Model):
     
         
         ##### Generate AZC
-        self.pol_to_azc_ratio = int(COL.coa.conservatism/10)
-        for i in range(self.number_pols*self.pol_to_azc_ratio):
+        for i in range(1,self.number_pols*self.pol_to_azc_ratio+1):
             city = City(i, self, None)
             AZC_COA = COA(i, self, city)
-            azc = AZC(i, self, {'as_ext','tr'})
-            azc.modality = 'AZC'
+            azc = AZC(i, self, {'as_ext','tr'}, AZC_COA,'AZC')
             azc.procedure_duration = 100
-            azc.coa = AZC_COA
             self.schedule.add(azc)
             ind = IND(i, self, None, AZC_COA)
             self.schedule.add(ind)
@@ -114,7 +117,7 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        for i in range(2):
+        for i in range(self.in_rate):
             self.addNewcomer()
             
     
@@ -137,8 +140,7 @@ class HumanitarianLogistics(Model):
         
         #gen NC attributes
         self.nc_count += 1
-        a = Newcomer(self.nc_count, self, self.country_distribution())
-        a.coa = self.ta.coa
+        a = Newcomer(self.nc_count, self, self.country_distribution(), self.ta.coa)
         self.schedule.add(a)
         #house in COL
         a.loc = self.ta

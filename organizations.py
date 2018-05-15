@@ -51,11 +51,12 @@ class COA(Organization):
         
         self.azcs = set([])
         self.ind = None
+        self.pos = None
         
         self.newcomer_payday = 0
         self.self_enhancement = 20
         self.self_transcendence = 70     
-        self.conservatism = 60
+        self.conservatism = 30
         self.openness_to_change = 20
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change)
@@ -112,7 +113,8 @@ class COA(Organization):
       
     
     def step(self):
-        pass
+        print(self.occupancy / self.capacity)
+        
         
 
         
@@ -142,6 +144,7 @@ class IND(Organization):
         self.min_time = 8
         self.coa = coa
         self.city = city
+        self.pos = self.coa.pos
         
     def set_time(self, newcomer):
         if newcomer.ls == 'as':
@@ -180,18 +183,39 @@ class Building(Agent):
 
 
 class AZC(Building):
-    def __init__(self, unique_id, model, occupant_type):
+    def __init__(self, unique_id, model, occupant_type,coa, modality):
         super().__init__(unique_id, model)
         
         self.capacity = 400
         self.occupants = set([])
         self.occupant_type = occupant_type
         self.procedure_duration = None
-        self.coa = None
+        self.coa = coa
         self.operating_capacity = None
         self.occupancy = 0
-        self.modality = None
+        self.modality = modality
+       
 
+        if self.modality == 'POL':
+            
+
+            self.pos = (unique_id*self.model.space_per_city + .25*(self.model.space_per_city), int(self.model.height / 3))
+            
+            
+        elif self.modality == 'AZC':
+            
+            orientation_x = int(self.model.space_per_azc * unique_id + self.model.space_per_azc)
+
+            self.pos = (orientation_x, int(self.model.height / 2))
+        elif self.modality == 'COL':
+            
+            self.pos = (self.model.width / 2, self.model.height - 10)
+
+            
+            
+        self.coa.pos = self.pos    
+        self.model.schedule.add(self)
+        self.model.grid.place_agent(self,self.pos)
     def step(self):
         
         super().step()

@@ -9,7 +9,7 @@ from organizations import AZC
 
 class Newcomer(Agent):
     
-    def __init__(self, unique_id, model,country_of_origin):
+    def __init__(self, unique_id, model,country_of_origin,coa):
         
         '''
         
@@ -24,10 +24,12 @@ class Newcomer(Agent):
         '''
         super().__init__(unique_id, model)
         
-        self.coa = None
+        self.coa = coa
+        self.pos = self.coa.pos
         
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
+        
          
         self.current_procedure_time = None
         

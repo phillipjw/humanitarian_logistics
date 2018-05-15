@@ -1,29 +1,48 @@
 # server.py
 from mesa.visualization.modules import CanvasGrid
 from mesa.visualization.ModularVisualization import ModularServer
-from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty, AZC_Viz, COA
+from model import HumanitarianLogistics, AZC, Newcomer, Hotel, Empty, AZC_Viz, COA, IND
 from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from mesa.visualization.ModularVisualization import VisualizationElement
+from SimpleContinuousModule import SimpleCanvas
+#from mesa.visualization.modules.SimpleContinuousModule import SimpleCanvas
 import numpy as np
 
-canvas_width = 600
-canvas_height = 400
-num_pol = 2
+canvas_width = 400
+canvas_height = 600
+num_pol = 3
 
-grid_width = int(canvas_width / 4)
-grid_height = int(canvas_height / 4)
+azc_display_size = 20
 
 
 
 def agent_portrayal(agent):
-    
     if agent is None:
         return
         
     portrayal = {}
-
+    
+    if type(agent) is IND:
         
+        portrayal['Shape'] = "circle"
+        portrayal['Filled'] = 'False'
+        portrayal['Layer'] = 0
+        portrayal['Color'] = 'blue'
+        portrayal['r'] = azc_display_size
+     
+    elif type(agent) is AZC:
+        
+        portrayal['Shape'] = "circle"
+        portrayal['Filled'] = 'False'
+        portrayal['Layer'] = 1
+        portrayal['Color'] = 'red'
+        portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
+    
+   
+        
+
+      
         
     
 
@@ -31,7 +50,9 @@ def agent_portrayal(agent):
         
     return portrayal
 
-grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_height)
+continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
+
+#grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_height)
 
 
 
@@ -41,7 +62,7 @@ grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [grid],
+                       [continuous_canvas],
                        "Humanitarian Logistics",
-                       {"width": grid_width, "height": grid_height, "num_pols": num_pol})
+                       {"width": canvas_width, "height": canvas_height, "num_pols": num_pol})
 
