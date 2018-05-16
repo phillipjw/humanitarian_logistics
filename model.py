@@ -116,6 +116,19 @@ class HumanitarianLogistics(Model):
                 self.country_shock_dist.append(row['ShockDist'])
                 self.country_list.append(row['Country'])
                 self.country_multinomial.append(row['Multinomial'])
+                
+        self.country_count = np.zeros(len(self.country_list)) #keeps track of how many applicants from each country
+        self.country_success = np.zeros(len(self.country_list))
+        self.current_country_index = -1
+        
+        #records success rates of each country of origin using current_country_index
+        #which is manipulated in sr_country
+        sr_functions = {}
+        for i in range(0, len(self.country_list)):
+            self.current_country_index = i
+            sr_functions[self.country_list[self.current_country_index]] = sr_country
+
+        self.sr = DataCollector(model_reporters = sr_functions)
         
         
         
@@ -125,6 +138,7 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
+        self.sr.collect(self)
         
         if self.shock:
             print('shock')
@@ -181,6 +195,7 @@ class HumanitarianLogistics(Model):
         a.loc = self.ta
         self.ta.occupants.add(a)
         self.ta.occupancy += 1
+        self.country_count[self.country_list.index(a.coo)] += 1
         
         a.current_procedure_time = a.loc.procedure_duration
         
@@ -191,6 +206,24 @@ class HumanitarianLogistics(Model):
 
         #remove from time n space
         self.schedule.remove(agent)
+    
+def sr_country(model):
+
+    model.current_country_index = model.current_country_index+1
+    if model.current_country_index >= len(model.country_list):
+        model.current_country_index = 0
+    
+    return success_counter(model,model.country_list[model.current_country_index])
+
+def success_counter(model,country):
+
+    '''
+    Tabulates how many of a given country get TR
+    '''
+    country = model.country_list.index(country)
+    status = model.country_success[country]
+
+    return 1.0*status / (model.country_count[country] + 1)
         
 
 

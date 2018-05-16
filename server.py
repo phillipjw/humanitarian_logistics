@@ -39,16 +39,17 @@ def agent_portrayal(agent):
         portrayal['Color'] = 'red'
         portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
     
-   
-        
-
-      
-        
-    
-
-
-        
     return portrayal
+
+chart_suces = ChartModule([{'Label' : 'Syria',
+                            'Color' : 'blue'},
+                          {'Label' : 'Iraq',
+                            'Color' : 'red'},
+                          {'Label' : 'Eritrea',
+                            'Color' : 'black'},
+                          {'Label' : 'Afghanistan',
+                            'Color' : 'yellow'},],
+                            data_collector_name = 'sr')
 
 continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
 
@@ -62,7 +63,7 @@ continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas],
+                       [continuous_canvas, chart_suces],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol})
 

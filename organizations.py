@@ -150,6 +150,10 @@ class IND(Organization):
         self.coa = coa
         self.city = city
         self.pos = self.coa.pos
+        self.threshold_first = .85
+        self.threshold_second = 1.2
+        self.number_asylum_interviews = 2
+        self.case_error_rate = .05
         
     def set_time(self, newcomer):
         if newcomer.ls == 'as':
@@ -161,13 +165,25 @@ class IND(Organization):
         elif newcomer.ls == 'tr':
             newcomer.decision_time = 100
     
-    def decide(self, first, newcomer):
+    def decide(self, first, newcomer, dq):
         
-        
-        if first:
-            return newcomer.first == 1
+        if dq:
+            if first:
+                return newcomer.doc_quality > self.threshold_first
+            else:
+                return newcomer.doc_quality > self.threshold_second
         else:
-            return newcomer.second == 1
+            if first:
+                return newcomer.first == 1
+            else:
+                return newcomer.second == 1
+    
+    def interview(self, newcomer):
+        '''
+        increase newcomer DQ by some amount
+        '''
+        country_dependent_multiplier = np.random.normal(newcomer.model.specs[newcomer.coo][0], 1-newcomer.model.specs[newcomer.coo][0])
+        newcomer.doc_quality += (self.threshold_first / self.number_asylum_interviews)*country_dependent_multiplier
         
     
                            
@@ -253,7 +269,6 @@ class AZC(Building):
                                     self.squared_ta - 
                                     self.sum_ta**2) / 
                                     (self.counter_ta*(self.counter_ta - 1)))
-        print(variance_ta)
         return (variance_ta, squared_ta, sum_ta) 
         
     

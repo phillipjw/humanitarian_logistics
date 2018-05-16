@@ -29,8 +29,6 @@ class Newcomer(Agent):
         
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
-        
-         
         self.current_procedure_time = None
         
         self.decision_time = 8 #28 days is the length of the general asylum procedure
@@ -48,9 +46,12 @@ class Newcomer(Agent):
                                   
         # new comer values
         self.values = Values(10, 70, 30, 70, 50)
-             
         self.testing_activities = False
         self.budget = 0
+        
+        #measure of quality o
+        self.doc_quality = 0
+        self.case_quality = 0
         
     
 
@@ -72,9 +73,17 @@ class Newcomer(Agent):
         #AZ to TR
         elif self.ls == 'as':
             self.current_procedure_time -= 1
+            
+            #increase DQ
+            
+            
             if self.current_procedure_time == 0:
-                if self.coa.ind.decide(True, self):
+                self.coa.ind.interview(self)
+                self.coa.ind.interview(self)
+                if self.coa.ind.decide(True, self, True):
                     self.ls = 'tr'
+                    self.model.country_success[self.model.country_list.index(self.coo)] += 1
+
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -82,8 +91,10 @@ class Newcomer(Agent):
         elif self.ls == 'as_ext':
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:
-                if self.coa.ind.decide(False, self):
+                self.coa.ind.interview(self)
+                if self.coa.ind.decide(False, self, True):
                     self.ls = 'tr'
+                    self.model.country_success[self.model.country_list.index(self.coo)] += 1
                     self.current_procedure_time = self.loc.procedure_duration
                 else:
                     self.model.Remove(self)
