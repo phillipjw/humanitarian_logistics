@@ -85,8 +85,10 @@ class HumanitarianLogistics(Model):
             AZC_COA.ind = ind
             
         ####flow in
-        self.in_rate = int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
-        self.nc_count = 0      
+        self.in_rate = 30 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
+        self.nc_count = 0  
+        self.var = 10
+        self.freq = 60
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -117,8 +119,11 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        for i in range(20):
+        current = int(self.var*(np.sin((1/self.freq)*self.schedule.steps)) + self.in_rate)
+        for i in range(current):
             self.addNewcomer()
+    
+        
             
     
     def country_distribution(self):
