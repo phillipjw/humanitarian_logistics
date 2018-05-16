@@ -32,7 +32,13 @@ class HumanitarianLogistics(Model):
         self.width = width
         self.height = height
         self.number_pols = num_pols
-
+        
+        ##### Shock
+        self.shock_duration = 100
+        self.shock_position = 0
+        self.shock_period = 200
+        self.shock = False
+        self.shock_rate = 100
         
 
 
@@ -119,9 +125,33 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        current = int(self.var*(np.sin((1/self.freq)*self.schedule.steps)) + self.in_rate)
-        for i in range(current):
-            self.addNewcomer()
+        
+        if self.shock:
+            print('shock')
+            shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
+            #add increasing amount of newcomers
+            for i in range(shock_in):
+                self.addNewcomer()
+
+            self.shock_position += 1
+            #reset shock conditions
+            if self.shock_position == self.shock_duration:
+                self.shock = False
+                self.shock_position = 0
+                print('shock_over')
+            
+            
+            
+        else: 
+            
+            #check for shock
+            if self.schedule.steps % self.shock_period == 0:
+                self.shock = True
+            
+            #if no shock, do normal
+            self.current = int(self.var*(np.sin((1/self.freq)*self.schedule.steps)) + self.in_rate)
+            for i in range(self.current):
+                self.addNewcomer()
     
         
             

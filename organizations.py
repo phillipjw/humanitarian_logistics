@@ -290,19 +290,16 @@ class AZC(Building):
                     #checks variance
                     variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
                     if self.shock_check(variance_ta):
-                        print(variance_ta)
-                        print('shock')
-                    #if no anomoly add to normal flow distribution    
+                    #if no anomoly add to normal flow distribution 
+                        pass
                     else:
                         self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
-                        print('noshock')
         else:
             if self.model.schedule.steps > 100:
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
                     self.occupancies.append(self.occupancy)
                     if len(self.occupancies) > self.period:
-                        print(self.estimate(self.period))
-                    
+                        pass
                     
 
 
