@@ -70,6 +70,16 @@ class COA(Organization):
         
         self.checkin = activity.Checkin('Checkin', self, 3)
         
+        self.current_policy = self.find_house
+    
+    def min_house(self, newcomer):
+        '''finds min occupancy building regardless of legal status
+        '''
+        candidates = [building for building in self.model.schedule.agents if
+                    type(building) is AZC and building.modality != 'COL']
+        min_type = min(candidates, key = attrgetter('occupancy'))
+        return min_type
+        
         
     def find_house(self, newcomer):
         '''finds min occupancy building for a given legal status
@@ -108,7 +118,7 @@ class COA(Organization):
             
         newcomer.loc.occupants.remove(newcomer)
         newcomer.loc.occupancy -= 1
-        destination = self.find_house(newcomer)
+        destination = self.current_policy(newcomer)
         destination.occupants.add(newcomer)
 
         destination.occupancy += 1 #update occupancy 
@@ -130,13 +140,7 @@ class COA(Organization):
         if day % self.staff == 0:
             self.checkin.do()
         
-        
-        
 
-        
-
-        
-            
         
 class NGO(Organization):
     
@@ -230,7 +234,7 @@ class AZC(Building):
         self.modality = modality
         self.state = 'Normal'
         self.shock_state = None
-        self.max_capacity = .90
+        self.max_capacity = .75
        
         #location setting, currently buggy
         if self.modality == 'POL':
@@ -317,9 +321,17 @@ class AZC(Building):
     
     def set_state(self, state):
         for azc in self.model.schedule.agents:
-                            if type(azc) is AZC:
-                                azc.state = state 
-    
+            if type(azc) is AZC:
+                azc.state = state 
+            
+    def set_policy(self):
+        for azc in self.model.schedule.agents:
+            if type(azc) is AZC:
+                if azc.shock_state == 'Problematic':
+                    azc.coa.current_policy = azc.coa.min_house
+                elif azc.shock_state == 'Manageable':
+                    azc.coa.current_policy = azc.coa.find_house
+                
     def get_state(self):
         #just gathe variance data for the first 100 steps
         if self.modality == 'COL':
@@ -336,6 +348,7 @@ class AZC(Building):
                     else:
                         self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
                         self.set_state('Normal')
+                        self.set_policy()
                         print('shock-over')
             
                     
@@ -350,10 +363,11 @@ class AZC(Building):
                     if estimation > self.capacity*self.max_capacity:
                         self.shock_state = 'Problematic'
                         print('problematic')
-                        #change policy                        
+                        #change policy   
+                        self.set_policy()
                     else: 
                         self.shock_state = 'Manageable'
-                        print('manaeable')
+                        self.set_policy()
                 if self.shock_state == 'Problematic':
                     
                     #check for crisis

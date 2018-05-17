@@ -131,7 +131,8 @@ class Newcomer(Agent):
         
         #value decay
         self.values.decay_val()
-                
+        
+        
         #update procedings 
         self.COA_Interaction()
         
