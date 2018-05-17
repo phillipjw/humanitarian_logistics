@@ -11,7 +11,7 @@ import numpy as np
 
 class Values():
     
-    def __init__(self, decay, se=0, st=0, c=0, otc=0):
+    def __init__(self, decay, se, st, c, otc, agent):
         
         # SE corresponds to an activity that provides betterment of one’s 
 	     # own attributes through either enhancement
@@ -35,10 +35,17 @@ class Values():
         #val_decay
         self.val_decay = np.repeat(decay, 4)
         
+        #degree of unsatisfacation
+        self.health = 1 - (np.sum(self.v_tau - self.val_t) / np.sum(self.v_tau))
+        
+        self.agent = agent
+        
         
     def decay_val(self):
         
-        self.val_t -= self.val_decay
+        self.agent.values.val_t = np.maximum(np.repeat(0,len(self.val_t)),
+                                             self.agent.values.val_t - self.val_decay)
+        self.agent.values.health = 1 - (np.sum(self.v_tau - self.val_t) / np.sum(self.v_tau))
         
     def prioritize(self):
         '''

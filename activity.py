@@ -21,6 +21,32 @@ class Action():
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
+class Checkin(Action):
+    
+    def __init__(self, name, agent, v_index):
+        super().__init__(name, agent, v_index)
+        
+        self.healthy_threshold = .5
+        self.satisfaction = np.array([])
+        
+    def precondition(self):
+        '''
+        That coa has some staff at all
+        '''
+        return self.agent.staff > 0
+    
+    def do(self):
+        '''
+        checks health of residents, if below threshold satisfy conservatism (ie security)
+        '''
+        super().do()
+        #iterate through newcomers
+        for azc in self.agent.azcs:
+            for newcomer in azc.occupants:
+                if newcomer.values.health < self.healthy_threshold:
+                    
+                    #placeholder value satisfaction
+                    newcomer.values.val_t += np.array([50,50,50,50])
         
 
 class BuildCentral(Action):
@@ -194,16 +220,13 @@ class RequestFunds(Action):
         self.counter = 0              #for histogramming purposes
         self.request_amount = 10000
         
-    def satisfaction(self):
-        
-        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
-        self.counter += 1
-        
     def precondition(self):
         
         return self.agent.shock
     
     def do(self):
+        
+        super().do()
         
         #increase budget
         self.agent.budget += self.request_amount
@@ -230,10 +253,7 @@ class Consolidate(Action):
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
         
-    def satisfaction(self):
-        
-        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
-        self.counter += 1
+
         
     def precondition(self):
         
@@ -246,7 +266,7 @@ class Consolidate(Action):
                                              self.agent.azcs]) > 0
     
     def do(self):
-        
+        super().do()
         #this is placeholder and should go outisde the function
         if not self.precondition():
             print('Cannot Consolidate')
@@ -285,8 +305,7 @@ class Consolidate(Action):
                         except TypeError:
                             print('Typerror,',len(current.occupants))
                         
-        #update values
-        self.satisfaction()
+
         
 class Invest(Action):
     
@@ -306,10 +325,7 @@ class Invest(Action):
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
         
-    def satisfaction(self):
-        
-        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
-        self.counter += 1
+
         
     def precondition(self):
         
@@ -328,6 +344,8 @@ class Invest(Action):
         return shock and finances
     
     def do(self):
+        
+        super().do()
         
     #During a non-shock period, COA satisfies ST by investing in the quality of life of its
     #residents by constructing an activity center (AC). The AC has a cost significantly less than an
@@ -354,7 +372,6 @@ class Invest(Action):
              num_activity_centers_added = num_activity_centers_added + 1
 
                 
-        self.satisfaction()
 
 class Segregate(Action):
         
@@ -377,10 +394,6 @@ class Segregate(Action):
                                        newcomer.ls == 'as_ext' and
                                        newcomer.second == 0]
         
-    def satisfaction(self):
-        
-        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
-        self.counter += 1
         
     def precondition(self):
         
@@ -389,6 +402,7 @@ class Segregate(Action):
         
     
     def do(self):
+        super().do()
         cheapest_azc_to_maintain = None
         
         #gets a cost per azc from health + occupancy + activities + proximity
@@ -411,7 +425,6 @@ class Segregate(Action):
                     self.agent.newcomers.add(newcomer)
                 
            
-        self.satisfaction()
         
 class Integrate(Action):
         
@@ -431,10 +444,7 @@ class Integrate(Action):
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
         
-    def satisfaction(self):
-        
-        self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
-        self.counter += 1
+
         
     def precondition(self):
         
@@ -442,6 +452,7 @@ class Integrate(Action):
         return not self.agent.crisis
     
     def do(self):
+        super().do()
         between_city_travel = True # we will want to parameterize this somehow
         travel_voucher = self.agent.city.cost_of_bus_within_city 
         if not between_city_travel:
@@ -451,7 +462,6 @@ class Integrate(Action):
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
                     
-        self.satisfaction() 
         
 
         
@@ -515,14 +525,11 @@ class Football(Activity):
         self.frequency = frequency
         
         self.v_index = v_index
-         
-    def satisfaction(self, agent):
         
-        super().satisfaction(agent)
     
     def do(self, agent):
         
-        super().satisfaction(agent)
+        super().do()
         
         #possible additions: SOCIALIZE or HEALTH++
         

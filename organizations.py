@@ -59,10 +59,16 @@ class COA(Organization):
         self.conservatism = 30
         self.openness_to_change = 20
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
-                             self.conservatism, self.openness_to_change)
+                             self.conservatism, self.openness_to_change,self)
         self.model.schedule.add(self)
         
         self.assessment_frequency = int(365/(self.openness_to_change*52/100))
+        self.staff =  int(365/(self.self_trascendence*52/100))
+        
+        
+        self.staff = 100
+        
+        self.checkin = activity.Checkin('Checkin', self, 3)
         
         
     def find_house(self, newcomer):
@@ -118,7 +124,12 @@ class COA(Organization):
     
     def step(self):
         
-        pass
+        day = self.model.schedule.steps
+        
+        #Obligations - Checkins
+        if day % self.staff == 0:
+            self.checkin.do()
+        
         
         
 
@@ -212,6 +223,7 @@ class AZC(Building):
         self.occupant_type = occupant_type
         self.procedure_duration = None
         self.coa = coa
+        self.coa.azcs.add(self)
         self.operating_capacity = None
         self.occupancy = 0
         self.modality = modality

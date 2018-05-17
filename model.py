@@ -39,6 +39,7 @@ class HumanitarianLogistics(Model):
         self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
+        self.shock_flag = False #flag to run sim without shocks
         
 
 
@@ -95,6 +96,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
+        self.dq = False #flag for which type of IND decision to make
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -130,6 +132,11 @@ class HumanitarianLogistics(Model):
 
         self.sr = DataCollector(model_reporters = sr_functions)
         
+        self.confusionMatrix = {'TP': 0,
+                                'TN': 0,
+                                'FP': 0,
+                                'FN': 0}
+        
         
         
 
@@ -140,7 +147,7 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         self.sr.collect(self)
         
-        if self.shock:
+        if self.shock_flag and self.shock:
             print('shock')
             shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
             #add increasing amount of newcomers

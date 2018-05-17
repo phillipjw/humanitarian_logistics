@@ -45,7 +45,7 @@ class Newcomer(Agent):
         self.second = None   
                                   
         # new comer values
-        self.values = Values(10, 70, 30, 70, 50)
+        self.values = Values(10, 70, 30, 70, 50, self)
         self.testing_activities = False
         self.budget = 0
         
@@ -53,9 +53,11 @@ class Newcomer(Agent):
         self.doc_quality = 0
         self.case_quality = 0
         
+          
     
 
     def COA_Interaction(self):
+        
         
         #decision procedure for interacting with COA
         
@@ -80,10 +82,13 @@ class Newcomer(Agent):
             if self.current_procedure_time == 0:
                 self.coa.ind.interview(self)
                 self.coa.ind.interview(self)
-                if self.coa.ind.decide(True, self, True):
+                if self.coa.ind.decide(True, self, self.model.dq):
                     self.ls = 'tr'
                     self.model.country_success[self.model.country_list.index(self.coo)] += 1
-
+                    if self.first == 1:
+                        self.model.confusionMatrix['TP'] += 1
+                    else:
+                        self.model.confusionMatrix['FP'] += 1
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -92,11 +97,24 @@ class Newcomer(Agent):
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:
                 self.coa.ind.interview(self)
-                if self.coa.ind.decide(False, self, True):
+                
+                #if positive decision
+                if self.coa.ind.decide(False, self, self.model.dq):
                     self.ls = 'tr'
                     self.model.country_success[self.model.country_list.index(self.coo)] += 1
                     self.current_procedure_time = self.loc.procedure_duration
+                    if self.second == 1:
+                        self.model.confusionMatrix['TP'] += 1
+                    else:
+                        self.model.confusionMatrix['FP'] += 1
+                
+                #if negative decision
                 else:
+                    if self.second == 0:
+                        self.model.confusionMatrix['TN'] += 1
+                    else:
+    
+                        self.model.confusionMatrix['FN'] += 1
                     self.model.Remove(self)
         elif self.ls == 'tr':
             self.current_procedure_time -= 1
@@ -111,6 +129,12 @@ class Newcomer(Agent):
         
     def step(self):
         
+        #value decay
+        self.values.decay_val()
+        
+        print(self.values.health)
+        
+        #update procedings 
         self.COA_Interaction()
         
 
