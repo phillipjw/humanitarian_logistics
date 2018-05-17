@@ -358,7 +358,7 @@ class AZC(Building):
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
                     self.occupancies.append(self.occupancy)
                 if self.state == 'Shock':
-                    estimation = self.estimate(max(len(self.occupancies), 3))                       
+                    estimation = self.estimate(min(len(self.occupancies), 6))                       
                         
                     if estimation > self.capacity*self.max_capacity:
                         self.shock_state = 'Problematic'
@@ -367,12 +367,23 @@ class AZC(Building):
                         self.set_policy()
                     else: 
                         self.shock_state = 'Manageable'
+                        #change policy
                         self.set_policy()
+                
+                #Crisis check
                 if self.shock_state == 'Problematic':
+                    self.crisis_check()
                     
-                    #check for crisis
-                    pass
                     
+    def crisis_check(self):
+        
+        total_capacity = sum([azc.capacity for azc in self.model.schedule.agents
+                          if type(azc) is AZC and azc.modality != 'COL'])
+            
+        total_estimated_occupancies = sum([azc.estimate(min(len(self.occupancies), 6)) for
+                                       azc in self.model.schedule.agents if
+                                       type(azc) is AZC and azc.modality != 'COL'])
+        print(total_capacity, total_estimated_occupancies)
     
     def step(self):
         
