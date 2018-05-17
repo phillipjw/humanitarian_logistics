@@ -63,7 +63,7 @@ class COA(Organization):
         self.model.schedule.add(self)
         
         self.assessment_frequency = int(365/(self.openness_to_change*52/100))
-        self.staff =  int(365/(self.self_trascendence*52/100))
+        self.staff =  int(365/(self.self_transcendence*52/100))
         
         
         self.staff = 100
@@ -159,6 +159,7 @@ class IND(Organization):
         self.max_time = 270
         self.min_time = 8
         self.coa = coa
+        self.coa.ind = self
         self.city = city
         self.pos = self.coa.pos
         self.threshold_first = .85
@@ -227,21 +228,17 @@ class AZC(Building):
         self.operating_capacity = None
         self.occupancy = 0
         self.modality = modality
+        self.state = 'Normal'
+        self.shock_state = None
+        self.max_capacity = .90
        
-
+        #location setting, currently buggy
         if self.modality == 'POL':
-            
-
             self.pos = (unique_id*self.model.space_per_city + .25*(self.model.space_per_city), int(self.model.height / 3))
-            
-            
         elif self.modality == 'AZC':
-            
             orientation_x = int(self.model.space_per_azc * unique_id + self.model.space_per_azc)
-
             self.pos = (orientation_x, int(self.model.height / 2))
-        elif self.modality == 'COL':
-            
+        elif self.modality == 'COL':      
             self.pos = (self.model.width / 2, self.model.height - 10)
 
             
@@ -262,6 +259,23 @@ class AZC(Building):
         #non-TA shock check
         self.occupancies = []
         self.period = 3
+        
+        
+        #####Actions
+        #####ACTIONS######
+        self.actions = set([])
+        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
+        
+        #add actions to action set
+        for action in range(len(self.action_names)):
+            
+            #make action w a name, actor, and index of value to be satisfied
+
+            
+            if action == 1:
+                current_action = activity.Invest(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            
         
     def online_variance_ta(self, building):
         
@@ -300,33 +314,61 @@ class AZC(Building):
         rate = (current - last) / period
         estimation = rate*period + current
         return estimation
-        
     
-    def step(self):
-        
+    def set_state(self, state):
+        for azc in self.model.schedule.agents:
+                            if type(azc) is AZC:
+                                azc.state = state 
+    
+    def get_state(self):
         #just gathe variance data for the first 100 steps
         if self.modality == 'COL':
             if self.model.schedule.steps < 100:
                 self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self)             
-            #then start checking for anomalies
             else:
-                
-                
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
-                    
-                    #checks variance
+                    #Check for Shock
                     variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
                     if self.shock_check(variance_ta):
+                        print('shock')
+                        self.set_state('Shock')
                     #if no anomoly add to normal flow distribution 
-                        pass
                     else:
                         self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
+                        self.set_state('Normal')
+                        print('shock-over')
+            
+                    
+        ###If not COL Just report for estimation purposes.
         else:
-            if self.model.schedule.steps > 100:
+            if self.model.schedule.steps > 50:
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
                     self.occupancies.append(self.occupancy)
-                    if len(self.occupancies) > self.period:
-                        pass
+                if self.state == 'Shock':
+                    estimation = self.estimate(max(len(self.occupancies), 3))                       
+                        
+                    if estimation > self.capacity*self.max_capacity:
+                        self.shock_state = 'Problematic'
+                        print('problematic')
+                        #change policy                        
+                    else: 
+                        self.shock_state = 'Manageable'
+                        print('manaeable')
+                if self.shock_state == 'Problematic':
+                    
+                    #check for crisis
+                    pass
+                    
+    
+    def step(self):
+        
+        #update state
+        self.get_state()
+        
+        #get available actions
+        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+        
+        
                     
 
 

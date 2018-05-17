@@ -329,47 +329,18 @@ class Invest(Action):
         
     def precondition(self):
         
-        #check if Balance enough to invest and not shock
-        shock = not self.agent.crisis
-        finances = None
+        #add finances
         
-        #if no activity center already
-        #check if enough funds to build one
-        if self.agent.activity_centers:
-            finances = self.agent.activity_budget > self.agent.activity_cost
-        
-        #otherwise, check if enough funds to add an activity
-        else:
-            finances = self.agent.budget > self.agent.activity_center_cost
-        return shock and finances
+        return self.agent.state != 'Crisis'
     
     def do(self):
         
         super().do()
         
     #During a non-shock period, COA satisfies ST by investing in the quality of life of its
-    #residents by constructing an activity center (AC). The AC has a cost significantly less than an
-    #entire building, as it may simply be a room in another building. The AC hosts activities, which
-    #are period events satisfying a certain criteria of a newcomer. Currently, we just add an activities
-    # to aczs that are less than half full and where the ls == as. However, there is functionality in the
-    # code to convert empty buildings to ActivityCenter buildings.
+    #residents by increasing staff
         
-        max_num_activity_centers = 1
-        max_num_activities_per_center = 3 
-        num_activity_centers_added = 0       
-        for azc in self.agent.azcs:
-       
-
-         if (num_activity_centers_added < max_num_activity_centers):
-             activities = set([])
-             azc.activity_center = organizations.ActivityCenter(num_activity_centers_added, self.agent.model,'as', azc.pos, azc)
-             for j in range(max_num_activities_per_center):
-                 generated_activity = Activity(num_activity_centers_added, self, {1,2,3,4},azc.activity_center.identify_need())
-                 activities.add(generated_activity)
-                 
-                    
-             azc.activity_center.activities_available = activities
-             num_activity_centers_added = num_activity_centers_added + 1
+        self.agent.staff += 25 #placeholder, there could be a more intelligent way to calculate how many to hire
 
                 
 

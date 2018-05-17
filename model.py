@@ -39,7 +39,7 @@ class HumanitarianLogistics(Model):
         self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = False #flag to run sim without shocks
+        self.shock_flag = True #flag to run sim without shocks
         
 
 
@@ -52,7 +52,7 @@ class HumanitarianLogistics(Model):
         ####Generate COL
         
         COL_coa = COA(0,self, None)
-        COL = AZC(0, self, {'edp'}, COL_coa, 'COL')
+        COL = AZC(1, self, {'edp'}, COL_coa, 'COL')
         COL.modality = 'COL'
         self.coa_ref = COL_coa
         self.ta = COL
@@ -85,7 +85,7 @@ class HumanitarianLogistics(Model):
             city = City(i, self, None)
             AZC_COA = COA(i, self, city)
             azc = AZC(i, self, {'as_ext','tr'}, AZC_COA,'AZC')
-            azc.procedure_duration = 100
+            azc.procedure_duration = 35
             self.schedule.add(azc)
             ind = IND(i, self, None, AZC_COA)
             self.schedule.add(ind)
@@ -148,7 +148,6 @@ class HumanitarianLogistics(Model):
         self.sr.collect(self)
         
         if self.shock_flag and self.shock:
-            print('shock')
             shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
             #add increasing amount of newcomers
             for i in range(shock_in):
