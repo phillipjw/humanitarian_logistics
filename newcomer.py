@@ -92,7 +92,7 @@ class Newcomer(Agent):
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
-                self.current_procedure_time = self.loc.procedure_duration
+                self.current_procedure_time = self.model.procedure_durations[self.ls]
         elif self.ls == 'as_ext':
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:

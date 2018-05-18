@@ -262,7 +262,7 @@ class Consolidate(Action):
         by ensuring that azcs's are non-empty
         '''
         
-        return not self.agent.crisis and sum([azc.occupancy for azc in
+        return self.agent.state != 'Crisis' and sum([azc.occupancy for azc in
                                              self.agent.azcs]) > 0
     
     def do(self):
@@ -274,7 +274,7 @@ class Consolidate(Action):
         
         #get all non-empty AZCs
         azcs = [azc for azc in self.agent.model.schedule.agents if
-                type(azc) is organizations.AZC and not azc.coa.ta and
+                type(azc) is organizations.AZC and not azc.modality != 'COL' and
                 azc.occupancy > 0]
 
         

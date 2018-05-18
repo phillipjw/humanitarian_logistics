@@ -39,10 +39,10 @@ class HumanitarianLogistics(Model):
         self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = True #flag to run sim without shocks
+        self.shock_flag = False #flag to run sim without shocks
         
 
-
+        
 
         #sim boilerplate
         self.grid = ContinuousSpace(width, height, True)
@@ -50,8 +50,12 @@ class HumanitarianLogistics(Model):
         self.running = True
                 
         ####Generate COL
-        
+        self.procedure_durations = {'edp':2,
+                                    'as':4,
+                                    'as_ext':90,
+                                    'tr': 35}
         COL_coa = COA(0,self, None)
+        COL_coa.ind = IND(0,self, None, COL_coa)
         COL = AZC(1, self, {'edp'}, COL_coa, 'COL')
         COL.modality = 'COL'
         self.coa_ref = COL_coa
@@ -62,7 +66,7 @@ class HumanitarianLogistics(Model):
         self.pol_to_azc_ratio = int(COL.coa.conservatism/10)
         self.num_azc = self.number_pols * self.pol_to_azc_ratio
         self.space_per_azc = int(self.width / self.num_azc)
-        
+        self.azc_count = 1
         
         #### Generate POLS
         pol_op_capacity = .75
@@ -90,6 +94,12 @@ class HumanitarianLogistics(Model):
             ind = IND(i, self, None, AZC_COA)
             self.schedule.add(ind)
             AZC_COA.ind = ind
+            self.azc_count += 1
+            
+        #### Generate Commercial Housing
+        
+        self.hotel = Hotel(0, self, (self.width/3, self.height/5),1000,COL_coa)
+        
             
         ####flow in
         self.in_rate = 30 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)

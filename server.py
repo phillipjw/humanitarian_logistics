@@ -38,7 +38,17 @@ def agent_portrayal(agent):
         portrayal['Layer'] = 1
         portrayal['Color'] = 'red'
         portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
-    
+        
+    elif type(agent) is Hotel:
+        
+        portrayal['Shape'] = "circle"
+        portrayal['Filled'] = 'false'
+        portrayal['Layer'] = 0
+        portrayal['Color'] = 'green'
+        portrayal['r'] = 20
+        portrayal['text'] = agent.occupancy
+        portrayal['text_color'] = 'black'
+        
     return portrayal
 
 chart_suces = ChartModule([{'Label' : 'Syria',

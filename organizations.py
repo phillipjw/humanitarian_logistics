@@ -64,22 +64,60 @@ class COA(Organization):
         
         self.assessment_frequency = int(365/(self.openness_to_change*52/100))
         self.staff =  int(365/(self.self_transcendence*52/100))
+        self.state = None
         
         
         self.staff = 100
-        
         self.checkin = activity.Checkin('Checkin', self, 3)
-        
         self.current_policy = self.find_house
+        
+        #####ACTIONS######
+        self.actions = set([])
+        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
+        
+        #add actions to action set
+        for action in range(len(self.action_names)):
+            
+            #make action w a name, actor, and index of value to be satisfied
+
+            
+            if action == 1:
+                current_action = activity.Invest(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 0:
+                current_action = activity.Consolidate(self.action_names[action], self,action)
+                self.actions.add(current_action)
+    
+    def build(self, size):
+        '''
+        Build adds a building of a given size to the simulation
+        '''
+        
+        
+        new = AZC(self.model.azc_count, self.model, {'as', 'as_ext', 'tr', self, 'AZC'})
+        new.capacity = size
+        self.model.schedule.add(new)
+        self.model.grid.place_agent(new, new.pos)
     
     def min_house(self, newcomer):
         '''finds min occupancy building regardless of legal status
         '''
         candidates = [building for building in self.model.schedule.agents if
-                    type(building) is AZC and building.modality != 'COL']
-        min_type = min(candidates, key = attrgetter('occupancy'))
+                    type(building) is AZC and building.modality != 'COL' and
+                    building.occupancy < building.max_capacity*building.capacity]
+        
+        if not candidates:
+            #hotel house
+            print('Hotel Housing')
+            min_type = self.model.hotel
+            #min_type.procedure_duration = self.model.procedures_duration[newcomer.ls]
+        else:
+            
+            min_type = min(candidates, key = attrgetter('occupancy'))
+        
         return min_type
         
+    
         
     def find_house(self, newcomer):
         '''finds min occupancy building for a given legal status
@@ -123,6 +161,7 @@ class COA(Organization):
 
         destination.occupancy += 1 #update occupancy 
         
+        
         newcomer.loc = destination
         newcomer.coa = destination.coa
         
@@ -139,6 +178,10 @@ class COA(Organization):
         #Obligations - Checkins
         if day % self.staff == 0:
             self.checkin.do()
+        
+        #other actions
+        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+        print(possible_actions)
         
 
         
@@ -235,7 +278,7 @@ class AZC(Building):
         self.state = 'Normal'
         self.shock_state = None
         self.max_capacity = .75
-       
+        self.need = 0
         #location setting, currently buggy
         if self.modality == 'POL':
             self.pos = (unique_id*self.model.space_per_city + .25*(self.model.space_per_city), int(self.model.height / 3))
@@ -265,20 +308,8 @@ class AZC(Building):
         self.period = 3
         
         
-        #####Actions
-        #####ACTIONS######
-        self.actions = set([])
-        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
         
-        #add actions to action set
-        for action in range(len(self.action_names)):
             
-            #make action w a name, actor, and index of value to be satisfied
-
-            
-            if action == 1:
-                current_action = activity.Invest(self.action_names[action], self,action)
-                self.actions.add(current_action)
             
         
     def online_variance_ta(self, building):
@@ -323,6 +354,7 @@ class AZC(Building):
         for azc in self.model.schedule.agents:
             if type(azc) is AZC:
                 azc.state = state 
+                self.coa.state = state
             
     def set_policy(self):
         for azc in self.model.schedule.agents:
@@ -339,17 +371,9 @@ class AZC(Building):
                 self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self)             
             else:
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
-                    #Check for Shock
-                    variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
-                    if self.shock_check(variance_ta):
-                        print('shock')
-                        self.set_state('Shock')
-                    #if no anomoly add to normal flow distribution 
-                    else:
-                        self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
-                        self.set_state('Normal')
-                        self.set_policy()
-                        print('shock-over')
+                    
+                    #check for anomalies in amount of incoming newcomer
+                    self.shock_check_procedure()
             
                     
         ###If not COL Just report for estimation purposes.
@@ -357,23 +381,39 @@ class AZC(Building):
             if self.model.schedule.steps > 50:
                 if self.model.schedule.steps % self.coa.assessment_frequency == 0:
                     self.occupancies.append(self.occupancy)
+                #problematic check
                 if self.state == 'Shock':
-                    estimation = self.estimate(min(len(self.occupancies), 6))                       
-                        
-                    if estimation > self.capacity*self.max_capacity:
-                        self.shock_state = 'Problematic'
-                        print('problematic')
-                        #change policy   
-                        self.set_policy()
-                    else: 
-                        self.shock_state = 'Manageable'
-                        #change policy
-                        self.set_policy()
-                
+                    self.problematic_check()
                 #Crisis check
                 if self.shock_state == 'Problematic':
                     self.crisis_check()
-                    
+    
+    def shock_check_procedure(self):
+        #Check for Shock
+        variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
+        if self.shock_check(variance_ta):
+            print('shock')
+            self.set_state('Shock')
+        #if no anomoly add to normal flow distribution 
+        else:
+            self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
+            self.set_state('Normal')
+            self.set_policy()
+            print('shock-over')                    
+    
+    def problematic_check(self):
+        estimation = self.estimate(min(len(self.occupancies), 6))                       
+                        
+        if estimation > self.capacity*self.max_capacity:
+            self.shock_state = 'Problematic'
+            print('problematic')
+            #change policy   
+            self.set_policy()
+        else: 
+            self.shock_state = 'Manageable'
+            print('Manageable')
+            #change policy
+            self.set_policy()
                     
     def crisis_check(self):
         
@@ -383,15 +423,22 @@ class AZC(Building):
         total_estimated_occupancies = sum([azc.estimate(min(len(self.occupancies), 6)) for
                                        azc in self.model.schedule.agents if
                                        type(azc) is AZC and azc.modality != 'COL'])
-        print(total_capacity, total_estimated_occupancies)
+        need = total_estimated_occupancies - total_capacity
+        
+        if need > 0:
+            print('Crisis')
+            self.state = 'Crisis'
+            self.need = need
+        else:
+            self.problematic_check()
+            
     
     def step(self):
         
         #update state
         self.get_state()
         
-        #get available actions
-        possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+        
         
         
                     
@@ -406,10 +453,10 @@ class Hotel(Building):
     '''
     
     def __init__(self, unique_id, model,
-                 pos, cost_pp):
+                 pos, cost_pp,coa):
         super().__init__(unique_id, model)
         
-        self.capacity = 1000
+        self.capacity = 100000
         self.occupants = set([])
         self.pos = pos
         self.cost_pp = cost_pp
@@ -417,6 +464,11 @@ class Hotel(Building):
         self.calculated_value = None
         self.city = None
         self.activity_center = None
+        self.model.schedule.add(self)
+        self.model.grid.place_agent(self, self.pos)
+        self.coa = coa
+        self.procedure_duration = None
+        
     
  
         
