@@ -41,12 +41,11 @@ class Checkin(Action):
         '''
         super().do()
         #iterate through newcomers
-        for azc in self.agent.azcs:
-            for newcomer in azc.occupants:
-                if newcomer.values.health < self.healthy_threshold:
+        for newcomer in self.agent.city.azc.occupants:
+            if newcomer.values.health < self.healthy_threshold:
                     
-                    #placeholder value satisfaction
-                    newcomer.values.val_t += np.array([50,50,50,50])
+                #placeholder value satisfaction
+                newcomer.values.val_t += np.array([50,50,50,50])
         
 
 class BuildCentral(Action):
@@ -289,7 +288,7 @@ class Consolidate(Action):
             #capacity AZC that can fit them
             
             amount = current.occupancy
-
+            
            
             if current.occupants:
             
@@ -304,6 +303,7 @@ class Consolidate(Action):
                             difference -= 1
                         except TypeError:
                             print('Typerror,',len(current.occupants))
+                    
                         
 
         
@@ -340,8 +340,8 @@ class Invest(Action):
     #During a non-shock period, COA satisfies ST by investing in the quality of life of its
     #residents by increasing staff
         
-        self.agent.staff += 25 #placeholder, there could be a more intelligent way to calculate how many to hire
-
+        self.agent.staff += 10 #placeholder, there could be a more intelligent way to calculate how many to hire
+        self.agent.checkin_frequency = int(365/(self.staff*52/100))
                 
 
 class Segregate(Action):
@@ -361,15 +361,15 @@ class Segregate(Action):
         self.v_index = v_index          #index of value to be satisfied
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
-        self.unlikely_status_holders = [newcomer for newcomer in self.agent.newcomers if
+        self.unlikely_status_holders = [newcomer for newcomer in self.agent.city.azc.occupants if
                                        newcomer.ls == 'as_ext' and
                                        newcomer.second == 0]
         
         
     def precondition(self):
         
-        #check if not shock and check if feasible
-        return not self.agent.crisis and self.agent.newcomers
+        #check if not crisis
+        return not self.agent.state != 'Crisis' 
         
     
     def do(self):
@@ -378,7 +378,9 @@ class Segregate(Action):
         
         #gets a cost per azc from health + occupancy + activities + proximity
         [azc.get_operational_cost() for azc in 
-         self.agent.azcs]
+         self.model.schedule.agents if
+         type(azc) is AZC and
+         azc.modality != 'COL']
         
         cheapest_azc_to_maintain = min([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
         

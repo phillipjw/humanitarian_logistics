@@ -70,7 +70,7 @@ class Newcomer(Agent):
 
                 self.ls = 'as'
                 self.coa.house(self)
-                self.coa.ind.set_time(self)
+                self.coa.city.ind.set_time(self)
                 self.current_procedure_time = self.loc.procedure_duration
         #AZ to TR
         elif self.ls == 'as':
@@ -80,9 +80,9 @@ class Newcomer(Agent):
             
             
             if self.current_procedure_time == 0:
-                self.coa.ind.interview(self)
-                self.coa.ind.interview(self)
-                if self.coa.ind.decide(True, self, self.model.dq):
+                self.coa.city.ind.interview(self)
+                self.coa.city.ind.interview(self)
+                if self.coa.city.ind.decide(True, self, self.model.dq):
                     self.ls = 'tr'
                     self.model.country_success[self.model.country_list.index(self.coo)] += 1
                     if self.first == 1:
@@ -96,10 +96,10 @@ class Newcomer(Agent):
         elif self.ls == 'as_ext':
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:
-                self.coa.ind.interview(self)
+                self.coa.city.ind.interview(self)
                 
                 #if positive decision
-                if self.coa.ind.decide(False, self, self.model.dq):
+                if self.coa.city.ind.decide(False, self, self.model.dq):
                     self.ls = 'tr'
                     self.model.country_success[self.model.country_list.index(self.coo)] += 1
                     self.current_procedure_time = self.loc.procedure_duration

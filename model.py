@@ -26,12 +26,13 @@ class HumanitarianLogistics(Model):
         dimensions width and height"""
 
 
-    def __init__(self, width, height, num_pols):
+    def __init__(self, width, height, num_pols, city_size):
 
         #canvas info
         self.width = width
         self.height = height
         self.number_pols = num_pols
+        self.city_size = city_size
         
         ##### Shock
         self.shock_duration = 100
@@ -41,7 +42,12 @@ class HumanitarianLogistics(Model):
         self.shock_rate = 100
         self.shock_flag = False #flag to run sim without shocks
         
-
+        self.coa_values = {'SE':20,
+                           'ST': 70,
+                           'C': 30,
+                           'OTC':20}
+        
+        
         
 
         #sim boilerplate
@@ -54,51 +60,34 @@ class HumanitarianLogistics(Model):
                                     'as':4,
                                     'as_ext':90,
                                     'tr': 35}
-        COL_coa = COA(0,self, None)
-        COL_coa.ind = IND(0,self, None, COL_coa)
-        COL = AZC(1, self, {'edp'}, COL_coa, 'COL')
-        COL.modality = 'COL'
-        self.coa_ref = COL_coa
-        self.ta = COL
-        COL.procedure_duration = 2
-        
+        self.pol_to_azc_ratio = int(self.coa_values['C']/10)
         self.space_per_city = int(self.width / self.number_pols)
-        self.pol_to_azc_ratio = int(COL.coa.conservatism/10)
         self.num_azc = self.number_pols * self.pol_to_azc_ratio
         self.space_per_azc = int(self.width / self.num_azc)
-        self.azc_count = 1
         
+        
+
+        self.city_count = 1
+        
+        
+        ####### Generate COLS
+        self.ta = City(self.city_count,self, {'edp'}, 'COL')
+        self.ta.azc.procedure_duration = 2
+        
+
         #### Generate POLS
-        pol_op_capacity = .75
-        pol_size = 400
         pol_duration = 4
         for i in range(1,self.number_pols+1):
-            city = City(i, self, None)
-            POL_COA = COA(i, self, city)
-            POL = AZC(i, self, {'as'}, POL_COA, 'POL')
-            POL.procedure_duration = pol_duration
-            POL.operating_capacity = pol_op_capacity
-            self.schedule.add(POL)
-            ind = IND(i, self, None, POL_COA)
-            self.schedule.add(ind)
-            POL_COA.ind = ind
-    
-        
+            city = City(i, self, {'as'}, 'POL')
+            city.azc.procedure_duration = pol_duration
+
         ##### Generate AZC
         for i in range(1,self.number_pols*self.pol_to_azc_ratio+1):
-            city = City(i, self, None)
-            AZC_COA = COA(i, self, city)
-            azc = AZC(i, self, {'as_ext','tr'}, AZC_COA,'AZC')
-            azc.procedure_duration = 35
-            self.schedule.add(azc)
-            ind = IND(i, self, None, AZC_COA)
-            self.schedule.add(ind)
-            AZC_COA.ind = ind
-            self.azc_count += 1
+            city = City(i, self, {'as_ext', 'tr'}, 'AZC')
+            city.azc.procedure_duration = 35
             
-        #### Generate Commercial Housing
-        
-        self.hotel = Hotel(0, self, (self.width/3, self.height/5),1000,COL_coa)
+            
+
         
             
         ####flow in
@@ -208,9 +197,9 @@ class HumanitarianLogistics(Model):
         a = Newcomer(self.nc_count, self, self.country_distribution(), self.ta.coa)
         self.schedule.add(a)
         #house in COL
-        a.loc = self.ta
-        self.ta.occupants.add(a)
-        self.ta.occupancy += 1
+        a.loc = self.ta.azc
+        self.ta.azc.occupants.add(a)
+        self.ta.azc.occupancy += 1
         self.country_count[self.country_list.index(a.coo)] += 1
         
         a.current_procedure_time = a.loc.procedure_duration

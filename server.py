@@ -75,5 +75,6 @@ continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
 server = ModularServer(HumanitarianLogistics,
                        [continuous_canvas, chart_suces],
                        "Humanitarian Logistics",
-                       {"width": canvas_width, "height": canvas_height, "num_pols": num_pol})
+                       {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
+                        "city_size": azc_display_size})
 
