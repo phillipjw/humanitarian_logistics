@@ -23,12 +23,12 @@ class City(Agent):
         
         self.modality = modality
         if self.modality == 'POL':
-            y = int(self.model.height - self.model.height/4)
+            y = int(self.model.height - 5*self.model.height/8)
         elif self.modality == 'COL':
-            y = int(self.model.height - 2*self.model.height/4)
+            y = int(self.model.height - 7*self.model.height/8)
         elif self.modality == 'AZC':
-            y = int(self.model.height - 3*self.model.height/4)
-        self.pos = (self.model.width/self.model.space_per_azc*unique_id*self.model.city_size + self.model.city_size,y)
+            y = int(self.model.height - 3*self.model.height/8)
+        self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
         self.ind = IND(self.unique_id, model, self)
@@ -535,7 +535,7 @@ class Hotel(Building):
         self.cost_pp = cost_pp
         self.available = True
         self.city = city
-        self.pos = self.city.pos
+        self.pos = (self.city.pos[0], self.city.pos[1] - 2*self.model.city_size - 5)
         self.calculated_value = None
         self.activity_center = None
         self.model.schedule.add(self)
