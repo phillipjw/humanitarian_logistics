@@ -368,7 +368,7 @@ class AZC(Building):
         self.counter_ta = 1
         self.variance_ta = None
         self.var_copy_ta = None
-        self.shock_threshold = 4
+        self.shock_threshold = 5
         
         #non-TA shock check
         self.occupancies = []
@@ -445,15 +445,15 @@ class AZC(Building):
                     
         ###If not COL Just report for estimation purposes.
         else:
-            if self.model.schedule.steps > 50:
-                if self.model.schedule.steps % self.city.coa.assessment_frequency == 0:
-                    self.occupancies.append(self.occupancy)
-                #problematic check
-                if self.state == 'Shock':
-                    self.problematic_check()
-                #Crisis check
-                if self.shock_state == 'Problematic':
-                    self.crisis_check()
+            
+            if self.model.schedule.steps % self.city.coa.assessment_frequency == 0:
+                self.occupancies.append(self.occupancy)
+            #problematic check
+            if self.state == 'Shock':
+                self.problematic_check()
+            #Crisis check
+            if self.shock_state == 'Problematic':
+                self.crisis_check()
     
     def shock_check_procedure(self):
         #Check for Shock

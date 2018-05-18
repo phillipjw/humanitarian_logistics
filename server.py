@@ -11,7 +11,7 @@ import numpy as np
 
 canvas_width = 400
 canvas_height = 600
-num_pol = 3
+num_pol = 2
 
 azc_display_size = 20
 
