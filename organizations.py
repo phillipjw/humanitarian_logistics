@@ -289,7 +289,14 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
+        self.conservatism = 70
+        self.self_enhancement = 40
+        self.self_transcendence = 30
+        self.openness_to_change = 60
+        self.values = Values(10, 30,40,70, 40,self)
         self.staff = 100
+        self.action_frequency = int(365/(self.openness_to_change*52/100))
+
         
         #####ACTIONS######
         self.actions = set([])
@@ -333,7 +340,33 @@ class IND(Organization):
         increase newcomer DQ by some amount
         '''
         newcomer.doc_quality += np.random.normal(newcomer.second, 1-newcomer.specs[0]) / self.number_asylum_interviews
+    
+    def step(self):
         
+        day = self.model.schedule.steps % 7
+        
+        self.values.decay_val()
+        
+        #prioritize
+        priority = self.values.prioritize()
+        
+        if day % self.action_frequency == 0:
+            #act
+            #find action that corresponds to priority
+            current = None
+            possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+            for value in priority:
+                    for action in possible_actions:
+                        if value == action.v_index:
+                            current = action
+                            break
+                    if current != None:
+                        break
+            
+            #update v_sat
+            if current != None:
+                print(current.name)
+                current.do()
     
                            
                     
