@@ -42,7 +42,10 @@ class Newcomer(Agent):
         #draw first decision outcome
         self.first = bernoulli.rvs(self.specs[0], size = 1)[0] 
         #second decision outcome not drawn unless necessary
-        self.second = None   
+        if self.first == 0:
+            self.second = bernoulli.rvs(self.specs[1], size = 1)[0] 
+        else:
+            self.second = 1
                                   
         # new comer values
         self.values = Values(10, 70, 30, 70, 50, self)
@@ -131,6 +134,7 @@ class Newcomer(Agent):
         
         #value decay
         self.values.decay_val()
+        
         
         
         #update procedings 

@@ -6,7 +6,6 @@ from mesa.visualization.modules import ChartModule
 from mesa.visualization.UserParam import UserSettableParameter
 from mesa.visualization.ModularVisualization import VisualizationElement
 from SimpleContinuousModule import SimpleCanvas
-#from mesa.visualization.modules.SimpleContinuousModule import SimpleCanvas
 import numpy as np
 
 canvas_width = 400
@@ -38,6 +37,8 @@ def agent_portrayal(agent):
         portrayal['Layer'] = 1
         portrayal['Color'] = 'red'
         portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
+        portrayal['text'] = np.mean([newcomer.values.health for newcomer in
+                 agent.occupants])
         
     elif type(agent) is Hotel:
         
@@ -61,9 +62,21 @@ chart_suces = ChartModule([{'Label' : 'Syria',
                             'Color' : 'yellow'},],
                             data_collector_name = 'sr')
 
+chart_azc = ChartModule([{'Label': 'AZC',
+                          'Color': 'black'},
+                          {'Label': 'AZC',
+                          'Color': 'black'},
+                           {'Label': 'AZC',
+                          'Color': 'black'},
+                            {'Label': 'AZC',
+                          'Color': 'black'},
+                            {'Label': 'AZC',
+                          'Color': 'black'},
+                            {'Label': 'AZC',
+                          'Color': 'black'},],data_collector_name = 'azc_health')
+
 continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
 
-#grid = CanvasGrid(agent_portrayal, grid_width, grid_height,canvas_width, canvas_height)
 
 
 
@@ -73,7 +86,7 @@ continuous_canvas = SimpleCanvas(agent_portrayal, canvas_width, canvas_height)
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas, chart_suces],
+                       [continuous_canvas, chart_suces, chart_azc],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size})

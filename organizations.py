@@ -267,8 +267,9 @@ class IND(Organization):
         self.min_time = 8
         self.city = city
         self.pos = self.city.pos
-        self.threshold_first = .85
-        self.threshold_second = 1.2
+        self.threshold_first = 1
+        self.margin = .25
+        self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
         
@@ -286,9 +287,9 @@ class IND(Organization):
         
         if dq:
             if first:
-                return newcomer.doc_quality > self.threshold_first
+                return newcomer.doc_quality > self.threshold_first - self.margin
             else:
-                return newcomer.doc_quality > self.threshold_second
+                return newcomer.doc_quality > self.threshold_second - self.margin
         else:
             if first:
                 return newcomer.first == 1
@@ -299,8 +300,7 @@ class IND(Organization):
         '''
         increase newcomer DQ by some amount
         '''
-        country_dependent_multiplier = np.random.normal(newcomer.model.specs[newcomer.coo][0], 1-newcomer.model.specs[newcomer.coo][0])
-        newcomer.doc_quality += (self.threshold_first / self.number_asylum_interviews)*country_dependent_multiplier
+        newcomer.doc_quality += np.random.normal(newcomer.second, 1-newcomer.specs[0]) / 2
         
     
                            

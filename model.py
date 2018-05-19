@@ -95,7 +95,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
-        self.dq = False #flag for which type of IND decision to make
+        self.dq = True #flag for which type of IND decision to make
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -131,6 +131,16 @@ class HumanitarianLogistics(Model):
 
         self.sr = DataCollector(model_reporters = sr_functions)
         
+        #records the health of newcomers in each facility, POL v AZC
+        self.azcs = [azc for azc in self.schedule.agents if
+                     type(azc) is AZC and azc.modality == 'AZC']
+        azc_health_functions = {}
+        self.azc_index = 0
+        for i in range(len(self.azcs)):
+            azc_health_functions[i] = azc_health
+        self.azc_health = DataCollector(model_reporters = azc_health_functions)
+        
+        
         self.confusionMatrix = {'TP': 0,
                                 'TN': 0,
                                 'FP': 0,
@@ -145,6 +155,7 @@ class HumanitarianLogistics(Model):
     def step(self):
         self.schedule.step()
         self.sr.collect(self)
+        self.azc_health.collect(self)
         
         if self.shock_flag and self.shock:
             shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
@@ -229,6 +240,18 @@ def success_counter(model,country):
     status = model.country_success[country]
 
     return 1.0*status / (model.country_count[country] + 1)
+
+def azc_health(model):
+    '''
+    calcs average health of a newcomer in a particular facility modality
+    '''
+    
+    building = model.azcs[model.azc_index]
+    health = np.mean([newcomer.values.health for newcomer in building.occupants])
+    model.azc_index += 1
+    if model.azc_index == len(model.azcs):
+        model.azc_index = 0
+    return health
         
 
 
