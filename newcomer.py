@@ -181,7 +181,6 @@ class Newcomer(Agent):
         self.values.decay_val()
         
         possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
-        print(possible_activities)
         
         
         

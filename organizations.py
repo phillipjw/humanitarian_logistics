@@ -61,6 +61,9 @@ class City(Agent):
                     self.coa.actions.add(current_action)
                     current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
+                elif action == 0:
+                    current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
                 elif action == 2:
                     current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
@@ -333,7 +336,7 @@ class Building(Agent):
         self.max_health = 100
     
     def step(self):
-        self.health = self.health - 1
+        self.health = self.health - (1*self.occupancy/self.capacity)
 
 
 class AZC(Building):

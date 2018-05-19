@@ -241,7 +241,7 @@ class Consolidate(Action):
         '''
         
         return self.agent.state != 'Crisis' and sum([azc.occupancy for azc in
-                                             self.agent.azcs]) > 0
+                                             self.agent.city.azcs]) > 0
     
     def do(self):
         super().do()
@@ -261,7 +261,7 @@ class Consolidate(Action):
         
         
         #move occupants to central location
-        for current in self.agent.azcs:
+        for current in self.agent.city.azcs:
             
             #take lowest capacity AZC and move its occupants to highest
             #capacity AZC that can fit them
