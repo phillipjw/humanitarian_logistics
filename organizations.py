@@ -24,10 +24,13 @@ class City(Agent):
         self.modality = modality
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
+            procedure_time = 4
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
+            procedure_time = 2
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
+            procedure_time = 35
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -36,10 +39,14 @@ class City(Agent):
         self.hotel = Hotel(self.unique_id, self.model, 1000,self ) 
         self.model.schedule.add(self.coa)
         self.azc = AZC(unique_id, model, occupant_type, modality, self)
+        self.azc.procedure_duration = procedure_time
+        self.azcs = set([self.azc])
         self.model.schedule.add(self.azc)
         
         self.auxiliary_housing = 0
         self.model.city_count += 1
+        self.cost_of_bus_within_city = 5
+        self.cost_of_bus_to_another_city = 20
 
         
         
@@ -75,9 +82,9 @@ class COA(Organization):
         
         
         self.self_enhancement = 20
-        self.self_transcendence = 70     
+        self.self_transcendence = 40    
         self.conservatism = 30
-        self.openness_to_change = 20
+        self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         
@@ -97,23 +104,24 @@ class COA(Organization):
         #####ACTIONS######
         self.actions = set([])
         self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
-        '''
-        #add actions to action set
-        for action in range(len(self.action_names)):
-            
-            #make action w a name, actor, and index of value to be satisfied
+        action_testing = True
+        if action_testing:
+            #add actions to action set
+            for action in range(len(self.action_names)):
+                
+                #make action w a name, actor, and index of value to be satisfied
+        
+                
+                if action == 1:
+                    current_action = activity.Invest(self.action_names[action], self,action)
+                    self.actions.add(current_action)
+                    current_action = activity.BuildCentral(self.action_names[action], self,action)
+                    self.actions.add(current_action)
+                if action == 3:
+                    current_action = activity.Integrate(self.action_names[action], self,action)
+                    self.actions.add(current_action)
+                    
 
-            
-            if action == 1:
-                current_action = activity.Invest(self.action_names[action], self,action)
-                self.actions.add(current_action)
-            elif action == 0:
-                current_action = activity.Consolidate(self.action_names[action], self,action)
-                self.actions.add(current_action)
-            elif action == 2:
-                current_action = activity.Segregate(self.action_names[action], self,action)
-                self.actions.add(current_action)
-        '''  
     
     def build(self, size):
         '''
@@ -121,8 +129,11 @@ class COA(Organization):
         '''
         
         
-        new = AZC(self.model.azc_count, self.model, {'as', 'as_ext', 'tr', self, 'AZC'})
+        new = AZC(self.model.city_count, self.model, {'as', 'as_ext', 'tr'}, 'AZC', self.city)
         new.capacity = size
+        new.pos = new.city.hotel.pos
+        new.city.azcs.add(new)
+        new.procedure_duration = 35
         self.model.schedule.add(new)
         self.model.grid.place_agent(new, new.pos)
     
@@ -135,8 +146,7 @@ class COA(Organization):
         
         if not candidates:
             #hotel house
-            print('Hotel Housing')
-            min_type = self.model.hotel
+            min_type = self.city.hotel
             #min_type.procedure_duration = self.model.procedures_duration[newcomer.ls]
         else:
             
@@ -158,12 +168,12 @@ class COA(Organization):
     def get_total_cap(self):
         '''total available room'''
         
-        return sum([azc.capacity for azc in [self.city.azc]])
+        return sum([azc.capacity for azc in self.city.azcs])
     
     def get_total_occupancy(self):
         '''total occupied space'''
         
-        return sum([azc.occupancy for azc in [self.city.azc]])
+        return sum([azc.occupancy for azc in self.city.azcs])
     
     def get_occupancy_pct(self):
         '''room to space ratio'''
@@ -190,7 +200,7 @@ class COA(Organization):
         
         
         newcomer.loc = destination
-        newcomer.coa = destination.coa
+        newcomer.coa = destination.city.coa
         
         
         
@@ -208,11 +218,10 @@ class COA(Organization):
         
         newcomer.loc = destination
         newcomer.coa = destination.coa
-            
-      
-    
-    def step(self):
         
+
+    def step(self):
+                
         day = self.model.schedule.steps
         
         #Obligations - Checkins
@@ -300,7 +309,7 @@ class IND(Organization):
         '''
         increase newcomer DQ by some amount
         '''
-        newcomer.doc_quality += np.random.normal(newcomer.second, 1-newcomer.specs[0]) / 2
+        newcomer.doc_quality += np.random.normal(newcomer.second, 1-newcomer.specs[0]) / self.number_asylum_interviews
         
     
                            
@@ -345,21 +354,11 @@ class AZC(Building):
         self.max_capacity = .75
         self.need = 0
         self.pos = self.city.pos
-        #location setting, currently buggy
-        '''
-        if self.modality == 'POL':
-            self.pos = (unique_id*self.model.space_per_city + .25*(self.model.space_per_city), int(self.model.height / 3))
-        elif self.modality == 'AZC':
-            orientation_x = int(self.model.space_per_azc * unique_id + self.model.space_per_azc)
-            self.pos = (orientation_x, int(self.model.height / 2))
-        elif self.modality == 'COL':      
-            self.pos = (self.model.width / 2, self.model.height - 10)
-        '''
-
-            
-            
+        #location setting, currently buggy          
         self.model.schedule.add(self)
         self.model.grid.place_agent(self,self.pos)
+        self.activity_center = ActivityCenter(self.unique_id, self.model,self)
+        self.activity_center.activities.add(activity.Language_Class)
         
         
         #ter apel shock check
@@ -368,11 +367,13 @@ class AZC(Building):
         self.counter_ta = 1
         self.variance_ta = None
         self.var_copy_ta = None
-        self.shock_threshold = 5
+        self.shock_threshold = 6
         
         #non-TA shock check
         self.occupancies = []
         self.period = 3
+        self.shock_position = 0
+        self.problematic_threshold = .60
         
         
         
@@ -411,11 +412,35 @@ class AZC(Building):
         to calculate occupanices one period in the future
         '''
         
+        if len(self.occupancies) < period:
+            return self.occupancy
+        else:
+            current = self.occupancies[-1]
+            last = self.occupancies[- period]
+            rate = (current - last) / period
+            estimation = rate*period + current
+            return estimation
+    
+    def estimate_time(self, period):
+        
         current = self.occupancies[-1]
         last = self.occupancies[- period]
-        rate = (current - last) / period
-        estimation = rate*period + current
-        return estimation
+        rate =  (current - last) / period
+        occupancy_exceeded = False
+        counter = 1
+        if rate > 0:
+            while not occupancy_exceeded:
+                estimation = rate*counter + current
+                if estimation > self.capacity:
+                    occupancy_exceeded = True
+                    return counter
+                else:
+                    counter += 1
+        else: 
+            return 0
+        
+        
+        
     
     def set_state(self, state):
         for azc in self.model.schedule.agents:
@@ -454,31 +479,33 @@ class AZC(Building):
             #Crisis check
             if self.shock_state == 'Problematic':
                 self.crisis_check()
-    
+            
+                
+                
     def shock_check_procedure(self):
         #Check for Shock
         variance_ta, squared_ta, sum_ta = self.online_variance_ta(self)
         if self.shock_check(variance_ta):
             print('shock')
             self.set_state('Shock')
+            self.shock_position += 1
         #if no anomoly add to normal flow distribution 
         else:
             self.variance_ta, self.squared_ta, self.sum_ta = variance_ta, squared_ta, sum_ta
             self.set_state('Normal')
+            self.shock_position = 0
             self.set_policy()
             print('shock-over')                    
     
     def problematic_check(self):
-        estimation = self.estimate(min(len(self.occupancies), 6))                       
+        estimation = self.estimate(max(3, self.shock_position))                       
                         
-        if estimation > self.capacity*self.max_capacity:
+        if estimation > self.capacity*self.problematic_threshold:
             self.shock_state = 'Problematic'
-            print('problematic')
             #change policy   
             self.set_policy()
         else: 
             self.shock_state = 'Manageable'
-            print('Manageable')
             #change policy
             self.set_policy()
                     
@@ -487,13 +514,12 @@ class AZC(Building):
         total_capacity = sum([azc.capacity for azc in self.model.schedule.agents
                           if type(azc) is AZC and azc.modality != 'COL'])
             
-        total_estimated_occupancies = sum([azc.estimate(min(len(self.occupancies), 6)) for
+        total_estimated_occupancies = sum([azc.estimate(max(3, self.shock_position)) for
                                        azc in self.model.schedule.agents if
                                        type(azc) is AZC and azc.modality != 'COL'])
         need = total_estimated_occupancies - total_capacity
         
         if need > 0:
-            print('Crisis')
             self.state = 'Crisis'
             self.need = need
         else:
@@ -554,16 +580,26 @@ class Empty(Building):
     Empty buildings have a refurbishing cost
     and can be converted into AZCs
     '''
-    def __init__(self, unique_id, model,
-                 pos, capacity, proximity):
+    def __init__(self, unique_id, model, capacity, city):
         super().__init__(unique_id, model)
         
-        self.proximity = proximity
         self.capacity = capacity
         self.occupants = set([])
+        self.city = city
 
     def step(self):
         super().step()
+        
+class ActivityCenter(Building):
+    def __init__(self, unique_id, model, azc):
+        super().__init__(unique_id, model)
+        
+        self.participants = set([])
+        self.available = False
+        self.occupancy = 0
+        self.azc = azc
+        self.activities_available = set([])
+        
 
             
         

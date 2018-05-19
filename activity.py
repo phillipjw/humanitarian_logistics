@@ -59,44 +59,23 @@ class BuildCentral(Action):
         check if agent in crisis
         '''        
         
-        return self.agent.crisis and not self.agent.ta
+        return self.agent.city.azc.state == 'Crisis' and self.agent.city.azc.modality != 'COL'
     
-    def evaluate_options(self):
-        average_duration = 50
-        
-        ####Gather Buildings####
-        empties = [building for building in self.agent.city.buildings
-                   if type(building) is organizations.Empty and
-                   self.agent.budget > building.convert_cost
-                   and building.proximity > .7] #only gathers cental ones
-        
-        #gather candidates
-        candidates = [building for building in 
-                      empties if
-                      building.capacity > self.agent.need]
-        
-        hotel = [x for x in self.agent.city.buildings
-                 if type(x) is organizations.Hotel][0]
-        
-        candidates.append(hotel)
-        print(candidates)
-        for building in candidates:
-            building.calc_cost(self.agent.need, average_duration)
-        
-        #find max value, need:cost ratio
-        best = max(candidates, key = attrgetter('calculated_value'))
-
-        #return policy
-        return best
     
     def do(self):
         super().do()
         
-        decision = self.evaluate_options()
-        print(decision)
-        if type(decision) is not organizations.Hotel:
-            
-            self.agent.construct(decision)
+        #how long until run out of space
+        time = self.agent.city.azc.estimate_time(max(3, self.agent.city.azc.shock_position))
+        
+        #how much space is required in six months
+        need = self.agent.city.azc.estimate(int(180/self.agent.assessment_frequency))
+        
+        #build for that amount
+        self.agent.build(need)
+        print('built')
+        
+        
 
 class BuildFlex(Action):
     
@@ -341,7 +320,7 @@ class Invest(Action):
     #residents by increasing staff
         
         self.agent.staff += 10 #placeholder, there could be a more intelligent way to calculate how many to hire
-        self.agent.checkin_frequency = int(365/(self.staff*52/100))
+        self.agent.checkin_frequency = int(365/(self.agent.staff*52/100))
                 
 
 class Segregate(Action):
@@ -422,7 +401,7 @@ class Integrate(Action):
     def precondition(self):
         
         #check if not shock and check if feasible
-        return not self.agent.crisis
+        return self.agent.state != 'Crisis'
     
     def do(self):
         super().do()
@@ -431,7 +410,7 @@ class Integrate(Action):
         if not between_city_travel:
             travel_voucher = self.agent.city.cost_of_bus_to_another_city 
         
-        for azc in self.agent.azcs:
+        for azc in self.agent.city.azcs:
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
                     
@@ -542,6 +521,7 @@ class Language_Class(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.occupany_type = {'tr'}
         
         self.v_index = v_index
          
@@ -563,6 +543,7 @@ class Volunteer(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.occupant_type = {'tr', 'as', 'as_ext'}
         
         self.v_index = v_index
          
@@ -584,6 +565,7 @@ class Work(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.occupant_type = {'tr', 'as', 'as_ext'}
         
         self.v_index = v_index
          

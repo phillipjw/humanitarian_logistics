@@ -126,7 +126,50 @@ class Newcomer(Agent):
                 
             
                 
+    def get_activities(self, day):
         
+        '''
+        Given budget of newcomer, searches through reachable AZCs
+        and returns the activities doable there.
+        '''
+        
+        #Add default activities such as work once written
+        possible_activities = []
+        
+        #check if enough for intercity
+        if self.budget > self.coa.city.cost_of_bus_to_another_city:
+            
+            
+            azcs = [azc for azc in self.model.schedule.agents if
+                    type(azc) is AZC and azc.modality != 'COL' and
+                    azc.activity_center != None and
+                    azc.activity_center.activities_available != None]
+            
+            
+        
+        #check if enough for intracity
+        elif self.budget > self.coa.city.cost_of_bus_within_city:
+            
+            
+            azcs = [azc for azc in self.coa.azcs if
+                    not azc.ta and azc.activity_center != None and
+                    azc.activity_center.activities_available != None]
+            
+        #local
+        else:
+            azcs = [self.loc]
+        
+        if len(azcs) > 0 and azcs[0].activity_center != None:
+            
+            #add activities in selected AZCs to possible activity list
+            for azc in azcs:
+                for activity in azc.activity_center.activities_available:
+                    #if occuring today
+                    if day in activity.frequency:
+                    
+                        possible_activities.append(activity)
+        
+        return possible_activities    
                  
 
         

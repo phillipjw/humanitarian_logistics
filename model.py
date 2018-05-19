@@ -41,6 +41,7 @@ class HumanitarianLogistics(Model):
         self.shock = False
         self.shock_rate = 100
         self.shock_flag = False #flag to run sim without shocks
+        self.shock_inverse = False
         
         self.coa_values = {'SE':20,
                            'ST': 70,
@@ -72,19 +73,14 @@ class HumanitarianLogistics(Model):
         
         ####### Generate COLS
         self.ta = City(self.city_count,self, {'edp'}, 'COL')
-        self.ta.azc.procedure_duration = 2
-        
 
         #### Generate POLS
-        pol_duration = 4
         for i in range(1,self.number_pols+1):
             city = City(i, self, {'as'}, 'POL')
-            city.azc.procedure_duration = pol_duration
 
         ##### Generate AZC
         for i in range(1,self.number_pols*self.pol_to_azc_ratio+1):
             city = City(i, self, {'as_ext', 'tr'}, 'AZC')
-            city.azc.procedure_duration = 35
             
             
 
@@ -135,11 +131,21 @@ class HumanitarianLogistics(Model):
         self.azcs = [azc for azc in self.schedule.agents if
                      type(azc) is AZC and azc.modality == 'AZC']
         azc_health_functions = {}
-        self.azc_index = 0
-        for i in range(len(self.azcs)):
-            azc_health_functions[i] = azc_health
+        self.azc_index = -1
+        for i in range(0,len(self.azcs)):
+            self.azc_index = i
+            azc_health_functions[self.azcs[self.azc_index]] = azc_health
         self.azc_health = DataCollector(model_reporters = azc_health_functions)
         
+        ###records occupancies per modality
+        self.modalities = ['COL', 'POL', 'AZC']
+        modality_functions = {}
+        self.modality_index = -1
+        for i in range(0,len(self.modalities)):
+            self.modality_index = i
+            modality_functions[self.modalities[self.modality_index]] = modality_occupancy
+        
+        self.modality_occ = DataCollector(model_reporters = modality_functions)
         
         self.confusionMatrix = {'TP': 0,
                                 'TN': 0,
@@ -156,10 +162,15 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         self.sr.collect(self)
         self.azc_health.collect(self)
+        self.modality_occ.collect(self)
         
         if self.shock_flag and self.shock:
-            shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
-            #add increasing amount of newcomers
+            if self.shock_inverse:
+                shock_in = int(-1*self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
+                #add increasing amount of newcomers
+            else:
+                shock_in = int(self.shock_rate*np.sin((np.pi/self.shock_duration)*self.schedule.steps) + self.current)
+                
             for i in range(shock_in):
                 self.addNewcomer()
 
@@ -168,7 +179,7 @@ class HumanitarianLogistics(Model):
             if self.shock_position == self.shock_duration:
                 self.shock = False
                 self.shock_position = 0
-                print('shock_over')
+                
             
             
             
@@ -246,12 +257,32 @@ def azc_health(model):
     calcs average health of a newcomer in a particular facility modality
     '''
     
-    building = model.azcs[model.azc_index]
-    health = np.mean([newcomer.values.health for newcomer in building.occupants])
     model.azc_index += 1
     if model.azc_index == len(model.azcs):
         model.azc_index = 0
+    return get_health(model, model.azc_index)
+
+def get_health(model, index):
+    
+    building = model.azcs[index]
+    health = np.mean([newcomer.values.health for newcomer in building.occupants])
     return health
+def modality_occupancy(model):
+    
+    model.modality_index += 1
+    
+    if model.modality_index  == len(model.modalities):
+        model.modality_index = 0
+    return get_modality(model,model.modalities[model.modality_index])
+
+def get_modality(model, modality):
+    
+    occupancy = np.mean([building.city.coa.get_occupancy_pct() for building in
+                         model.schedule.agents if
+                         type(building) is AZC and
+                         building.modality == modality])
+    
+    return occupancy
         
 
 
