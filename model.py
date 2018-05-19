@@ -154,6 +154,7 @@ class HumanitarianLogistics(Model):
         
         
         
+        
 
        
 
@@ -163,6 +164,7 @@ class HumanitarianLogistics(Model):
         self.sr.collect(self)
         self.azc_health.collect(self)
         self.modality_occ.collect(self)
+        print(self.confusionMatrix)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:

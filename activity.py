@@ -73,7 +73,6 @@ class BuildCentral(Action):
         
         #build for that amount
         self.agent.build(need)
-        print('built')
         
         
 
@@ -415,6 +414,57 @@ class Integrate(Action):
         for azc in self.agent.city.azcs:
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
+
+class raiseThreshold(Action):
+    
+    def __init__(self,name, agent, v_index):
+        
+        '''
+        raises threshold, essentially tightens border security
+        '''
+        super().__init__(name, agent,v_index)
+
+        self.counter = 0              #for histogramming purposes
+        self.marginal_decrease = .05
+        
+    def precondition(self):
+        '''
+        IND can do this whenever
+        '''
+        return True
+        
+    def do(self):
+        
+        super().do()
+        
+        #increase margin by .05
+        self.agent.margin -= self.marginal_decrease
+        
+class lowerThreshold(Action):
+    
+    def __init__(self,name, agent, v_index):
+        
+        '''
+        raises threshold, essentially tightens border security
+        '''
+        super().__init__(name, agent,v_index)
+
+        self.counter = 0              #for histogramming purposes
+        self.marginal_increase = .05
+        
+    def precondition(self):
+        '''
+        IND can do this whenever
+        '''
+        return True
+        
+    def do(self):
+        
+        super().do()
+        
+        #increase margin by .05
+        self.agent.margin += self.marginal_increase
+    
                     
         
 

@@ -289,6 +289,21 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
+        self.staff = 100
+        
+        #####ACTIONS######
+        self.actions = set([])
+        self.action_names = ['issueStatement', 'lowerThreshold', 'raiseThreshold', 'adjustStaff']
+        
+        for action in range(len(self.action_names)):
+
+            if action == 2:
+                current_action = activity.lowerThreshold(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 3:
+                current_action = activity.raiseThreshold(self.action_names[action], self,action)
+                self.actions.add(current_action)
+        
         
     def set_time(self, newcomer):
         if newcomer.ls == 'as':
