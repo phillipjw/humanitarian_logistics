@@ -152,6 +152,15 @@ class HumanitarianLogistics(Model):
                                 'FP': 0,
                                 'FN': 0}
         
+        #### Confusion matrix Data Collector
+        self.cm_index = -1
+        cm_functions = {}
+        self.cm = list(self.confusionMatrix.keys())
+        for i in range(0, len(self.cm)):
+            self.cm_index = i
+            cm_functions[self.cm[self.cm_index]] = cm
+            
+        self.cm_dc = DataCollector(model_reporters = cm_functions)
         
         
         
@@ -164,7 +173,7 @@ class HumanitarianLogistics(Model):
         self.sr.collect(self)
         self.azc_health.collect(self)
         self.modality_occ.collect(self)
-        print(self.confusionMatrix)
+        self.cm_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -285,6 +294,15 @@ def get_modality(model, modality):
                          building.modality == modality])
     
     return occupancy
+
+def get_cm(model, idx):
+    return 1.*model.confusionMatrix[model.cm[idx]] / (sum(list(model.confusionMatrix.values()))+1)
+    
+def cm(model):
+    model.cm_index += 1
+    if model.cm_index == len(model.cm):
+        model.cm_index = 0
+    return get_cm(model, model.cm_index)
         
 
 
