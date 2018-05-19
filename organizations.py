@@ -289,11 +289,12 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
-        self.conservatism = 70
+        self.conservatism = 30
         self.self_enhancement = 40
-        self.self_transcendence = 30
+        self.self_transcendence = 80
         self.openness_to_change = 60
-        self.values = Values(10, 30,40,70, 40,self)
+        self.values = Values(10, self.self_enhancement, self.self_transcendence,
+                             self.conservatism, self.openness_to_change,self)
         self.staff = 100
         self.action_frequency = int(365/(self.openness_to_change*52/100))
 
@@ -304,10 +305,10 @@ class IND(Organization):
         
         for action in range(len(self.action_names)):
 
-            if action == 2:
+            if action == 1:
                 current_action = activity.lowerThreshold(self.action_names[action], self,action)
                 self.actions.add(current_action)
-            elif action == 3:
+            elif action == 2:
                 current_action = activity.raiseThreshold(self.action_names[action], self,action)
                 self.actions.add(current_action)
         

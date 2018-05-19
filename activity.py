@@ -420,7 +420,7 @@ class raiseThreshold(Action):
     def __init__(self,name, agent, v_index):
         
         '''
-        raises threshold, essentially tightens border security
+        raises threshold, shrinks the margin, essentially tightens border security
         '''
         super().__init__(name, agent,v_index)
 
@@ -445,12 +445,12 @@ class lowerThreshold(Action):
     def __init__(self,name, agent, v_index):
         
         '''
-        raises threshold, essentially tightens border security
+        lowering the threshold increases the margin
         '''
         super().__init__(name, agent,v_index)
 
         self.counter = 0              #for histogramming purposes
-        self.marginal_increase = .05
+        self.marginal_increase = .15
         
     def precondition(self):
         '''
