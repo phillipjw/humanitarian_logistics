@@ -47,6 +47,26 @@ class City(Agent):
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
+        
+        action_testing = True
+        if action_testing:
+            #add actions to action set
+            for action in range(len(self.coa.action_names)):
+                
+                #make action w a name, actor, and index of value to be satisfied
+        
+                
+                if action == 1:
+                    current_action = activity.Invest(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
+                    current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
+                elif action == 2:
+                    current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
+                elif action == 3:
+                    current_action = activity.Integrate(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
 
         
         
@@ -104,22 +124,7 @@ class COA(Organization):
         #####ACTIONS######
         self.actions = set([])
         self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
-        action_testing = True
-        if action_testing:
-            #add actions to action set
-            for action in range(len(self.action_names)):
-                
-                #make action w a name, actor, and index of value to be satisfied
         
-                
-                if action == 1:
-                    current_action = activity.Invest(self.action_names[action], self,action)
-                    self.actions.add(current_action)
-                    current_action = activity.BuildCentral(self.action_names[action], self,action)
-                    self.actions.add(current_action)
-                if action == 3:
-                    current_action = activity.Integrate(self.action_names[action], self,action)
-                    self.actions.add(current_action)
                     
 
     

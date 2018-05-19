@@ -151,7 +151,7 @@ class Newcomer(Agent):
         elif self.budget > self.coa.city.cost_of_bus_within_city:
             
             
-            azcs = [azc for azc in self.coa.azcs if
+            azcs = [azc for azc in self.coa.city.azcs if
                     azc.modality != 'COL' and azc.activity_center != None and
                     azc.activity_center.activities_available != None]
             

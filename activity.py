@@ -340,9 +340,11 @@ class Segregate(Action):
         self.v_index = v_index          #index of value to be satisfied
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
-        self.unlikely_status_holders = [newcomer for newcomer in self.agent.city.azc.occupants if
-                                       newcomer.ls == 'as_ext' and
-                                       newcomer.second == 0]
+        self.unlikely_status_holders = []
+        for azc in self.agent.city.azcs:
+            for newcomer in azc.occupants:
+                if newcomer.second == 0:
+                    self.unlikely_status_holders.append(newcomer)
         
         
     def precondition(self):
@@ -358,10 +360,10 @@ class Segregate(Action):
         #gets a cost per azc from health + occupancy + activities + proximity
         [azc.get_operational_cost() for azc in 
          self.model.schedule.agents if
-         type(azc) is AZC and
+         type(azc) is organizations.AZC and
          azc.modality != 'COL']
         
-        cheapest_azc_to_maintain = min([azc for azc in self.agent.azcs], key = attrgetter('operational_cost'))
+        cheapest_azc_to_maintain = min([azc for azc in self.agent.city.azcs], key = attrgetter('operational_cost'))
         
         if cheapest_azc_to_maintain != None:
             
@@ -370,7 +372,7 @@ class Segregate(Action):
             
             while count < len(self.unlikely_status_holders):
                 newcomer = self.agent.newcomers.pop()
-                if newcomer.ls == "as_ext" and newcomer.second == 0:
+                if newcomer.second == 0:
                     self.agent.move(newcomer, cheapest_azc_to_maintain)
                     count += 1
                 else:
