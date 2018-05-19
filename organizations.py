@@ -358,8 +358,10 @@ class AZC(Building):
         self.model.schedule.add(self)
         self.model.grid.place_agent(self,self.pos)
         self.activity_center = ActivityCenter(self.unique_id, self.model,self)
-        self.activity_center.activities.add(activity.Language_Class)
-        
+        self.activity_center.activities_available.add(activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0))
+        self.activity_center.activities_available.add(activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0))
+
+
         
         #ter apel shock check
         self.sum_ta = 0 

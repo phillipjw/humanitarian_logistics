@@ -152,7 +152,7 @@ class Newcomer(Agent):
             
             
             azcs = [azc for azc in self.coa.azcs if
-                    not azc.ta and azc.activity_center != None and
+                    azc.modality != 'COL' and azc.activity_center != None and
                     azc.activity_center.activities_available != None]
             
         #local
@@ -175,8 +175,13 @@ class Newcomer(Agent):
         
     def step(self):
         
+        day = self.model.schedule.steps % 7
+        
         #value decay
         self.values.decay_val()
+        
+        possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
+        print(possible_activities)
         
         
         
