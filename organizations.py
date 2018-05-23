@@ -257,7 +257,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
         
 
@@ -289,10 +289,10 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
-        self.conservatism = 30
-        self.self_enhancement = 40
-        self.self_transcendence = 80
-        self.openness_to_change = 60
+        self.conservatism = 50
+        self.self_enhancement = 30
+        self.self_transcendence = 50
+        self.openness_to_change = 70
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         self.staff = 50
@@ -318,7 +318,7 @@ class IND(Organization):
         
     def set_time(self, newcomer):
         capacity = self.city.coa.get_occupancy_pct()
-        staff_adjustment = (self.staff)/100
+        staff_adjustment = 1 - (self.staff)/100
         if newcomer.ls == 'as':
             
             time = staff_adjustment*27*capacity + 8

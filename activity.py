@@ -489,19 +489,20 @@ class lowerThreshold(Action):
     
 class adjustStaff(Action):
     
-    LOW_OCCUPANCY_OCC_TO_STAFF_RATIO = 10
-    HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO = 5
+    
     def __init__(self,name, agent, v_index):
         
         '''
-        raises threshold, shrinks the margin, essentially tightens border security
+        
         '''
         super().__init__(name, agent,v_index)
-        self.counter = 0              #for histogramming purposes???
+        self.counter = 0              #for histogramming purposes #used in the test ipynb
+        self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO = 4
+        self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO = 2
         
     def precondition(self):
         '''
-        IND can do this whenever, right?
+        Indeed, ind can do this whenever.
         '''
         return True
         
@@ -510,15 +511,16 @@ class adjustStaff(Action):
         super().do()
         # Adjust current staff to be in accordance with actual occupancy levels
         # here occupants reside in azc?
-        currentOccupants = len(self.agent.agent.city.azc.occupants)
-        currentStaff = self.agent.agent.city.ind.staff+1 # to ensure no divide by zero
-        if (currentOccupants/currentStaff) >= adjustStaff.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO:
-            self.agent.city.ind.staff = len(self.agent.city.azc.occupants)*LOW_OCCUPANCY_OCC_TO_STAFF_RATIO
-            
-        # this simulates bottle necking highering additional staff when occupancy is high    
-        if (currentOccupants/currentStaff) > adjustStaff.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO:
-            self.agent.city.ind.staff = len(self.agent.city.azc.occupants)*HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO 
         
+        
+        currentOccupants = len(self.agent.city.azc.occupants)
+        currentStaff = self.agent.city.ind.staff+1 # to ensure no divide by zero
+        if (currentOccupants/currentStaff) >= self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO:
+            self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO
+        # this simulates bottle necking highering additional staff when occupancy is high    
+        if (currentOccupants/currentStaff) > self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO:
+            self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO 
+
         
 class Activity(Agent):
     
