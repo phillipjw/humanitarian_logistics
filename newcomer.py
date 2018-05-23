@@ -86,7 +86,7 @@ class Newcomer(Agent):
                 self.ls = 'as'
                 self.coa.house(self)
                 self.coa.city.ind.set_time(self)
-                self.current_procedure_time = self.loc.procedure_duration
+                #self.current_procedure_time = self.coa.city.ind.set_time(self)
         #AZ to TR
         elif self.ls == 'as':
             self.current_procedure_time -= 1

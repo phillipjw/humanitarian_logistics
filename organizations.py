@@ -30,7 +30,7 @@ class City(Agent):
             procedure_time = 2
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
-            procedure_time = 35
+            procedure_time = 180
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -295,7 +295,7 @@ class IND(Organization):
         self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
-        self.staff = 100
+        self.staff = 50
         self.action_frequency = int(365/(self.openness_to_change*52/100))
 
         
@@ -317,14 +317,16 @@ class IND(Organization):
         
         
     def set_time(self, newcomer):
+        capacity = self.city.coa.get_occupancy_pct()
+        staff_adjustment = (self.staff)/100
         if newcomer.ls == 'as':
-            capacity = self.city.coa.get_occupancy_pct()
-            time = 90*capacity + 8
-            newcomer.current_decision_time = int(time)
+            
+            time = staff_adjustment*27*capacity + 8
+            newcomer.current_procedure_time = int(time)
         elif newcomer.ls == 'as_ext':
-            newcomer.decision_time = 90
+            newcomer.current_procedure_time = staff_adjustment*int(180*capacity + 90)
         elif newcomer.ls == 'tr':
-            newcomer.decision_time = 100
+            newcomer.current_procedure_time = 100
     
     def decide(self, first, newcomer, dq):
         

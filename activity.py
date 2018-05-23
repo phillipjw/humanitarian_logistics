@@ -319,7 +319,7 @@ class Invest(Action):
     #residents by increasing staff
         
         self.agent.staff += 10 #placeholder, there could be a more intelligent way to calculate how many to hire
-        self.agent.checkin_frequency = int(365/(self.agent.staff*52/100))
+        self.agent.checkin_frequency = max(1,int(365/(self.agent.staff*52/100)))
                 
 
 class Segregate(Action):
@@ -459,7 +459,7 @@ class raiseThreshold(Action):
         
         super().do()
         
-        #increase margin by .05
+        #decrease margin by .05
         self.agent.margin -= self.marginal_decrease
         
 class lowerThreshold(Action):
