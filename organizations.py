@@ -118,7 +118,7 @@ class COA(Organization):
         self.staff = self.self_transcendence
         self.checkin_frequency =  int(365/(self.staff*52/100))
         self.state = None
-        
+        self.local_NGO=None
         
         self.staff = 100
         self.checkin = activity.Checkin('Checkin', self, 3)
@@ -310,6 +310,9 @@ class IND(Organization):
                 self.actions.add(current_action)
             elif action == 2:
                 current_action = activity.raiseThreshold(self.action_names[action], self,action)
+                self.actions.add(current_action)
+            elif action == 3:
+                current_action = activity.adjustStaff(self.action_names[action], self,action)
                 self.actions.add(current_action)
         
         

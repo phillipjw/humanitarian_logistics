@@ -4,10 +4,19 @@ from scipy.stats import bernoulli
 import numpy as np
 from Values import Values
 from organizations import AZC
-
+from scipy.stats import truncnorm
 
 
 class Newcomer(Agent):
+    
+    HEALTH_MAX = 100.0
+    HEALTH_MIN = 1.0
+    HEALTH_SD = 20.0
+    HEALTH_MEAN = 66.0
+    
+    def get_truncated_normal(mean=50, sd=10, low=0, upp=100):
+        return truncnorm(
+            (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
     
     def __init__(self, unique_id, model,country_of_origin,coa):
         
@@ -56,6 +65,9 @@ class Newcomer(Agent):
         self.doc_quality = 0
         self.case_quality = 0
         
+        # adding a health measure (what would it mean if health was 1 - just incapable of acting)
+        self.health = Newcomer.get_truncated_normal(mean=Newcomer.HEALTH_MEAN, 
+                                                    sd=Newcomer.HEALTH_SD, low=Newcomer.HEALTH_MIN, upp=Newcomer.HEALTH_MAX)
           
     
 
@@ -166,8 +178,8 @@ class Newcomer(Agent):
                 for activity in azc.activity_center.activities_available:
                     #if occuring today
                     if day in activity.frequency:
-                    
-                        possible_activities.append(activity)
+                        if activity.precondition(self):
+                            possible_activities.append(activity)
         
         return possible_activities    
                  
