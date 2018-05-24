@@ -69,7 +69,6 @@ class Newcomer(Agent):
         self.health = Newcomer.get_truncated_normal(mean=Newcomer.HEALTH_MEAN, 
                                                     sd=Newcomer.HEALTH_SD, low=Newcomer.HEALTH_MIN, upp=Newcomer.HEALTH_MAX)
           
-    
 
     def COA_Interaction(self):
         
@@ -193,8 +192,6 @@ class Newcomer(Agent):
         self.values.decay_val()
         
         possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
-        
-        
         
         #update procedings 
         self.COA_Interaction()

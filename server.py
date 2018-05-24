@@ -84,6 +84,13 @@ chart_modality_occupancy = ChartModule([{'Label': 'AZC',
                                          {'Label': 'COL',
                                          'Color': 'red'}], data_collector_name = 'modality_occ')
 
+chart_modality_staff = ChartModule([{'Label': 'AZC',
+                                 'Color': 'black'},
+                                 {'Label': 'POL',
+                                 'Color': 'blue'},
+                                 {'Label': 'COL',
+                                 'Color': 'red'}], data_collector_name = 'staff_dc')
+
 chart_cm = ChartModule([{'Label': 'TP',
                          'Color': 'black'},
                         {'Label': 'TN',
@@ -103,7 +110,7 @@ chart_cm = ChartModule([{'Label': 'TP',
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas, chart_suces, chart_cm, chart_modality_occupancy, chart_azc],
+                       [continuous_canvas, chart_suces, chart_cm, chart_modality_occupancy,chart_modality_staff, chart_azc],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size})

@@ -65,6 +65,7 @@ class HumanitarianLogistics(Model):
         self.space_per_city = int(self.width / self.number_pols)
         self.num_azc = self.number_pols * self.pol_to_azc_ratio
         self.space_per_azc = int(self.width / self.num_azc)
+        self.fraction_ngo = .30
         
         
 
@@ -91,7 +92,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
-        self.dq = False #flag for which type of IND decision to make
+        self.dq = True #flag for which type of IND decision to make
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -162,7 +163,17 @@ class HumanitarianLogistics(Model):
             
         self.cm_dc = DataCollector(model_reporters = cm_functions)
         
+        ### Staff data collector
+        self.staff_index = -1
+        staff_functions = {}
+        self.staff = self.modalities
+        for i in range(0, len(self.staff)):
+            self.staff_index = i
+            staff_functions[self.staff[self.staff_index]] = staff
         
+        self.staff_dc = DataCollector(model_reporters = staff_functions)
+        
+        self.ind_statement = 1
         
 
        
@@ -174,6 +185,7 @@ class HumanitarianLogistics(Model):
         self.azc_health.collect(self)
         self.modality_occ.collect(self)
         self.cm_dc.collect(self)
+        self.staff_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -226,16 +238,20 @@ class HumanitarianLogistics(Model):
     def addNewcomer(self):
         
         #gen NC attributes
-        self.nc_count += 1
-        a = Newcomer(self.nc_count, self, self.country_distribution(), self.ta.coa)
-        self.schedule.add(a)
-        #house in COL
-        a.loc = self.ta.azc
-        self.ta.azc.occupants.add(a)
-        self.ta.azc.occupancy += 1
-        self.country_count[self.country_list.index(a.coo)] += 1
-        
-        a.current_procedure_time = a.loc.procedure_duration
+        if self.ind_statement != None:
+            a = Newcomer(self.nc_count, self, self.country_distribution(), self.ta.coa)
+            if a.second == 0 and np.random.uniform(0,1) > self.ind_statement:
+                return
+            else:
+                self.schedule.add(a)
+                #house in COL
+                a.loc = self.ta.azc
+                self.ta.azc.occupants.add(a)
+                self.ta.azc.occupancy += 1
+                self.country_count[self.country_list.index(a.coo)] += 1
+                a.current_procedure_time = a.loc.procedure_duration
+                    
+       
         
     def Remove(self, agent):
         
@@ -303,6 +319,19 @@ def cm(model):
     if model.cm_index == len(model.cm):
         model.cm_index = 0
     return get_cm(model, model.cm_index)
+
+def get_staff(model, idx):
+    
+    staff =  np.mean([building.city.ind.staff for building in
+                         model.schedule.agents if
+                         type(building) is AZC and
+                         building.modality == model.modalities[idx]])
+    return staff
+def staff(model):
+    model.staff_index += 1
+    if model.staff_index == len(model.staff):
+        model.staff_index = 0
+    return get_staff(model, model.staff_index)
         
 
 

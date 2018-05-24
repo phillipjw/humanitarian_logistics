@@ -427,7 +427,7 @@ class OpenToNGO(Action):
         
     def precondition(self):
         # test to see if an ngo exits. this is right, correct. A coa would have an NGO
-        return self.agent.city.coa.local_NGO != None
+        return self.agent.city.ngo != None
     
     
     def do(self):
@@ -515,13 +515,31 @@ class adjustStaff(Action):
         
         currentOccupants = len(self.agent.city.azc.occupants)
         currentStaff = self.agent.city.ind.staff+1 # to ensure no divide by zero
-        if (currentOccupants/currentStaff) >= self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO:
-            self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO
+        #if (currentOccupants/currentStaff) >= self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO:
+        self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO
         # this simulates bottle necking highering additional staff when occupancy is high    
         if (currentOccupants/currentStaff) > self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO:
             self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO 
 
+class issueStatement(Action):
+
+    def __init__(self, name, agent, v_index):
         
+        super().__init__(name, agent,v_index)
+        self.counter = 0
+        
+    def precondition(self):
+        
+        return True
+    
+    def do(self):
+        super().do()
+        
+        occupancy = np.sum([azc.occupancy for azc in self.agent.model.schedule.agents if
+                           type(azc) is organizations.AZC and azc.modality == 'AZC'])
+        capacity = np.sum([azc.capacity for azc in self.agent.model.schedule.agents if
+                           type(azc) is organizations.AZC and azc.modality == 'AZC'])
+        self.agent.model.ind_statement = 1 - (occupancy / capacity)
 class Activity(Agent):
     
     def __init__(self, unique_id, model, frequency, v_index):
@@ -562,7 +580,7 @@ class Activity(Agent):
         
 
 class Doctor(Activity):
-    HEALTH_INCREASE = 1.0
+    
     def __init__(self, unique_id, model, frequency,v_index):
     
             
@@ -578,19 +596,21 @@ class Doctor(Activity):
         # could everyone do this or just as_ext?
         self.occupant_type = {'tr', 'as', 'as_ext'}
         self.v_index = v_index
+        self.HEALTH_INCREASE = 10
+        self.healthiness_threshold = 40
         
     def precondition(self, agent):
         '''
-        Any agent can do this regardless of health, right?
+        Available to those who need it, ie health below threshold
         '''
-        return True
+        return agent.ls in self.occupant_type and agent.health < self.healthiness_threshold
     
     def satisfaction(self, agent):
         super().satisfaction(agent)
     
     def do(self, agent):
         super().satisfaction(agent)
-        agent.health = min(agent.health+Doctor.HEALTH_INCREASE, Agent.HEALTH_MAX)
+        agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         
 class Football(Activity):
     HEALTH_THRESHOLD = 50.0
@@ -608,11 +628,12 @@ class Football(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.occupant_type = {'as', 'as_ext', 'tr'}
         
         self.v_index = v_index
     
     def precondition(self, agent):
-        return  agent.health > Football.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > Football.HEALTH_THRESHOLD
         
     # why was there no satisfaction here before
     def satisfaction(self, agent):
@@ -620,7 +641,7 @@ class Football(Activity):
    
     def do(self, agent):
         super().satisfaction(agent)
-        agent.health = min(agent.health+Football.HEALTH_INCREASE, Agent.HEALTH_MAX)
+        agent.health = min(agent.health+Football.HEALTH_INCREASE, agent.HEALTH_MAX)
         #possible additions: SOCIALIZE or HEALTH++
         
    
@@ -644,7 +665,7 @@ class Craft(Activity):
         self.v_index = v_index
         
     def precondition(self, agent):
-        return  agent.health > Craft.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > Craft.HEALTH_THRESHOLD
          
     def satisfaction(self, agent):
         super().satisfaction(agent)
@@ -654,19 +675,19 @@ class Craft(Activity):
         #possible additions: SOCIALIZE or HEALTH++
 
 class Language_Class(Activity):
-    HEALTH_THRESHOLD = 10.0
     def __init__(self, unique_id, model, frequency,v_index):
         
         super().__init__(unique_id, model, frequency, v_index)
         
         self.effect = self.satisfaction
         self.frequency = frequency
-        self.occupany_type = {'tr'}
-        
+        self.occupant_type = {'tr'}
+        self.HEALTH_THRESHOLD = 10.0
+
         self.v_index = v_index
     
     def precondition(self, agent):
-        return  agent.health > Language_Class.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
         
     def satisfaction(self, agent):
         super().satisfaction(agent)
@@ -677,7 +698,7 @@ class Language_Class(Activity):
         #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
 
 class Volunteer(Activity):
-    HEALTH_THRESHOLD = 40.0
+    
     def __init__(self, unique_id, model, frequency,v_index):
         
         super().__init__(unique_id, model, frequency, v_index)
@@ -685,11 +706,11 @@ class Volunteer(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'tr', 'as', 'as_ext'}
-        
+        self.HEALTH_THRESHOLD = 40.0
         self.v_index = v_index
     
     def precondition(self, agent):
-        return  agent.health > Volunteer.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
              
     def satisfaction(self, agent):
         super().satisfaction(agent)
@@ -712,13 +733,16 @@ class Work(Activity):
         self.v_index = v_index
         
     def precondition(self, agent):
-        return  agent.health > Work.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD 
          
     def satisfaction(self, agent):
         super().satisfaction(agent)
     
     def do(self, agent):
         super().satisfaction(agent)
+        earnings = 40
+        agent.budget += .50*earnings
+        agent.coa.budget += .50*earnings
         
             #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
             # Also agent.budget++

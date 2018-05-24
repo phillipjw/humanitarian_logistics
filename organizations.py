@@ -20,7 +20,7 @@ class City(Agent):
     
     def __init__(self, unique_id, model, occupant_type,modality):
         super().__init__(unique_id, model)
-        
+        self.ngo = None
         self.modality = modality
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
@@ -31,6 +31,7 @@ class City(Agent):
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
+            self.ngo = NGO(self.unique_id, self.model, self)
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -118,7 +119,6 @@ class COA(Organization):
         self.staff = self.self_transcendence
         self.checkin_frequency =  int(365/(self.staff*52/100))
         self.state = None
-        self.local_NGO=None
         
         self.staff = 100
         self.checkin = activity.Checkin('Checkin', self, 3)
@@ -264,7 +264,7 @@ class COA(Organization):
         
 class NGO(Organization):
     
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model,city):
         super().__init__(unique_id, model)
         
         '''
@@ -290,9 +290,9 @@ class IND(Organization):
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
         self.conservatism = 50
-        self.self_enhancement = 30
-        self.self_transcendence = 50
-        self.openness_to_change = 70
+        self.self_enhancement = 70
+        self.self_transcendence = 45
+        self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         self.staff = 50
@@ -314,13 +314,15 @@ class IND(Organization):
             elif action == 3:
                 current_action = activity.adjustStaff(self.action_names[action], self,action)
                 self.actions.add(current_action)
+            elif action == 0:
+                current_action = activity.issueStatement(self.action_names[action], self,action)
+                self.actions.add(current_action)
         
         
     def set_time(self, newcomer):
         capacity = self.city.coa.get_occupancy_pct()
         staff_adjustment = 1 - (self.staff)/100
         if newcomer.ls == 'as':
-            
             time = staff_adjustment*27*capacity + 8
             newcomer.current_procedure_time = int(time)
         elif newcomer.ls == 'as_ext':
@@ -371,7 +373,7 @@ class IND(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
     
                            
@@ -422,7 +424,11 @@ class AZC(Building):
         self.activity_center = ActivityCenter(self.unique_id, self.model,self)
         self.activity_center.activities_available.add(activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0))
         self.activity_center.activities_available.add(activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0))
-
+        self.activity_center.activities_available.add(activity.Doctor(self.unique_id, self.model, {1,2,3,4,5}, 2))
+        
+        #NGO activities if available
+        if self.city.ngo != None:
+            self.activity_center.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3}, 3))
 
         
         #ter apel shock check
