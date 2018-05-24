@@ -65,10 +65,11 @@ class Newcomer(Agent):
         self.doc_quality = 0
         self.case_quality = 0
         
-        # adding a health measure (what would it mean if health was 1 - just incapable of acting)
+        # adding a health measure (what would it mean if health was 1 - just incapable of acting) 
+        # that would mean that the health bonus given by exercises is insufficient to counteract health decay.
         self.health = Newcomer.get_truncated_normal(mean=Newcomer.HEALTH_MEAN, 
                                                     sd=Newcomer.HEALTH_SD, low=Newcomer.HEALTH_MIN, upp=Newcomer.HEALTH_MAX)
-          
+        self.health_decay = self.model.health_decay
 
     def COA_Interaction(self):
         
@@ -193,7 +194,23 @@ class Newcomer(Agent):
         
         possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
         
+        #do activity
+        priority = self.values.prioritize()
+        
+        #find action that corresponds to priority
+        current = None
+        for value in priority:
+            for action in possible_activities:
+                if value == action.v_index:
+                    current = action
+                    break
+            if current != None:
+                    break
+        #update v_sat
+        if current != None:
+            current.do(self)
+        
         #update procedings 
         self.COA_Interaction()
         
-
+        self.health -= self.health_decay

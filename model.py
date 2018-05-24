@@ -34,6 +34,11 @@ class HumanitarianLogistics(Model):
         self.number_pols = num_pols
         self.city_size = city_size
         
+        #test health params
+        #health param
+        self.health_decay = .35
+        self.football_increase = 4
+        
         ##### Shock
         self.shock_duration = 100
         self.shock_position = 0
@@ -83,7 +88,7 @@ class HumanitarianLogistics(Model):
         for i in range(1,self.number_pols*self.pol_to_azc_ratio+1):
             city = City(i, self, {'as_ext', 'tr'}, 'AZC')
             
-            
+        
 
         
             

@@ -563,6 +563,7 @@ class Activity(Agent):
         
         #putting the above together into one array
         self.v_index = v_index
+        self.name = None
         
         self.effect = None
     
@@ -577,6 +578,10 @@ class Activity(Agent):
         '''
         
         self.satisfaction(agent)
+        if self.name in agent.loc.activity_center.counter:
+            agent.loc.activity_center.counter[self.name] += 1
+        else:
+            agent.loc.activity_center.counter[self.name] = 1
         
 
 class Doctor(Activity):
@@ -596,8 +601,9 @@ class Doctor(Activity):
         # could everyone do this or just as_ext?
         self.occupant_type = {'tr', 'as', 'as_ext'}
         self.v_index = v_index
-        self.HEALTH_INCREASE = 10
-        self.healthiness_threshold = 40
+        self.HEALTH_INCREASE = 5
+        self.healthiness_threshold = 30
+        self.name = 'Doctor'
         
     def precondition(self, agent):
         '''
@@ -613,8 +619,7 @@ class Doctor(Activity):
         agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         
 class Football(Activity):
-    HEALTH_THRESHOLD = 50.0
-    HEALTH_INCREASE = 1
+    
     def __init__(self, unique_id, model, frequency,v_index):
         
         '''
@@ -629,11 +634,14 @@ class Football(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'as', 'as_ext', 'tr'}
+        self.HEALTH_THRESHOLD = 50.0
+        self.HEALTH_INCREASE = self.model.football_increase
+        self.name = 'Football'
         
         self.v_index = v_index
     
     def precondition(self, agent):
-        return  agent.ls in self.occupant_type and agent.health > Football.HEALTH_THRESHOLD
+        return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
         
     # why was there no satisfaction here before
     def satisfaction(self, agent):
@@ -641,7 +649,7 @@ class Football(Activity):
    
     def do(self, agent):
         super().satisfaction(agent)
-        agent.health = min(agent.health+Football.HEALTH_INCREASE, agent.HEALTH_MAX)
+        agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         #possible additions: SOCIALIZE or HEALTH++
         
    
@@ -661,6 +669,7 @@ class Craft(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.name = 'Craft'
         
         self.v_index = v_index
         
@@ -683,6 +692,7 @@ class Language_Class(Activity):
         self.frequency = frequency
         self.occupant_type = {'tr'}
         self.HEALTH_THRESHOLD = 10.0
+        self.name = 'languageClass'
 
         self.v_index = v_index
     
@@ -693,7 +703,7 @@ class Language_Class(Activity):
         super().satisfaction(agent)
     
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         
         #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
 
@@ -708,15 +718,15 @@ class Volunteer(Activity):
         self.occupant_type = {'tr', 'as', 'as_ext'}
         self.HEALTH_THRESHOLD = 40.0
         self.v_index = v_index
+        self.name = 'Volunteer'
     
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
              
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
+
     
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         
         #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
@@ -728,6 +738,7 @@ class Work(Activity):
         
         self.effect = self.satisfaction
         self.frequency = frequency
+        self.name = 'Work'
         self.occupant_type = {'tr', 'as', 'as_ext'}
         
         self.v_index = v_index
@@ -735,11 +746,10 @@ class Work(Activity):
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD 
          
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
+
     
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         earnings = 40
         agent.budget += .50*earnings
         agent.coa.budget += .50*earnings

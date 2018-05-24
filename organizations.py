@@ -31,7 +31,8 @@ class City(Agent):
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            self.ngo = NGO(self.unique_id, self.model, self)
+            if np.random.uniform(0,1) > .5:
+                self.ngo = NGO(self.unique_id, self.model, self)
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -63,8 +64,9 @@ class City(Agent):
                     current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
                 elif action == 0:
-                    current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
-                    self.coa.actions.add(current_action)
+                    pass
+                    #current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
+                    #self.coa.actions.add(current_action)
                 elif action == 2:
                     current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
@@ -127,6 +129,8 @@ class COA(Organization):
         #####ACTIONS######
         self.actions = set([])
         self.action_names = ['Consolidate', 'Invest', 'Segregate', 'Integrate']
+        
+        self.budget = 0
         
                     
 
@@ -428,7 +432,7 @@ class AZC(Building):
         
         #NGO activities if available
         if self.city.ngo != None:
-            self.activity_center.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3}, 3))
+            self.activity_center.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3,4,5}, 3))
 
         
         #ter apel shock check
@@ -565,7 +569,7 @@ class AZC(Building):
             self.set_state('Normal')
             self.shock_position = 0
             self.set_policy()
-            print('shock-over')                    
+            #print('shock-over')                    
     
     def problematic_check(self):
         estimation = self.estimate(max(3, self.shock_position))                       
@@ -608,6 +612,8 @@ class AZC(Building):
         
         #update state
         self.get_state()
+        
+        print(self.activity_center.counter)
         
         
         
@@ -669,6 +675,7 @@ class ActivityCenter(Building):
         self.occupancy = 0
         self.azc = azc
         self.activities_available = set([])
+        self.counter = {}
         
 
             
