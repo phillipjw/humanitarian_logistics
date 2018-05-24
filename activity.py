@@ -610,12 +610,10 @@ class Doctor(Activity):
         Available to those who need it, ie health below threshold
         '''
         return agent.ls in self.occupant_type and agent.health < self.healthiness_threshold
-    
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
+
     
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         
 class Football(Activity):
@@ -643,12 +641,9 @@ class Football(Activity):
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
         
-    # why was there no satisfaction here before
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
-   
+
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         #possible additions: SOCIALIZE or HEALTH++
         
@@ -676,11 +671,9 @@ class Craft(Activity):
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > Craft.HEALTH_THRESHOLD
          
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
     
     def do(self, agent):
-        super().satisfaction(agent)
+        super().do(agent)
         #possible additions: SOCIALIZE or HEALTH++
 
 class Language_Class(Activity):
@@ -699,8 +692,7 @@ class Language_Class(Activity):
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > self.HEALTH_THRESHOLD
         
-    def satisfaction(self, agent):
-        super().satisfaction(agent)
+
     
     def do(self, agent):
         super().do(agent)

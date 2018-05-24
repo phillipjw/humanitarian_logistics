@@ -613,7 +613,6 @@ class AZC(Building):
         #update state
         self.get_state()
         
-        print(self.activity_center.counter)
         
         
         
