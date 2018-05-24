@@ -5,7 +5,7 @@ import numpy as np
 from Values import Values
 from organizations import AZC
 from scipy.stats import truncnorm
-
+from socialnetwork import SocialNetwork
 
 class Newcomer(Agent):
     
@@ -17,6 +17,7 @@ class Newcomer(Agent):
     def get_truncated_normal(mean=50, sd=10, low=0, upp=100):
         return truncnorm(
             (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
+    
     
     def __init__(self, unique_id, model,country_of_origin,coa):
         
@@ -70,6 +71,7 @@ class Newcomer(Agent):
         self.health = Newcomer.get_truncated_normal(mean=Newcomer.HEALTH_MEAN, 
                                                     sd=Newcomer.HEALTH_SD, low=Newcomer.HEALTH_MIN, upp=Newcomer.HEALTH_MAX)
         self.health_decay = self.model.health_decay
+        self.sn = SocialNetwork()
 
     def COA_Interaction(self):
         
@@ -209,8 +211,14 @@ class Newcomer(Agent):
         #update v_sat
         if current != None:
             current.do(self)
+            self.model.action_agents.append(self)
+            self.model.actions.append(current)
         
         #update procedings 
         self.COA_Interaction()
         
         self.health -= self.health_decay
+        
+        if self.model.include_social_networks:
+            self.sn.decayRelationships()
+            self.sn.maintainNetwork()

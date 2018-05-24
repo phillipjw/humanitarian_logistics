@@ -564,7 +564,6 @@ class Activity(Agent):
         #putting the above together into one array
         self.v_index = v_index
         self.name = None
-        
         self.effect = None
     
     def satisfaction(self, agent):
@@ -581,8 +580,7 @@ class Activity(Agent):
         if self.name in agent.loc.activity_center.counter:
             agent.loc.activity_center.counter[self.name] += 1
         else:
-            agent.loc.activity_center.counter[self.name] = 1
-        
+            agent.loc.activity_center.counter[self.name] = 1 
 
 class Doctor(Activity):
     

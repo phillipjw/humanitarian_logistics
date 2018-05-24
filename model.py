@@ -18,14 +18,14 @@ from viz import AZC_Viz
 #from Activities import Activity, Football
 
 
-
+    
 
 class HumanitarianLogistics(Model):
     """A model with: number of azc
         rate of newcomer arrival
         dimensions width and height"""
-
-
+    SOCIAL_ACTIVITIES = ["Football", "Craft", "LanguageClass"]
+    
     def __init__(self, width, height, num_pols, city_size):
 
         #canvas info
@@ -180,7 +180,9 @@ class HumanitarianLogistics(Model):
         
         self.ind_statement = 1
         
-
+        self.action_agents = []
+        self.actions = []
+        self.include_social_networks = False
        
 
 
@@ -222,8 +224,29 @@ class HumanitarianLogistics(Model):
             for i in range(self.current):
                 self.addNewcomer()
     
-        
+        if self.include_social_networks:
+            self.adjust_social_networks()
             
+    def reset_social_network_lists(self):
+        self.action_agents=[]
+        self.actions=[]
+    
+    def adjust_social_networks(self):
+        for i in range(0, len(self.action_agents)):
+            agent_i = self.action_agents[i]
+            action_i = self.actions[i]
+            city_i = agent_i.coa.city
+            for j in range(0, len(self.actions)):
+               agent_j = self.action_agents[j]
+               action_j = self.actions[j]
+               city_j = agent_j.coa.city
+               if i != j:
+                   if city_i == city_j:
+                       if action_i.name == action_j.name:
+                           if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:                       
+                               agent_i.sn.bondWithAgent(agent_j)
+                           
+        self.reset_social_network_lists()
     
     def country_distribution(self):
         #draws a random discrete number from multinomial distribution
