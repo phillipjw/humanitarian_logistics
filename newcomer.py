@@ -220,8 +220,8 @@ class Newcomer(Agent):
 
         if self.current != None:
             self.current[0].do(self)
-	    self.self.model.action_agents.append(self)
-            self.model.actions.append(current[0])
+            self.model.action_agents.append(self)
+            self.model.actions.append(self.current[0])
 
         
         #update procedings 
