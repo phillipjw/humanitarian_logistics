@@ -587,6 +587,8 @@ class Activity(Agent):
 
             agent.current[1].activity_center.counter[self.name] = 1
             
+        agent.acculturation += self.local_involvement*((agent.max_acc - agent.acculturation)/50)
+            
 
 class Doctor(Activity):
     
@@ -637,7 +639,7 @@ class Football(Activity):
         self.frequency = frequency
         self.occupant_type = {'as', 'as_ext', 'tr'}
         self.HEALTH_THRESHOLD = 50.0
-        self.HEALTH_INCREASE = self.model.football_increase
+        self.HEALTH_INCREASE = 4
         self.name = 'Football'
         
         self.v_index = v_index
@@ -753,7 +755,7 @@ class Work(Activity):
     
     def do(self, agent):
         super().do(agent)
-        earnings = 40
+        earnings = 10
         agent.budget += .50*earnings
         agent.coa.budget += .50*earnings
         

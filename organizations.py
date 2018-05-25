@@ -31,7 +31,7 @@ class City(Agent):
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            if np.random.uniform(0,1) < .2:
+            if np.random.uniform(0,1) < .5:
                 self.ngo = NGO(self.unique_id, self.model, self)
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -65,13 +65,16 @@ class City(Agent):
                     self.coa.actions.add(current_action)
                     current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
+                elif action == 2:
+                    current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
+                '''
                 elif action == 0:
                     
                     current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
-                elif action == 2:
-                    current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
-                    self.coa.actions.add(current_action)
+                '''
+
                 '''
                 elif action == 3:
                     current_action = activity.Integrate(self.coa.action_names[action], self.coa,action)
@@ -261,7 +264,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
         
 

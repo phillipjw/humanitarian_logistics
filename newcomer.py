@@ -58,7 +58,7 @@ class Newcomer(Agent):
         self.values = Values(10, 40, 30, 60, 70, self)
         self.testing_activities = False
         self.budget = 0
-        self.acculturation = np.random.uniform(0,.2)
+        self.acculturation = .2
         self.max_acc = 1.
         
         #measure of quality o
@@ -156,6 +156,9 @@ class Newcomer(Agent):
         #Add default activities such as work once written
         possible_activities = []
         
+        #deduct for food
+        self.budget -= 8
+        
         #check if enough for intercity
         if self.budget > self.coa.city.cost_of_bus_to_another_city:
             
@@ -217,12 +220,14 @@ class Newcomer(Agent):
                     break
         
         #update v_sat
-
+        prior = self.acculturation
         if self.current != None:
             self.current[0].do(self)
             self.model.action_agents.append(self)
             self.model.actions.append(self.current[0])
-
+        
+        if self.acculturation > prior:
+            print(self.loc == self.current[1],self.current[0].name)
         
         #update procedings 
         self.COA_Interaction()

@@ -97,7 +97,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
-        self.dq = True #flag for which type of IND decision to make
+        self.dq = False #flag for which type of IND decision to make
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -189,10 +189,10 @@ class HumanitarianLogistics(Model):
     def step(self):
         self.schedule.step()
         self.sr.collect(self)
-        self.azc_health.collect(self)
+        #self.azc_health.collect(self)
         self.modality_occ.collect(self)
-        self.cm_dc.collect(self)
-        self.staff_dc.collect(self)
+        #self.cm_dc.collect(self)
+        #self.staff_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
