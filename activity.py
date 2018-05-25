@@ -564,6 +564,7 @@ class Activity(Agent):
         #putting the above together into one array
         self.v_index = v_index
         self.name = None
+        self.local_involvement = 0  #number between 0 and 1 indicating what percent of participants are locals
         
         self.effect = None
     
@@ -576,13 +577,19 @@ class Activity(Agent):
         Do is separate from satisfaction bc there may be
         extra changes in state that are activity specific
         '''
-        
+        #change satisfaction 
         self.satisfaction(agent)
-        if self.name in agent.loc.activity_center.counter:
-            agent.loc.activity_center.counter[self.name] += 1
+        if self.name in agent.current[1].activity_center.counter:
+            agent.current[1].activity_center.counter[self.name] += 1
         else:
-            agent.loc.activity_center.counter[self.name] = 1
-        
+            agent.current[1].activity_center.counter[self.name] = 1
+            
+        pre = agent.acculturation 
+        agent.acculturation += self.local_involvement * agent.acculturation
+        post = agent.acculturation
+        if self.name == 'Football':
+            print(self.local_involvement)
+            print(self.name, pre == post)
 
 class Doctor(Activity):
     
@@ -601,9 +608,9 @@ class Doctor(Activity):
         # could everyone do this or just as_ext?
         self.occupant_type = {'tr', 'as', 'as_ext'}
         self.v_index = v_index
-        self.HEALTH_INCREASE = 5
         self.healthiness_threshold = 30
         self.name = 'Doctor'
+        self.HEALTH_INCREASE = 10
         
     def precondition(self, agent):
         '''
@@ -643,8 +650,11 @@ class Football(Activity):
         
 
     def do(self, agent):
+        self.local_involvement = agent.current[1].city.public_opinion
+        
         super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
+        
         #possible additions: SOCIALIZE or HEALTH++
         
    
@@ -696,7 +706,7 @@ class Language_Class(Activity):
     
     def do(self, agent):
         super().do(agent)
-        
+        agent.acculturation += (agent.max_acc - agent.acculturation) / 10
         #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
 
 class Volunteer(Activity):
@@ -718,8 +728,12 @@ class Volunteer(Activity):
 
     
     def do(self, agent):
+        self.local_involvement = agent.current[1].coa.city.public_opinion
         super().do(agent)
         
+        po_max = agent.current[1].coa.city.po_max
+        current = agent.current[1].coa.city.public_opinion
+        agent.current[1].coa.city.public_opinion += (po_max - current) / 10
         #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):

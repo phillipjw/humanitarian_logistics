@@ -31,7 +31,7 @@ class City(Agent):
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            if np.random.uniform(0,1) > .5:
+            if np.random.uniform(0,1) < .2:
                 self.ngo = NGO(self.unique_id, self.model, self)
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -49,7 +49,9 @@ class City(Agent):
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
-        
+        self.public_opinion = .5                #cities start out neutral regarding PO of NC.
+        self.po_max = 1.
+        self.po_min = 0
         action_testing = True
         if action_testing:
             #add actions to action set
@@ -64,16 +66,17 @@ class City(Agent):
                     current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
                 elif action == 0:
-                    pass
-                    #current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
-                    #self.coa.actions.add(current_action)
+                    
+                    current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
                 elif action == 2:
                     current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
+                '''
                 elif action == 3:
                     current_action = activity.Integrate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
-
+                '''
         
         
 
@@ -294,8 +297,8 @@ class IND(Organization):
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
         self.conservatism = 50
-        self.self_enhancement = 70
-        self.self_transcendence = 45
+        self.self_enhancement = 45
+        self.self_transcendence = 70
         self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
@@ -426,14 +429,7 @@ class AZC(Building):
         self.model.schedule.add(self)
         self.model.grid.place_agent(self,self.pos)
         self.activity_center = ActivityCenter(self.unique_id, self.model,self)
-        self.activity_center.activities_available.add(activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0))
-        self.activity_center.activities_available.add(activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0))
-        self.activity_center.activities_available.add(activity.Doctor(self.unique_id, self.model, {1,2,3,4,5}, 2))
         
-        #NGO activities if available
-        if self.city.ngo != None:
-            self.activity_center.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3,4,5}, 3))
-
         
         #ter apel shock check
         self.sum_ta = 0 
@@ -613,6 +609,8 @@ class AZC(Building):
         #update state
         self.get_state()
         
+
+        
         
         
         
@@ -673,7 +671,16 @@ class ActivityCenter(Building):
         self.available = False
         self.occupancy = 0
         self.azc = azc
-        self.activities_available = set([])
+        self.activities_available = set([
+                activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0),
+                activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
+                activity.Doctor(self.unique_id, self.model, {1,2,3,4,5}, 2)])
+        
+        #NGO activities if available
+        if self.azc.city.ngo != None:
+            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3,4,5}, 3))
+            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
+
         self.counter = {}
         
 

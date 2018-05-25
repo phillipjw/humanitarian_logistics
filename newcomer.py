@@ -9,10 +9,7 @@ from scipy.stats import truncnorm
 
 class Newcomer(Agent):
     
-    HEALTH_MAX = 100.0
-    HEALTH_MIN = 1.0
-    HEALTH_SD = 20.0
-    HEALTH_MEAN = 66.0
+    
     
     def get_truncated_normal(mean=50, sd=10, low=0, upp=100):
         return truncnorm(
@@ -57,9 +54,11 @@ class Newcomer(Agent):
             self.second = 1
                                   
         # new comer values
-        self.values = Values(10, 70, 30, 70, 50, self)
+        self.values = Values(10, 40, 30, 60, 70, self)
         self.testing_activities = False
         self.budget = 0
+        self.acculturation = np.random.uniform(0,.2)
+        self.max_acc = 1.
         
         #measure of quality o
         self.doc_quality = 0
@@ -67,8 +66,13 @@ class Newcomer(Agent):
         
         # adding a health measure (what would it mean if health was 1 - just incapable of acting) 
         # that would mean that the health bonus given by exercises is insufficient to counteract health decay.
-        self.health = Newcomer.get_truncated_normal(mean=Newcomer.HEALTH_MEAN, 
-                                                    sd=Newcomer.HEALTH_SD, low=Newcomer.HEALTH_MIN, upp=Newcomer.HEALTH_MAX)
+        self.HEALTH_MAX = 100.0
+        self.HEALTH_MIN = 1.0
+        self.HEALTH_SD = 20.0
+        self.HEALTH_MEAN = 66.0
+        
+        self.health = Newcomer.get_truncated_normal(mean=self.HEALTH_MEAN, 
+                                                    sd=self.HEALTH_SD, low=self.HEALTH_MIN, upp=self.HEALTH_MAX)
         self.health_decay = self.model.health_decay
 
     def COA_Interaction(self):
@@ -104,6 +108,7 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
+                        self.coa.city.public_opinion -= 1000
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -122,6 +127,7 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
+                        self.coa.city.public_opinion -= (self.coa.city.po_min - self.coa.city.public_opinion) / 2
                 
                 #if negative decision
                 else:
@@ -175,11 +181,12 @@ class Newcomer(Agent):
             
             #add activities in selected AZCs to possible activity list
             for azc in azcs:
+                
                 for activity in azc.activity_center.activities_available:
                     #if occuring today
                     if day in activity.frequency:
                         if activity.precondition(self):
-                            possible_activities.append(activity)
+                            possible_activities.append((activity,azc))
         
         return possible_activities    
                  
@@ -198,17 +205,18 @@ class Newcomer(Agent):
         priority = self.values.prioritize()
         
         #find action that corresponds to priority
-        current = None
+        self.current = None
         for value in priority:
             for action in possible_activities:
-                if value == action.v_index:
-                    current = action
+                if value == action[0].v_index:
+                    self.current = action
                     break
-            if current != None:
+            if self.current != None:
                     break
+        
         #update v_sat
-        if current != None:
-            current.do(self)
+        if self.current != None:
+            self.current[0].do(self)
         
         #update procedings 
         self.COA_Interaction()
