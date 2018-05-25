@@ -564,8 +564,10 @@ class Activity(Agent):
         #putting the above together into one array
         self.v_index = v_index
         self.name = None
+
         self.local_involvement = 0  #number between 0 and 1 indicating what percent of participants are locals
         
+
         self.effect = None
     
     def satisfaction(self, agent):
@@ -582,14 +584,9 @@ class Activity(Agent):
         if self.name in agent.current[1].activity_center.counter:
             agent.current[1].activity_center.counter[self.name] += 1
         else:
+
             agent.current[1].activity_center.counter[self.name] = 1
             
-        pre = agent.acculturation 
-        agent.acculturation += self.local_involvement * agent.acculturation
-        post = agent.acculturation
-        if self.name == 'Football':
-            print(self.local_involvement)
-            print(self.name, pre == post)
 
 class Doctor(Activity):
     

@@ -78,14 +78,11 @@ class City(Agent):
                     self.coa.actions.add(current_action)
                 '''
         
-        
+    def __eq__(self, other): 
+        return self.unique_id == other.unique_id    
 
     def step(self):
         pass
-        
-        
-
-
 
 class Organization(Agent):
     
