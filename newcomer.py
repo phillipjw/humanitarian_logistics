@@ -220,14 +220,12 @@ class Newcomer(Agent):
                     break
         
         #update v_sat
-        prior = self.acculturation
         if self.current != None:
             self.current[0].do(self)
             self.model.action_agents.append(self)
             self.model.actions.append(self.current[0])
         
-        if self.acculturation > prior:
-            print(self.loc == self.current[1],self.current[0].name)
+        
         
         #update procedings 
         self.COA_Interaction()

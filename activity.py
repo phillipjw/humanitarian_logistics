@@ -21,6 +21,26 @@ class Action():
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
+    
+class adjustStaff_COA(Action):
+    '''
+    An action that calibrates current staff to current number of occupants
+    '''
+    def __init__(self,name, agent, v_index):
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        '''
+        COA can do this theoretically whenever, but we could also put a budget constraint
+        '''
+
+        return True
+    def do(self):
+        super().do()
+        
+        self.agent.staff = self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio
+    
+    
 class Checkin(Action):
     
     def __init__(self, name, agent, v_index):
@@ -40,12 +60,21 @@ class Checkin(Action):
         checks health of residents, if below threshold satisfy conservatism (ie security)
         '''
         super().do()
+        
+        current_ratio = self.agent.staff / np.sum([azc.occupancy for azc in
+                                                   self.agent.city.azcs])
+        error_probability = current_ratio / self.agent.staff_to_resident_ratio
+        print(error_probability)
         #iterate through newcomers
         for newcomer in self.agent.city.azc.occupants:
-            if newcomer.values.health < self.healthy_threshold:
+            #probability of error depends on number of staff
+            
+            if np.random.uniform(0,1) < error_probability:
+                #do checkin
+                if newcomer.values.health < self.healthy_threshold:
                     
-                #placeholder value satisfaction
-                newcomer.values.val_t += np.array([50,50,50,50])
+                    #placeholder value satisfaction
+                    newcomer.values.val_t += np.array([50,50,50,50])
         
 
 class BuildCentral(Action):
@@ -318,8 +347,7 @@ class Invest(Action):
     #During a non-shock period, COA satisfies ST by investing in the quality of life of its
     #residents by increasing staff
         
-        self.agent.staff += 10 #placeholder, there could be a more intelligent way to calculate how many to hire
-        self.agent.checkin_frequency = max(1,int(365/(self.agent.staff*52/100)))
+        pass
                 
 
 class Segregate(Action):
