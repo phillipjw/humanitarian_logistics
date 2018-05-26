@@ -71,7 +71,7 @@ class City(Agent):
                 
                 elif action == 0:
                     
-                    current_action = activity.Consolidate(self.coa.action_names[action], self.coa,action)
+                    current_action = activity.improveFacilities(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
                 
                 elif action == 3:
@@ -110,8 +110,8 @@ class COA(Organization):
         
         self.self_enhancement = 20
         self.self_transcendence = 40    
-        self.conservatism = 30
-        self.openness_to_change = 60
+        self.conservatism = 60
+        self.openness_to_change = 30
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         
@@ -120,7 +120,7 @@ class COA(Organization):
         self.assessment_frequency = int(365/(self.openness_to_change*52/100))
         self.action_frequency = self.assessment_frequency
         self.checkin_frequency =  int(365/(self.self_transcendence*52/100))
-        self.state = None
+        self.state = 'Normal'
         self.staff_to_resident_ratio = .15
         
         self.staff = 15
@@ -129,7 +129,7 @@ class COA(Organization):
         
         #####ACTIONS######
         self.actions = set([])
-        self.action_names = ['Consolidate', 'Invest', 'Segregate', 'adjustStaff']
+        self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff']
         
         self.budget = 0
         
@@ -262,7 +262,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
         
 
@@ -413,6 +413,7 @@ class AZC(Building):
         self.operating_capacity = None
         self.health = 100
         self.max_health = 100
+        self.operational_health = 50
         self.operational_cost = self.occupancy/self.capacity + self.health/self.max_health
         self.occupancy = 0
         self.health = 100
@@ -593,7 +594,7 @@ class AZC(Building):
         else:
             self.problematic_check()
             
-    def get_operational_cost():
+    def get_operational_cost(self):
         occupancy = self.occupancy / self.capacity
         health = self.health/ self.max_health
         

@@ -25,6 +25,8 @@ class Action():
 class adjustStaff_COA(Action):
     '''
     An action that calibrates current staff to current number of occupants
+    Value: Openness to change
+    Improves Flexibility
     '''
     def __init__(self,name, agent, v_index):
         super().__init__(name, agent, v_index)
@@ -33,13 +35,31 @@ class adjustStaff_COA(Action):
         '''
         COA can do this theoretically whenever, but we could also put a budget constraint
         '''
-
         return True
     def do(self):
         super().do()
         
         self.agent.staff = self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio
     
+class improveFacilities(Action):
+    '''
+    Value: Self-Enhancement
+    Improves building health
+    '''
+    def __init__(self,name, agent, v_index):
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        '''
+        COA can do this theoretically whenever, but we could also put a budget constraint
+        '''
+        return True
+    def do(self):
+        super().do()
+        for azc in self.agent.city.azcs:
+            increase_amount = (azc.max_health - azc.health)*(self.agent.conservatism/100)
+            azc.health = max(azc.operational_health, azc.health + increase_amount)
+        
     
 class Checkin(Action):
     
@@ -64,7 +84,6 @@ class Checkin(Action):
         current_ratio = self.agent.staff / np.sum([azc.occupancy for azc in
                                                    self.agent.city.azcs])
         error_probability = current_ratio / self.agent.staff_to_resident_ratio
-        print(error_probability)
         #iterate through newcomers
         for newcomer in self.agent.city.azc.occupants:
             #probability of error depends on number of staff
@@ -344,10 +363,16 @@ class Invest(Action):
         
         super().do()
         
-    #During a non-shock period, COA satisfies ST by investing in the quality of life of its
-    #residents by increasing staff
+    
         
-        pass
+        between_city_travel = True # we will want to parameterize this somehow
+        travel_voucher = self.agent.city.cost_of_bus_within_city 
+        if not between_city_travel:
+            travel_voucher = self.agent.city.cost_of_bus_to_another_city 
+        
+        for azc in self.agent.city.azcs:
+                 for newcomer in azc.occupants:
+                     newcomer.budget = newcomer.budget + travel_voucher
                 
 
 class Segregate(Action):
@@ -377,7 +402,7 @@ class Segregate(Action):
     def precondition(self):
         
         #check if not crisis
-        return not self.agent.state != 'Crisis' 
+        return self.agent.state != 'Crisis' 
         
     
     def do(self):
@@ -386,7 +411,7 @@ class Segregate(Action):
         
         #gets a cost per azc from health + occupancy + activities + proximity
         [azc.get_operational_cost() for azc in 
-         self.model.schedule.agents if
+         self.agent.model.schedule.agents if
          type(azc) is organizations.AZC and
          azc.modality != 'COL']
         
