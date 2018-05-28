@@ -180,6 +180,17 @@ class HumanitarianLogistics(Model):
         
         self.ind_statement = 1
         
+        self.ls_index = -1
+        ls_functions = {}
+        self.ls = ['edp', 'as', 'as_ext', 'tr']
+        for i in range(0, len(self.ls)):
+            self.ls_index = i
+            ls_functions[self.ls[self.ls_index]] = distress
+        
+        self.ls_dc = DataCollector(model_reporters = ls_functions)
+        
+        
+        
         self.action_agents = []
         self.actions = []
         self.include_social_networks = False
@@ -188,11 +199,12 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        self.sr.collect(self)
+        #self.sr.collect(self)
         #self.azc_health.collect(self)
-        self.modality_occ.collect(self)
+        #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
+        self.ls_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -360,6 +372,19 @@ def staff(model):
     if model.staff_index == len(model.staff):
         model.staff_index = 0
     return get_staff(model, model.staff_index)
+
+def distress(model):
+    model.ls_index += 1
+    if model.ls_index == len(model.ls):
+        model.ls_index = 0
+    return get_distress(model, model.ls_index)
+
+def get_distress(model, idx):
+    
+    ncs = np.mean([nc.values.health for nc in model.schedule.agents if
+                   type(nc) is Newcomer and
+                   nc.ls == model.ls[idx]])
+    return ncs
         
 
 

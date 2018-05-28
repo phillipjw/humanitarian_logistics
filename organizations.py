@@ -8,6 +8,7 @@ from mesa.datacollection import DataCollector
 from Values import Values
 from fractions import Fraction
 import activity
+import newcomer
 
 
 
@@ -608,6 +609,7 @@ class AZC(Building):
         #update state
         self.get_state()
         
+        
 
         
         
@@ -681,6 +683,12 @@ class ActivityCenter(Building):
             self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
 
         self.counter = {}
+        
+        self.active_participants = set([])
+        
+    def step(self):
+        
+        print(self.active_participants)
         
 
             

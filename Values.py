@@ -45,7 +45,11 @@ class Values():
         
         self.agent.values.val_t = np.maximum(np.repeat(0,len(self.val_t)),
                                              self.agent.values.val_t - self.val_decay)
-        self.agent.values.health = 1 - (np.sum(self.v_tau - self.val_t) / np.sum(self.v_tau))
+        
+        lack = self.v_tau - self.agent.values.val_t
+        lack[lack<0] = 0
+        
+        self.agent.values.health = 1 - (np.sum(lack) / np.sum(self.v_tau))
         
     def prioritize(self):
         '''

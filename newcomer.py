@@ -194,12 +194,18 @@ class Newcomer(Agent):
                             possible_activities.append((activity,azc))
         
         return possible_activities    
+    
+    def outcome(self):
+        
+        pass
                  
 
         
     def step(self):
         
         day = self.model.schedule.steps % 7
+        
+
         
         #value decay
         self.values.decay_val()
