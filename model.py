@@ -35,7 +35,7 @@ class HumanitarianLogistics(Model):
         
         #test health params
         #health param
-        self.health_    ecay = .35
+        self.health_decay = .35
         self.football_increase = 4
         
         ##### Shock
@@ -206,7 +206,7 @@ class HumanitarianLogistics(Model):
         #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
-        #self.ls_dc.collect(self)
+        self.ls_dc.collect(self)
         self.network_dc.collect(self)
         
         if self.shock_flag and self.shock:
@@ -271,7 +271,7 @@ class HumanitarianLogistics(Model):
                                else: 
                                    agent_i.sn.bondWithAgent(agent_j)
                                    
-                           
+            print(len(agent_i.sn.network))               
         self.reset_social_network_lists()
 
                 

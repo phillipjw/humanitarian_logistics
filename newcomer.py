@@ -76,6 +76,19 @@ class Newcomer(Agent):
                                                     sd=self.HEALTH_SD, low=self.HEALTH_MIN, upp=self.HEALTH_MAX)
         self.health_decay = self.model.health_decay
         self.sn = SocialNetwork()
+        
+        #demographics
+        probability_male = .7
+        probability_minor = .25
+        
+        if np.random.uniform(0,1) < probability_male:
+            self.sex = 'Male'
+        else:
+            self.sex = 'Female'
+        if np.random.uniform(0,1) < probability_minor:
+            self.age = 15
+        else:
+            self.age = 35
 
     def COA_Interaction(self):
         
