@@ -197,7 +197,12 @@ class Newcomer(Agent):
     
     def outcome(self):
         
-        pass
+        distress = self.values.health
+        physical_health = self.health
+        local_interaction = self.acculturation
+        social_health = np.mean([relationship.weight for relationship in
+                                 self.sn.network])
+        return (distress, physical_health, local_interaction, social_health)
                  
 
         
@@ -228,8 +233,9 @@ class Newcomer(Agent):
         #update v_sat
         if self.current != None:
             self.current[0].do(self)
+            print(self.current[0].name)
             self.model.action_agents.append(self)
-            self.model.actions.append(self.current[0])
+            self.model.actions.append(self.current)
         
         
         

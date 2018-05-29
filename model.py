@@ -24,9 +24,9 @@ class HumanitarianLogistics(Model):
     """A model with: number of azc
         rate of newcomer arrival
         dimensions width and height"""
-    SOCIAL_ACTIVITIES = ["Football", "Craft", "LanguageClass"]
+    SOCIAL_ACTIVITIES = set(["Football", "Craft", "LanguageClass", 'Volunteer', 'Socialize', 'Work'])
     
-    def __init__(self, width, height, num_pols, city_size):
+    def __init__(self, width, height, num_pols, city_size, se,st,c,otc):
 
         #canvas info
         self.width = width
@@ -48,10 +48,10 @@ class HumanitarianLogistics(Model):
         self.shock_flag = False #flag to run sim without shocks
         self.shock_inverse = False
         
-        self.coa_values = {'SE':20,
-                           'ST': 70,
-                           'C': 30,
-                           'OTC':20}
+        self.coa_values = {'SE':se,
+                           'ST': st,
+                           'C': c,
+                           'OTC':otc}
         
         
         
@@ -85,7 +85,7 @@ class HumanitarianLogistics(Model):
             city = City(i, self, {'as'}, 'POL')
 
         ##### Generate AZC
-        for i in range(1,self.number_pols*self.pol_to_azc_ratio+1):
+        for i in range(1,self.number_pols*self.pol_to_azc_ratio):
             city = City(i, self, {'as_ext', 'tr'}, 'AZC')
             
         
@@ -97,7 +97,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
-        self.dq = False #flag for which type of IND decision to make
+        self.dq = True #flag for which type of IND decision to make
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}
@@ -193,7 +193,7 @@ class HumanitarianLogistics(Model):
         
         self.action_agents = []
         self.actions = []
-        self.include_social_networks = False
+        self.include_social_networks = True
        
 
 
@@ -201,8 +201,8 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         #self.sr.collect(self)
         #self.azc_health.collect(self)
-        #self.modality_occ.collect(self)
-        #self.cm_dc.collect(self)
+        self.modality_occ.collect(self)
+        self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
         self.ls_dc.collect(self)
         
@@ -246,12 +246,12 @@ class HumanitarianLogistics(Model):
     def adjust_social_networks(self):
         for i in range(0, len(self.action_agents)):
             agent_i = self.action_agents[i]
-            action_i = self.actions[i]
-            city_i = agent_i.coa.city
+            action_i = self.actions[i][0]
+            city_i = self.actions[i][1]
             for j in range(0, len(self.actions)):
                agent_j = self.action_agents[j]
-               action_j = self.actions[j]
-               city_j = agent_j.coa.city
+               action_j = self.actions[j][0]
+               city_j = self.actions[j][0]
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:

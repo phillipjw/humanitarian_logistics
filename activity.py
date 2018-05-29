@@ -746,7 +746,7 @@ class Language_Class(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'tr'}
-        self.HEALTH_THRESHOLD = 10.0
+        self.HEALTH_THRESHOLD = 30.0
         self.name = 'languageClass'
 
         self.v_index = v_index
@@ -760,6 +760,34 @@ class Language_Class(Activity):
         super().do(agent)
         agent.acculturation += (agent.max_acc - agent.acculturation) / 10
         #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
+    
+class Socialize(Activity):
+    
+    def __init__(self, unique_id, model, frequency, v_index):
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        '''
+        Value: Conservatism (Tradition and Security)
+        General idea: Essentially Hanging-Out, Socializing for its own sake.
+            Socialize builds community. Agents connect with those of the same
+        culture. As Acculturation increases, so does the likelihood of connecting
+        with somemone of a different culture
+        '''
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        self.occupant_type = {'edp','as','as_ext','tr'}
+        self.HEALTH_THRESHOLD = 30.0
+        self.name = 'Socialize'
+    
+    def precondition(self, agent):
+        
+        return agent.health > self.HEALTH_THRESHOLD
+    
+    def do(self, agent):
+        
+        super().do(agent)
+        
 
 class Volunteer(Activity):
     

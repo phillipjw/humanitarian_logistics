@@ -109,10 +109,10 @@ class COA(Organization):
         self.pos = self.city.pos
         
         
-        self.self_enhancement = 20
-        self.self_transcendence = 40    
-        self.conservatism = 60
-        self.openness_to_change = 30
+        self.self_enhancement = self.model.coa_values['SE']
+        self.self_transcendence = self.model.coa_values['ST']
+        self.conservatism = self.model.coa_values['C']
+        self.openness_to_change = self.model.coa_values['OTC']
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         
@@ -675,7 +675,8 @@ class ActivityCenter(Building):
         self.activities_available = set([
                 activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
-                activity.Doctor(self.unique_id, self.model, {1,2,3,4,5}, 2)])
+                activity.Doctor(self.unique_id, self.model, {1,2,3,4,5,6,7}, 2),
+                activity.Socialize(self.unique_id, self.model, {1,2,3,4,5,6,7},2)])
         
         #NGO activities if available
         if self.azc.city.ngo != None:

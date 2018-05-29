@@ -66,6 +66,8 @@ class Values():
         sorted_priority_indices = np.array([
                 np.where(priorities == x)[0][0] for x in
                          sorted_priorities])
+    
+    
         
         
         return sorted_priority_indices
