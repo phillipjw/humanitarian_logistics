@@ -782,7 +782,7 @@ class Socialize(Activity):
     
     def precondition(self, agent):
         
-        return agent.health > self.HEALTH_THRESHOLD
+        return agent.health > self.HEALTH_THRESHOLD and np.random.uniform(0,100) < agent.loc.health
     
     def do(self, agent):
         '''

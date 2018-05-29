@@ -256,21 +256,15 @@ class HumanitarianLogistics(Model):
                        if action_i.name == action_j.name:
                            if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
                                relationship = SocialRelationship(agent_j)
+                               
+                               #OTC dependent bias against other culture relationship formation
                                if (relationship in agent_i.sn.network) == False:
                                    if agent_i.coo != agent_j.coo:
                                        if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
                                            agent_i.sn.bondWithAgent(agent_j)
-                                           print('G',agent_i.coo, agent_j.coo)
 
-                                           
-
-                                           
-                                    
-                        
-                              
                                else: 
                                    agent_i.sn.bondWithAgent(agent_j)
-                                   print('G',agent_i.coo, agent_j.coo)
                            
         self.reset_social_network_lists()
 
