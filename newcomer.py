@@ -10,7 +10,7 @@ from socialnetwork import SocialNetwork
 class Newcomer(Agent):
     
     
-    
+    UID=1
     def get_truncated_normal(mean=50, sd=10, low=0, upp=100):
         return truncnorm(
             (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
@@ -30,6 +30,8 @@ class Newcomer(Agent):
         
         '''
         super().__init__(unique_id, model)
+        self.unique_id = Newcomer.UID
+        Newcomer.UID = Newcomer.UID + 1
         
         self.coa = coa
         self.pos = self.coa.pos
