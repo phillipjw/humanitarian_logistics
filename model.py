@@ -70,7 +70,7 @@ class HumanitarianLogistics(Model):
         self.num_azc = self.number_pols * self.pol_to_azc_ratio
         self.space_per_azc = int(self.width / self.num_azc)
         self.fraction_ngo = .30
-        
+        self.num_nc = 0
         
 
         self.city_count = 1
@@ -195,7 +195,7 @@ class HumanitarianLogistics(Model):
         
         self.action_agents = []
         self.actions = []
-        self.include_social_networks = True
+        self.include_social_networks = False
        
 
 
@@ -255,6 +255,7 @@ class HumanitarianLogistics(Model):
                agent_j = self.action_agents[j]
                action_j = self.actions[j][0]
                city_j = self.actions[j][1]
+               
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:
@@ -267,11 +268,9 @@ class HumanitarianLogistics(Model):
                                        if agent_i.coo != agent_j.coo:
                                            if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
                                                agent_i.sn.bondWithAgent(agent_j)
-                                           
+    
                                else: 
                                    agent_i.sn.bondWithAgent(agent_j)
-                                   
-            print(len(agent_i.sn.network))               
         self.reset_social_network_lists()
 
                 
@@ -411,7 +410,7 @@ def network_size(model):
 
 def get_network_size(model, idx):
     
-    ncs = np.mean([len(nc.sn.network) for nc in model.schedule.agents if
+    ncs = np.mean([sum([w.weight for w in nc.sn.network])/(len(nc.sn.network)+1) for nc in model.schedule.agents if
                    type(nc) is Newcomer and
                    nc.ls == model.ls[idx]])
     return ncs

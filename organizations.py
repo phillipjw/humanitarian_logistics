@@ -26,14 +26,18 @@ class City(Agent):
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
+            po = .5
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
+            po = .5
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
             if np.random.uniform(0,1) < .5:
-                self.ngo = NGO(self.unique_id, self.model, self)
+                po = .7
+            else:
+                po = .2
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -45,12 +49,12 @@ class City(Agent):
         self.azc.procedure_duration = procedure_time
         self.azcs = set([self.azc])
         self.model.schedule.add(self.azc)
-        
+        self.ngo = NGO(self.unique_id, self.model, self)
         self.auxiliary_housing = 0
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
-        self.public_opinion = .5                #cities start out neutral regarding PO of NC.
+        self.public_opinion = po                #cities start out neutral regarding PO of NC.
         self.po_max = 1.
         self.po_min = 0
         action_testing = True
@@ -273,10 +277,74 @@ class NGO(Organization):
     def __init__(self, unique_id, model,city):
         super().__init__(unique_id, model)
         
-        '''
-        Basic NGO class
+        super().__init__(unique_id, model)
+        self.model.schedule.add(self)
+        self.city = city
+        self.pos = self.city.pos
+        self.values = Values(10,45,41,70,40, self)
+        self.funds = 0
+        self.cost_per_activity = 5
+        self.activities = set([])
+        self.action_frequency = int(365/(self.values.v_tau[3]*52/100))
+
+        #actions
+        self.action_names = ['marketingCampaign', 'customActivity', 'Fundraise','Prioritize']
+        self.actions = set([])
+        for i in range(0, len(self.action_names)):
+            
+            if i == 3:
+                self.actions.add(activity.Prioritize(self.action_names[i], self, i))
+            elif i == 1:
+                self.actions.add(activity.customActivity(self.action_names[i], self, i))
+            elif i == 0:
+                self.actions.add(activity.marketingCampaign(self.action_names[i], self, i))
+            elif i == 2:
+                self.actions.add(activity.Fundraise(self.action_names[i], self, i))
+
+    def identify_need(self):
         
         '''
+        Surveys residents of an AZC
+        identifies the chief unmet need
+        '''
+        
+        totals = np.array([0,0,0,0])
+        
+        for nc in self.city.azc.occupants:
+            totals += nc.values.v_tau - nc.values.val_t
+        
+        return np.where(totals == max(totals))[0][0]
+        
+    def step(self):
+        
+        day = self.model.schedule.steps % 7
+        
+        self.values.decay_val()
+        
+        #prioritize
+        priority = self.values.prioritize()
+        
+        if day % self.action_frequency == 0:
+            #act
+            #find action that corresponds to priority
+            current = None
+            possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+            for value in priority:
+                    for action in possible_actions:
+                        if value == action.v_index:
+                            current = action
+                            break
+                    if current != None:
+                        break
+            
+            #update v_sat
+            if current != None:
+                print(current.name)
+                current.do()
+            print(self.funds)
+        
+        
+        
 
         
         
@@ -676,7 +744,8 @@ class ActivityCenter(Building):
                 activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Doctor(self.unique_id, self.model, {1,2,3,4,5,6,7}, 2),
-                activity.Socialize(self.unique_id, self.model, {1,2,3,4,5,6,7},2)])
+                activity.Socialize(self.unique_id, self.model, {1,2,3,4,5,6,7},2),
+                activity.Study(self.unique_id, self.model, {1,2,3,4,5}, 0)])
         
         #NGO activities if available
         if self.azc.city.ngo != None:
@@ -688,9 +757,7 @@ class ActivityCenter(Building):
         self.active_participants = set([])
         
     def step(self):
-        
-        print(self.active_participants)
-        
+        pass        
 
             
         

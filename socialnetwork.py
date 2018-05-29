@@ -4,7 +4,7 @@ class SocialNetwork():
     # based on this paper https://www.sciencedirect.com/science/article/pii/S0140366412002642
     # which shows average social network size people can maintain is ~ 150ish
     # in future version we can set this up to vary based on the individual
-    MAX_SIZE = 150.0
+    MAX_SIZE = 150
     
     def __init__(self):
         # initializes an empty social network
@@ -20,9 +20,11 @@ class SocialNetwork():
         relationship = SocialRelationship(agent)
         if (relationship in self.network) == False:
             self.addRelationship(relationship)
+
         else:
             indexOfRelationship = self.network.index(relationship)
             self.network[indexOfRelationship].incrementWeight
+  
     
     def decayRelationships(self):
         for relationship in self.network:
