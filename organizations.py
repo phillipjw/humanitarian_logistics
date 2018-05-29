@@ -263,7 +263,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
         
 

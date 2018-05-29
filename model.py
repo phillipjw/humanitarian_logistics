@@ -15,8 +15,7 @@ import numpy as np
 from newcomer import Newcomer
 from organizations import COA, AZC, Hotel, Empty, City, IND
 from viz import AZC_Viz
-#from Activities import Activity, Football
-
+from socialrelationship import SocialRelationship
 
     
 
@@ -251,14 +250,32 @@ class HumanitarianLogistics(Model):
             for j in range(0, len(self.actions)):
                agent_j = self.action_agents[j]
                action_j = self.actions[j][0]
-               city_j = self.actions[j][0]
+               city_j = self.actions[j][1]
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:
-                           if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:                       
-                               agent_i.sn.bondWithAgent(agent_j)
+                           if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
+                               relationship = SocialRelationship(agent_j)
+                               if (relationship in agent_i.sn.network) == False:
+                                   if agent_i.coo != agent_j.coo:
+                                       if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                           agent_i.sn.bondWithAgent(agent_j)
+                                           print('G',agent_i.coo, agent_j.coo)
+
+                                           
+
+                                           
+                                    
+                        
+                              
+                               else: 
+                                   agent_i.sn.bondWithAgent(agent_j)
+                                   print('G',agent_i.coo, agent_j.coo)
                            
         self.reset_social_network_lists()
+
+                
+            
     
     def country_distribution(self):
         #draws a random discrete number from multinomial distribution

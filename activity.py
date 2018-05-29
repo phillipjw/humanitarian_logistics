@@ -785,6 +785,10 @@ class Socialize(Activity):
         return agent.health > self.HEALTH_THRESHOLD
     
     def do(self, agent):
+        '''
+        What if, agents share information re activities
+        so that agents aren't so omnicient.
+        '''
         
         super().do(agent)
         
@@ -831,7 +835,8 @@ class Work(Activity):
         
     def precondition(self, agent):
         return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD 
-         
+      
+
 
     
     def do(self, agent):
