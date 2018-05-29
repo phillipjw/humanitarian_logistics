@@ -54,7 +54,8 @@ class City(Agent):
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
-        self.public_opinion = po                #cities start out neutral regarding PO of NC.
+        self.po = po
+        self.public_opinion = self.po + self.ngo.campaign                #cities start out neutral regarding PO of NC.
         self.po_max = 1.
         self.po_min = 0
         action_testing = True
@@ -281,11 +282,13 @@ class NGO(Organization):
         self.model.schedule.add(self)
         self.city = city
         self.pos = self.city.pos
-        self.values = Values(10,45,41,70,40, self)
+        self.values = Values(10,45,41,35,40, self)
         self.funds = 0
-        self.cost_per_activity = 5
+        self.cost_per_activity = .05
         self.activities = set([])
         self.action_frequency = int(365/(self.values.v_tau[3]*52/100))
+        self.campaign = 0
+        
 
         #actions
         self.action_names = ['marketingCampaign', 'customActivity', 'Fundraise','Prioritize']
@@ -320,6 +323,11 @@ class NGO(Organization):
         day = self.model.schedule.steps % 7
         
         self.values.decay_val()
+        
+        #the action of marketing gives PO a big boost, but than wanes over time
+        if self.campaign > 0:
+            self.campaign -= .1
+            self.city.public_opinion -= self.campaign
         
         #prioritize
         priority = self.values.prioritize()

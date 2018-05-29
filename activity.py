@@ -48,10 +48,13 @@ class marketingCampaign(Action):
         super().__init__(name, agent, v_index)
         self.counter = 0
     def precondition(self):
-        return True
+        return self.agent.funds > 0
     
     def do(self):
         super().do()
+        self.agent.city.public_opinion += self.agent.funds
+        self.agent.campaign = self.agent.funds
+        self.agent.funds = 0
         
 class customActivity(Action):
     '''
