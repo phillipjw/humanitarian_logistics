@@ -233,12 +233,9 @@ class Newcomer(Agent):
         #update v_sat
         if self.current != None:
             self.current[0].do(self)
-            print(self.loc)
-            print(self.current[0].name)
             self.model.action_agents.append(self)
             self.model.actions.append(self.current)
-        
-        
+
         
         #update procedings 
         self.COA_Interaction()

@@ -35,7 +35,7 @@ class HumanitarianLogistics(Model):
         
         #test health params
         #health param
-        self.health_decay = .35
+        self.health_    ecay = .35
         self.football_increase = 4
         
         ##### Shock
@@ -182,11 +182,14 @@ class HumanitarianLogistics(Model):
         self.ls_index = -1
         ls_functions = {}
         self.ls = ['edp', 'as', 'as_ext', 'tr']
+        network_functions = {}
         for i in range(0, len(self.ls)):
             self.ls_index = i
+            network_functions[self.ls[self.ls_index]] = network_size
             ls_functions[self.ls[self.ls_index]] = distress
         
         self.ls_dc = DataCollector(model_reporters = ls_functions)
+        self.network_dc = DataCollector(model_reporters= network_functions)
         
         
         
@@ -200,10 +203,11 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         #self.sr.collect(self)
         #self.azc_health.collect(self)
-        self.modality_occ.collect(self)
-        self.cm_dc.collect(self)
+        #self.modality_occ.collect(self)
+        #self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
-        self.ls_dc.collect(self)
+        #self.ls_dc.collect(self)
+        self.network_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -255,16 +259,18 @@ class HumanitarianLogistics(Model):
                    if city_i == city_j:
                        if action_i.name == action_j.name:
                            if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
-                               relationship = SocialRelationship(agent_j)
-                               
-                               #OTC dependent bias against other culture relationship formation
-                               if (relationship in agent_i.sn.network) == False:
-                                   if agent_i.coo != agent_j.coo:
-                                       if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
-                                           agent_i.sn.bondWithAgent(agent_j)
 
+                               if action_i.name == 'Socialize':
+                                   #OTC dependent bias against other culture relationship formation
+                                   relationship = SocialRelationship(agent_j)
+                                   if (relationship in agent_i.sn.network) == False:
+                                       if agent_i.coo != agent_j.coo:
+                                           if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                               agent_i.sn.bondWithAgent(agent_j)
+                                           
                                else: 
                                    agent_i.sn.bondWithAgent(agent_j)
+                                   
                            
         self.reset_social_network_lists()
 
@@ -396,6 +402,20 @@ def get_distress(model, idx):
                    type(nc) is Newcomer and
                    nc.ls == model.ls[idx]])
     return ncs
+
+def network_size(model):
+    model.ls_index += 1
+    if model.ls_index == len(model.ls):
+        model.ls_index = 0
+    return get_network_size(model, model.ls_index)
+
+def get_network_size(model, idx):
+    
+    ncs = np.mean([len(nc.sn.network) for nc in model.schedule.agents if
+                   type(nc) is Newcomer and
+                   nc.ls == model.ls[idx]])
+    return ncs
+
         
 
 
