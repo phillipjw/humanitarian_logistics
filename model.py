@@ -410,7 +410,7 @@ def network_size(model):
 
 def get_network_size(model, idx):
     
-    ncs = np.mean([sum([w.weight for w in nc.sn.network])/(len(nc.sn.network)+1) for nc in model.schedule.agents if
+    ncs = np.mean([len(nc.sn.network) for nc in model.schedule.agents if
                    type(nc) is Newcomer and
                    nc.ls == model.ls[idx]])
     return ncs

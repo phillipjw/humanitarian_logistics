@@ -26,18 +26,18 @@ class City(Agent):
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = .5
+            po = .3
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = .5
+            po = .2
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
             if np.random.uniform(0,1) < .5:
                 po = .7
             else:
-                po = .2
+                po = .3
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -282,7 +282,7 @@ class NGO(Organization):
         self.model.schedule.add(self)
         self.city = city
         self.pos = self.city.pos
-        self.values = Values(10,45,41,35,40, self)
+        self.values = Values(10,45,61,35,40, self)
         self.funds = 0
         self.cost_per_activity = .05
         self.activities = set([])
@@ -349,7 +349,6 @@ class NGO(Organization):
             if current != None:
                 print(current.name)
                 current.do()
-            print(self.funds)
         
         
         

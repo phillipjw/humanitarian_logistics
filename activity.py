@@ -74,7 +74,7 @@ class customActivity(Action):
         need = self.agent.identify_need()
         activity = Activity(self.agent.unique_id, self.agent.model, {1}, need)
         activity.name = 'custom'+str(need)
-        self.agent.activites.add(activity)
+        self.agent.activities.add(activity)
         self.agent.city.azc.activity_center.activities_available.add(activity)
         self.agent.funds -= self.agent.cost_per_activity
         
@@ -697,6 +697,10 @@ class Activity(Agent):
     def satisfaction(self, agent):
         
         agent.values.val_t[self.v_index] += agent.values.val_sat[self.v_index]
+    
+    def precondition(self, agent):
+        
+        return agent.health > .3
         
     def do(self, agent):
         '''
