@@ -57,7 +57,7 @@ class Newcomer(Agent):
             self.second = 1
                                   
         # new comer values
-        self.values = Values(10, 40, 30, 60, 70, self)
+        self.values = Values(10, 40, 30, 60, 55, self)
         self.testing_activities = False
         self.budget = 0
         self.acculturation = .2
@@ -78,11 +78,11 @@ class Newcomer(Agent):
                                                     sd=self.HEALTH_SD, low=self.HEALTH_MIN, upp=self.HEALTH_MAX)
         self.health_decay = self.model.health_decay
         self.sn = SocialNetwork()
+        self.model.nc_count += 1
         
         #demographics
         probability_male = .7
         probability_minor = .25
-        
         if np.random.uniform(0,1) < probability_male:
             self.sex = 'Male'
         else:
@@ -91,6 +91,10 @@ class Newcomer(Agent):
             self.age = 15
         else:
             self.age = 35
+            
+        #Education
+        self.education = .5
+        self.max_education = 1
 
     def COA_Interaction(self):
         
@@ -224,7 +228,6 @@ class Newcomer(Agent):
     def step(self):
         
         day = self.model.schedule.steps % 7
-        
 
         
         #value decay

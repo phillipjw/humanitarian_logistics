@@ -21,6 +21,77 @@ class Action():
         
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
+        
+class Fundraise(Action):
+    '''
+    An action to convert public opinion into usable funds
+    '''
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        return True
+    
+    def do(self):
+        super().do()
+        self.agent.funds = max(0,self.agent.city.public_opinion - len(self.agent.activities) * self.agent.cost_per_activity)
+
+class marketingCampaign(Action):
+    '''
+    An action to convert public opinion into usable funds
+    '''
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        return self.agent.funds > 0
+    
+    def do(self):
+        super().do()
+        self.agent.city.public_opinion += self.agent.funds
+        self.agent.campaign = self.agent.funds
+        self.agent.funds = 0
+        
+class customActivity(Action):
+    '''
+    An action to convert public opinion into usable funds
+    '''
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        return self.agent.funds > self.agent.cost_per_activity
+    
+    def do(self):
+        super().do()
+        #find needed activity, add it to set
+        need = self.agent.identify_need()
+        activity = Activity(self.agent.unique_id, self.agent.model, {1}, need)
+        activity.name = 'custom'+str(need)
+        self.agent.activities.add(activity)
+        self.agent.city.azc.activity_center.activities_available.add(activity)
+        self.agent.funds -= self.agent.cost_per_activity
+        
+class Prioritize(Action):
+    '''
+    An action to convert public opinion into usable funds
+    '''
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        return True
+    
+    def do(self):
+        super().do()
     
 class adjustStaff_COA(Action):
     '''
@@ -91,9 +162,9 @@ class Checkin(Action):
             if np.random.uniform(0,1) < error_probability:
                 #do checkin
                 if newcomer.values.health < self.healthy_threshold:
-                    
+                    pass
                     #placeholder value satisfaction
-                    newcomer.values.val_t += np.array([50,50,50,50])
+                    #newcomer.values.val_t += np.array([50,50,50,50])
         
 
 class BuildCentral(Action):
@@ -626,6 +697,10 @@ class Activity(Agent):
     def satisfaction(self, agent):
         
         agent.values.val_t[self.v_index] += agent.values.val_sat[self.v_index]
+    
+    def precondition(self, agent):
+        
+        return agent.health > .3
         
     def do(self, agent):
         '''
@@ -834,7 +909,7 @@ class Work(Activity):
         self.v_index = v_index
         
     def precondition(self, agent):
-        return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD 
+        return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD and agent.age > 18
       
 
 
@@ -846,7 +921,29 @@ class Work(Activity):
         agent.coa.budget += .50*earnings
         
             #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
-            # Also agent.budget++
+
+class Study(Activity):
+    HEALTH_THRESHOLD = 40.0
+    def __init__(self, unique_id, model, frequency,v_index):
         
+        super().__init__(unique_id, model, frequency, v_index)
+        
+        self.effect = self.satisfaction
+        self.frequency = frequency
+        self.name = 'Study'
+        self.occupant_type = {'tr', 'as', 'as_ext'}
+        
+        self.v_index = v_index
+        
+    def precondition(self, agent):
+        return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD and agent.age < 18
+
+    def do(self, agent):
+        self.local_involvement = agent.current[1].coa.city.public_opinion
+        super().do(agent)
+        agent.education += (agent.max_education - agent.education) / (100-agent.values.v_tau[0])
+        
+            #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
+            # Also agent.budget++        
         
         
