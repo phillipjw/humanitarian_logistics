@@ -412,10 +412,19 @@ def network_size(model):
     return get_network_size(model, model.ls_index)
 
 def get_network_size(model, idx):
+    # the average size of a newcomer's social network seems pretty stable
+    # however, this function gets called four times each time step
+    # each time with a different idx
+    # edp: is always 0 this is because they can't participate in anything with a sn
+    # as: is the largest sn stablizing around 80-90 under default parameters
+    # as_ext and tr are about the same size and sit between 30-40
     
+    # in the plot it seems like each of these individual numbers are
+    # being plotted as if they occur on different time steps. I think we
+    # want to plot each type (or just plot them for one type (as, as_ext or tr))
     ncs = np.mean([len(nc.sn.network) for nc in model.schedule.agents if
-                   type(nc) is Newcomer and
-                   nc.ls == model.ls[idx]])
+                   type(nc) is Newcomer and nc.ls == model.ls[idx]])
+    print(model.ls[idx],": ",ncs)
     return ncs
 
         
