@@ -61,6 +61,8 @@ class Newcomer(Agent):
         self.acculturation = .2
         self.max_acc = 1.
         
+        
+        self.integrated = False
         #measure of quality o
         self.doc_quality = 0
         self.case_quality = 0
@@ -81,6 +83,7 @@ class Newcomer(Agent):
         #demographics
         probability_male = .7
         probability_minor = .25
+        self.political_polarity = np.random.uniform(0,1)
         if np.random.uniform(0,1) < probability_male:
             self.sex = 'Male'
         else:
@@ -127,7 +130,7 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
-                        self.coa.city.public_opinion -= 1000
+                        self.coa.city.public_opinion -= (self.coa.city.po_min - self.coa.city.public_opinion) / 2
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -207,6 +210,7 @@ class Newcomer(Agent):
                 for activity in azc.activity_center.activities_available:
                     #if occuring today
                     if day in activity.frequency:
+                        
                         if activity.precondition(self):
                             possible_activities.append((activity,azc))
         

@@ -92,7 +92,7 @@ class HumanitarianLogistics(Model):
         
             
         ####flow in
-        self.in_rate = 30 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
+        self.in_rate = 20 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
@@ -195,15 +195,15 @@ class HumanitarianLogistics(Model):
         
         self.action_agents = []
         self.actions = []
-        self.include_social_networks = False
+        self.include_social_networks = True
        
 
 
     def step(self):
         self.schedule.step()
-        #self.sr.collect(self)
+        self.sr.collect(self)
         #self.azc_health.collect(self)
-        #self.modality_occ.collect(self)
+        self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
         self.ls_dc.collect(self)
@@ -267,6 +267,9 @@ class HumanitarianLogistics(Model):
                                    if (relationship in agent_i.sn.network) == False:
                                        if agent_i.coo != agent_j.coo:
                                            if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                               agent_i.sn.bondWithAgent(agent_j)
+                                       else:
+                                           if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
                                                agent_i.sn.bondWithAgent(agent_j)
     
                                else: 

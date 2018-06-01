@@ -36,7 +36,52 @@ class Fundraise(Action):
     
     def do(self):
         super().do()
-        self.agent.funds = max(0,self.agent.city.public_opinion - len(self.agent.activities) * self.agent.cost_per_activity)
+        
+        campaign_cost = self.agent.campaign
+        activity_cost = 0
+        capital = self.agent.funds + campaign_cost + activity_cost
+        
+        
+        if self.agent.activities:
+            for activity in self.agent.activities:
+                for day in activity.frequency:
+                    activity_cost += self.agent.cost_per_activity
+                
+        #if too small, just raise funds        
+        if capital < self.agent.overhead:
+            self.agent.funds += self.agent.city.public_opinion
+        
+        #If room to grow, grow.
+        elif self.agent.city.public_opinion > activity_cost + campaign_cost:
+            self.agent.funds += self.agent.city.public_opinion - (activity_cost + campaign_cost)
+            print(self.agent.city.public_opinion, activity_cost, campaign_cost)
+        else: 
+
+            #case two: if have existing activities
+            while self.agent.funds < self.agent.overhead:
+                self.agent.get_average_attendance()
+                mini = np.inf
+            
+                for activity in self.agent.activities:
+                    for day in activity.frequency:
+                        if self.agent.activity_attendance[activity.name][day] < mini:
+                            mini = self.agent.activity_attendance[activity.name][day]
+                            worst, when = activity.name, day
+                
+                #remove min
+                if len(worst.frequency) == 1:
+                    #if only one session p week, remove the whole activity
+                    self.agent.activities.remove(worst)
+                    self.agent.activity_attendance.pop(worst)
+                    self.agent.activity_records.pop(worst)
+                else:
+                    #otherwise just remove one session. 
+                    self.agent.activity_attendance[worst].pop(when)
+                    self.agent.activity_records[worst].pop(when)
+                #increase funds
+                self.agent.funds += self.agent.cost_per_activity
+            
+            
 
 class marketingCampaign(Action):
     '''
@@ -48,13 +93,13 @@ class marketingCampaign(Action):
         super().__init__(name, agent, v_index)
         self.counter = 0
     def precondition(self):
-        return self.agent.funds > 0
+        return self.agent.funds > self.agent.overhead
     
     def do(self):
         super().do()
         self.agent.city.public_opinion += self.agent.funds
-        self.agent.campaign = self.agent.funds
-        self.agent.funds = 0
+        self.agent.campaign = self.agent.funds * (self.agent.values.v_tau[0] / np.sum(self.agent.values.v_tau))
+        self.agent.funds -= self.agent.campaign
         
 class customActivity(Action):
     '''
@@ -64,19 +109,42 @@ class customActivity(Action):
     def __init__(self, name, agent, v_index):
         
         super().__init__(name, agent, v_index)
+        self.possible_days = set([0,1,2,3,4,5,6])
         self.counter = 0
     def precondition(self):
-        return self.agent.funds > self.agent.cost_per_activity
+        return self.agent.funds > self.agent.overhead
     
     def do(self):
         super().do()
         #find needed activity, add it to set
         need = self.agent.identify_need()
-        activity = Activity(self.agent.unique_id, self.agent.model, {1}, need)
-        activity.name = 'custom'+str(need)
-        self.agent.activities.add(activity)
-        self.agent.city.azc.activity_center.activities_available.add(activity)
-        self.agent.funds -= self.agent.cost_per_activity
+        
+        #if activity already meets  that need, add another session to it
+        additional_session = None
+        for act in self.agent.activities:
+            if need == act.v_index:
+                additional_session = act
+                break
+        #add session to existing activity
+        if additional_session != None:
+            new_day = self.possible_days.difference(act.frequency).pop()
+            act.frequency.add(new_day)
+            act.attendance[new_day] = 0
+            self.agent.activity_records[act.name][new_day] = 0
+            self.agent.activity_attendance[act.name][new_day] = 0
+            self.agent.funds -= self.agent.cost_per_activity
+
+        
+        #otherwise create new activity
+        else:
+            day = np.random.randint(0,6)
+            activity = Activity(self.agent.unique_id, self.agent.model, {day}, need)
+            activity.name = 'custom'+str(need)
+            self.agent.activities.add(activity)
+            self.agent.activity_records[activity.name] = {day:1}
+            self.agent.activity_attendance[activity.name] = {day:0}
+            self.agent.city.azc.activity_center.activities_available.add(activity)
+            self.agent.funds -= self.agent.cost_per_activity
         
 class Prioritize(Action):
     '''
@@ -88,7 +156,7 @@ class Prioritize(Action):
         super().__init__(name, agent, v_index)
         self.counter = 0
     def precondition(self):
-        return True
+        return self.agent.funds > self.agent.overhead
     
     def do(self):
         super().do()
@@ -444,6 +512,7 @@ class Invest(Action):
         for azc in self.agent.city.azcs:
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
+                     newcomer.integrated = True
                 
 
 class Segregate(Action):
@@ -584,7 +653,7 @@ class raiseThreshold(Action):
         super().do()
         
         #decrease margin by .05
-        self.agent.margin -= self.marginal_decrease
+        self.agent.margin = max(-.1,self.agent.margin - self.marginal_decrease)
         
 class lowerThreshold(Action):
     
@@ -675,7 +744,7 @@ class Activity(Agent):
         '''
         super().__init__(unique_id, model)   
         self.frequency = frequency
-	
+
         # SE corresponds to an activity that provides betterment of one’s 
 	     # own attributes through either enhancement
         # of already owned resources, corresponding to achievement, or the enhanced control of resource
@@ -690,9 +759,12 @@ class Activity(Agent):
         self.name = None
 
         self.local_involvement = 0  #number between 0 and 1 indicating what percent of participants are locals
-        
 
         self.effect = None
+        self.current_day = None
+        self.attendance = {}
+        for day in frequency:
+            self.attendance[day] = 0
     
     def satisfaction(self, agent):
         
@@ -707,8 +779,17 @@ class Activity(Agent):
         Do is separate from satisfaction bc there may be
         extra changes in state that are activity specific
         '''
+        day = self.model.schedule.steps % 7
+        
+            
         #change satisfaction 
         self.satisfaction(agent)
+        
+        
+        #keeping track of attendances for NGO
+        self.attendance[day] += 1
+        
+        #keeping track for activity center
         if self.name in agent.current[1].activity_center.counter:
             agent.current[1].activity_center.counter[self.name] += 1
         else:
@@ -857,7 +938,7 @@ class Socialize(Activity):
     
     def precondition(self, agent):
         
-        return agent.health > self.HEALTH_THRESHOLD and np.random.uniform(0,100) < agent.loc.health
+        return agent.values.health > .4 and agent.health > self.HEALTH_THRESHOLD and np.random.uniform(0,100) < agent.loc.health
     
     def do(self, agent):
         '''
@@ -896,7 +977,7 @@ class Volunteer(Activity):
         #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):
-    HEALTH_THRESHOLD = 40.0
+    HEALTH_THRESHOLD = 50.0
     def __init__(self, unique_id, model, frequency,v_index):
         
         super().__init__(unique_id, model, frequency, v_index)
