@@ -16,8 +16,8 @@ class SocialNetwork():
         if len(self.network) < self.max_size:
             self.network.append(relationship)
 
-    def bondWithAgent(self, agent):
-        newRelationship = SocialRelationship(agent)
+    def bondWithAgent(self, agent, similarity):
+        newRelationship = SocialRelationship(agent, similarity)
         alreadyExists = False
         indexOfRelationship = -1
         for index in range(0, len(self.network)):

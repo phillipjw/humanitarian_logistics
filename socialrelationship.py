@@ -3,16 +3,18 @@ import numpy as np
 class SocialRelationship():
     
     INITIAL_CONNECTION_WEIGHT_MIN = 0.10
-    INITIAL_CONNECTION_WEIGHT_MAX = 0.50
+    INITIAL_CONNECTION_WEIGHT_MAX = 0.40
     ACTIVITY_INCREMENT = 0.10
     DECAY_DECREMENT = 0.05
     MAX_WEIGHT = 1.0
     MIN_WEIGHT = 0.0
       
-    def __init__(self, agent):
+    def __init__(self, agent, similarity):
     # initializes an empty social network  
         self.connection = agent
-        weight = np.random.uniform(low=SocialRelationship.INITIAL_CONNECTION_WEIGHT_MIN, 
+        diff_between_min_and_max = SocialRelationship.INITIAL_CONNECTION_WEIGHT_MAX - SocialRelationship.INITIAL_CONNECTION_WEIGHT_MIN
+        new_min_value = SocialRelationship.INITIAL_CONNECTION_WEIGHT_MAX - (diff_between_min_and_max*(1.0-similarity))
+        weight = np.random.uniform(low=new_min_value, 
                                    high=SocialRelationship.INITIAL_CONNECTION_WEIGHT_MAX)
         self.weight = weight
     

@@ -195,7 +195,7 @@ class HumanitarianLogistics(Model):
         
         self.action_agents = []
         self.actions = []
-        self.include_social_networks = False
+        self.include_social_networks = True
        
 
 
@@ -255,7 +255,7 @@ class HumanitarianLogistics(Model):
                agent_j = self.action_agents[j]
                action_j = self.actions[j][0]
                city_j = self.actions[j][1]
-               
+               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:
@@ -263,14 +263,14 @@ class HumanitarianLogistics(Model):
 
                                if action_i.name == 'Socialize':
                                    #OTC dependent bias against other culture relationship formation
-                                   relationship = SocialRelationship(agent_j)
+                                   relationship = SocialRelationship(agent_j, similarity)
                                    if (relationship in agent_i.sn.network) == False:
                                        if agent_i.coo != agent_j.coo:
                                            if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
-                                               agent_i.sn.bondWithAgent(agent_j)
+                                               agent_i.sn.bondWithAgent(agent_j, similarity)
     
-                               else: 
-                                   agent_i.sn.bondWithAgent(agent_j)
+                                   else: 
+                                       agent_i.sn.bondWithAgent(agent_j, similarity)
         self.reset_social_network_lists()
 
                 
