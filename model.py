@@ -259,7 +259,7 @@ class HumanitarianLogistics(Model):
                    if city_i == city_j:
                        if action_i.name == action_j.name:
                            if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
-
+                               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
                                if action_i.name == 'Socialize':
                                    #OTC dependent bias against other culture relationship formation
                                    relationship = SocialRelationship(agent_j, similarity)
