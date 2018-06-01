@@ -352,8 +352,7 @@ class NGO(Organization):
                     if act.name in self.activity_records.keys():
                         print(self.activity_records, day)
                         self.activity_records[act.name][day] += 1
-                    else:
-                        print('afdad')
+
         
         
             
