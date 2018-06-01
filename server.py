@@ -14,9 +14,9 @@ num_pol = 2
 
 azc_display_size = 20
 
-st = UserSettableParameter('slider', 'Self-Transcendence', 35,0,100,5)
+st = UserSettableParameter('slider', 'Self-Transcendence', 70,0,100,5)
 se = UserSettableParameter('slider', 'Self-Enhancement', 60,0,100, 5)
-c = UserSettableParameter('slider', 'Conservatism', 50, 0, 100, 5)
+c = UserSettableParameter('slider', 'Conservatism', 55, 0, 100, 5)
 otc = UserSettableParameter('slider', 'Openness-to-Change',40,0,100, 5)
 
 
@@ -41,19 +41,19 @@ def agent_portrayal(agent):
         portrayal['Layer'] = 1
         portrayal['Color'] = 'red'
         portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
-        portrayal['text'] = np.mean([newcomer.values.health for newcomer in
-                 agent.occupants])
+        
         
     elif type(agent) is Hotel:
-        
+        pass
+        '''
         portrayal['Shape'] = "circle"
         portrayal['Filled'] = 'false'
         portrayal['Layer'] = 0
         portrayal['Color'] = 'green'
-        portrayal['r'] = 20
+        portrayal['r'] = azc_display#int(agent.city.public_opinion * azc_display_size)
         portrayal['text'] = agent.occupancy
         portrayal['text_color'] = 'black'
-        
+        '''
     return portrayal
 
 chart_suces = ChartModule([{'Label' : 'Syria',
@@ -129,7 +129,7 @@ test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas, chart_ls, chart_network],
+                       [continuous_canvas, chart_ls, chart_modality_occupancy,chart_suces,chart_network],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})

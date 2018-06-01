@@ -92,7 +92,7 @@ class HumanitarianLogistics(Model):
         
             
         ####flow in
-        self.in_rate = 30 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
+        self.in_rate = 20 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
@@ -201,9 +201,9 @@ class HumanitarianLogistics(Model):
 
     def step(self):
         self.schedule.step()
-        #self.sr.collect(self)
+        self.sr.collect(self)
         #self.azc_health.collect(self)
-        #self.modality_occ.collect(self)
+        self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         #self.staff_dc.collect(self)
         self.ls_dc.collect(self)
@@ -255,7 +255,6 @@ class HumanitarianLogistics(Model):
                agent_j = self.action_agents[j]
                action_j = self.actions[j][0]
                city_j = self.actions[j][1]
-               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:
@@ -267,6 +266,11 @@ class HumanitarianLogistics(Model):
                                    if (relationship in agent_i.sn.network) == False:
                                        if agent_i.coo != agent_j.coo:
                                            if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
+                                               agent_i.sn.bondWithAgent(agent_j, similarity)
+                                       else:
+                                           if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
+                                               similarity = 1-(abs(agent_i.values.v_tau[2]-agent_j.values.v_tau[2])/100)
                                                agent_i.sn.bondWithAgent(agent_j, similarity)
     
                                    else: 

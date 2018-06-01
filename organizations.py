@@ -26,18 +26,20 @@ class City(Agent):
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = .3
+            po = .05
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = .2
+            po = .05
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            if np.random.uniform(0,1) < .5:
-                po = .7
+            if np.random.uniform(0,1) < .2:
+                po = .05
+                
             else:
-                po = .3
+                po = .05
+                
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
         self.model.schedule.add(self.coa)
@@ -49,13 +51,15 @@ class City(Agent):
         self.azc.procedure_duration = procedure_time
         self.azcs = set([self.azc])
         self.model.schedule.add(self.azc)
-        self.ngo = NGO(self.unique_id, self.model, self)
+        
+        
         self.auxiliary_housing = 0
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
-        self.po = po
-        self.public_opinion = self.po + self.ngo.campaign                #cities start out neutral regarding PO of NC.
+        self.public_opinion = po           #cities start out neutral regarding PO of NC.
+        self.ngo = NGO(self.unique_id, self.model, self)
+
         self.po_max = 1.
         self.po_min = 0
         action_testing = True
@@ -286,13 +290,17 @@ class NGO(Organization):
         self.funds = 0
         self.cost_per_activity = .05
         self.activities = set([])
+        self.activity_records = {}
+        self.activity_attendance = {}
         self.action_frequency = int(365/(self.values.v_tau[3]*52/100))
         self.campaign = 0
+        self.overhead = .2
         
 
         #actions
         self.action_names = ['marketingCampaign', 'customActivity', 'Fundraise','Prioritize']
         self.actions = set([])
+        
         for i in range(0, len(self.action_names)):
             
             if i == 3:
@@ -318,11 +326,37 @@ class NGO(Organization):
         
         return np.where(totals == max(totals))[0][0]
         
+    def get_avg_attendance(self):
+        
+        '''
+        gets avg attendance p day of each activity. 
+        '''
+        if self.activity_attendance:
+            for act in self.activities:
+                for day in act.frequency:
+                    
+                    self.activity_attendance[act.name][day] = act.attendance[day] / self.activity_records[act.name][day]
+        
+    
     def step(self):
         
         day = self.model.schedule.steps % 7
         
         self.values.decay_val()
+        
+        #update attendance records
+        if self.activities:
+            for act in self.activities:
+                if day in act.frequency:
+                    print(day, act.frequency)
+                    if act.name in self.activity_records.keys():
+                        print(self.activity_records, day)
+                        self.activity_records[act.name][day] += 1
+
+        
+        
+            
+
         
         #the action of marketing gives PO a big boost, but than wanes over time
         if self.campaign > 0:
@@ -348,6 +382,7 @@ class NGO(Organization):
             #update v_sat
             if current != None:
                 print(current.name)
+                print(self.funds)
                 current.do()
         
         
@@ -370,9 +405,9 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
-        self.conservatism = 50
+        self.conservatism = 52
         self.self_enhancement = 45
-        self.self_transcendence = 70
+        self.self_transcendence = 49
         self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
@@ -487,7 +522,7 @@ class AZC(Building):
         self.city = city
         self.coa = self.city.coa
         self.operating_capacity = None
-        self.health = 100
+        self.health = 60
         self.max_health = 100
         self.operational_health = 50
         self.operational_cost = self.occupancy/self.capacity + self.health/self.max_health
@@ -751,13 +786,13 @@ class ActivityCenter(Building):
                 activity.Language_Class(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Doctor(self.unique_id, self.model, {1,2,3,4,5,6,7}, 2),
-                activity.Socialize(self.unique_id, self.model, {1,2,3,4,5,6,7},2),
+                activity.Socialize(self.unique_id, self.model, {1,2,6,7},2),
                 activity.Study(self.unique_id, self.model, {1,2,3,4,5}, 0)])
         
         #NGO activities if available
         if self.azc.city.ngo != None:
-            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,2,3,4,5}, 3))
-            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
+            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,5}, 3))
+            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {2,3}, 1))
 
         self.counter = {}
         
