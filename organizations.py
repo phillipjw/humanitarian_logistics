@@ -42,6 +42,7 @@ class City(Agent):
                 
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
+        self.ngo = NGO(self.unique_id, self.model, self)
         self.model.schedule.add(self.coa)
         self.ind = IND(self.unique_id, model, self)
         self.model.schedule.add(self.ind)
@@ -58,7 +59,7 @@ class City(Agent):
         self.cost_of_bus_within_city = 5
         self.cost_of_bus_to_another_city = 20
         self.public_opinion = po           #cities start out neutral regarding PO of NC.
-        self.ngo = NGO(self.unique_id, self.model, self)
+    
 
         self.po_max = 1.
         self.po_min = 0
@@ -303,9 +304,9 @@ class NGO(Organization):
         
         for i in range(0, len(self.action_names)):
             
-            if i == 9:
+            if i == 3:
                 self.actions.add(activity.Prioritize(self.action_names[i], self, i))
-            elif i == 9:
+            elif i == 1:
                 self.actions.add(activity.customActivity(self.action_names[i], self, i))
             elif i == 0:
                 self.actions.add(activity.marketingCampaign(self.action_names[i], self, i))
@@ -358,7 +359,6 @@ class NGO(Organization):
         
         #the action of marketing gives PO a big boost, but than wanes over time
         if self.campaign > 0:
-            print('degrade')
             degrade = (self.campaign/10)
             self.campaign -= degrade
             self.city.public_opinion -= degrade
@@ -785,12 +785,13 @@ class ActivityCenter(Building):
                 activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
                 activity.Doctor(self.unique_id, self.model, {1,2,3,4,5,6,7}, 2),
                 activity.Socialize(self.unique_id, self.model, {1,2,6,7},2),
-                activity.Study(self.unique_id, self.model, {1,2,3,4,5}, 0)])
+                activity.Study(self.unique_id, self.model, {1,2,3,4,5}, 0),
+                activity.Crime(self.unique_id, self.model, {1,2,3,4,5,6}, 0)])
         
         #NGO activities if available
         if self.azc.city.ngo != None:
             self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,5}, 3))
-            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {2,3}, 1))
+            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,5}, 1))
 
         self.counter = {}
         

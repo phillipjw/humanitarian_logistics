@@ -22,6 +22,54 @@ class Action():
         self.agent.values.val_t[self.v_index] += self.agent.values.val_sat[self.v_index]
         self.counter += 1
         
+class Prioritize(Action):
+    '''
+    An action to re-allocate resources to best meet the needs of Newcomers
+    '''
+    
+    def __init__(self, name, agent, v_index):
+        
+        super().__init__(name, agent, v_index)
+        self.counter = 0
+    def precondition(self):
+        self.num_activities = 0
+        if self.agent.activities:
+            for activity in self.agent.activities:
+                for day in activity.frequency:
+                    self.num_activities += 1
+        return self.num_activities > 2
+    
+    def do(self):
+        super().do()
+        health = np.zeros(4)
+        
+        #gather distribution of unmet value satisfaction
+        for azc in self.agent.city.azcs:
+            for nc in azc.occupants:
+                health += nc.values.health
+        h_sum = np.sum(health)
+        capital = self.agent.funds + self.num_activities*self.agent_cost_per_activity
+        for val in health:
+            val = val/h_sum * capital
+        
+        funding_allocation = np.zeros(4)
+        
+        #distribution of values p activities
+        for act in self.agent.activities:
+            for day in act.frequency:
+                funding_allocation[act.v_index] += 1
+        f_sum = np.sum(funding_allocation)
+        
+        #proportion of funding per val
+        for val in funding_allocation:
+            val = val / f_sum
+        print('true dist',health)
+        print('funding dist', funding_allocation)
+      
+        
+        
+    
+        
 class Fundraise(Action):
     '''
     An action to convert public opinion into usable funds
@@ -50,7 +98,6 @@ class Fundraise(Action):
         #if too small, just raise funds        
         if capital < self.agent.overhead:
             self.agent.funds += (1 - self.agent.funds) * self.agent.city.public_opinion
-            print('po:', self.agent.city.public_opinion, ' funds: ',self.agent.funds)
         
         else: 
             print('Too big', self.agent.city.public_opinion, self.agent.funds)
@@ -100,11 +147,9 @@ class marketingCampaign(Action):
     
     def do(self):
         super().do()
-        print('Marketing before', self.agent.city.public_opinion, self.agent.funds)
         self.agent.campaign = (self.agent.city.po_max - self.agent.city.public_opinion) / (100 - self.agent.values.v_tau[0])
         self.agent.city.public_opinion += self.agent.campaign
         self.agent.funds -= self.agent.campaign
-        print('Marketing after', self.agent.city.public_opinion, self.agent.funds)
 
         
 class customActivity(Action):
@@ -154,20 +199,6 @@ class customActivity(Action):
             self.agent.city.azc.activity_center.activities_available.add(activity)
             self.agent.funds -= self.agent.cost_per_activity
         
-class Prioritize(Action):
-    '''
-    An action to convert public opinion into usable funds
-    '''
-    
-    def __init__(self, name, agent, v_index):
-        
-        super().__init__(name, agent, v_index)
-        self.counter = 0
-    def precondition(self):
-        return self.agent.funds > self.agent.overhead
-    
-    def do(self):
-        super().do()
     
 class adjustStaff_COA(Action):
     '''
@@ -855,7 +886,7 @@ class Football(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'as', 'as_ext', 'tr'}
-        self.HEALTH_THRESHOLD = 50.0
+        self.HEALTH_THRESHOLD = 70.0
         self.HEALTH_INCREASE = 4
         self.name = 'Football'
         
@@ -941,7 +972,7 @@ class Socialize(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'edp','as','as_ext','tr'}
-        self.HEALTH_THRESHOLD = 30.0
+        self.HEALTH_THRESHOLD = 40.0
         self.name = 'Socialize'
     
     def precondition(self, agent):
@@ -966,7 +997,7 @@ class Volunteer(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'tr', 'as', 'as_ext'}
-        self.HEALTH_THRESHOLD = 40.0
+        self.HEALTH_THRESHOLD = 60.0
         self.v_index = v_index
         self.name = 'Volunteer'
     
@@ -981,11 +1012,11 @@ class Volunteer(Activity):
         
         po_max = agent.current[1].coa.city.po_max
         current = agent.current[1].coa.city.public_opinion
-        #agent.current[1].coa.city.public_opinion += (po_max - current) * current
-        #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
+        agent.current[1].coa.city.public_opinion += (po_max - current) / 1000
+        #ossible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):
-    HEALTH_THRESHOLD = 50.0
+    HEALTH_THRESHOLD = 70.0
     def __init__(self, unique_id, model, frequency,v_index):
         
         super().__init__(unique_id, model, frequency, v_index)
@@ -1010,6 +1041,25 @@ class Work(Activity):
         agent.coa.budget += .50*earnings
         
             #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
+
+class Crime(Activity):
+    
+    def __init__(self,unique_id, model, frequency, v_index):
+        
+        super().__init__(unique_id, model, frequency, v_index)
+        self.frequency = frequency
+        self.name = 'Crime'
+        self.occupant_type = {'tr', 'as', 'as_ext'}
+        self.v_index = v_index
+    
+    def precondition(self, agent):
+        
+        return  np.random.uniform(0,1) < .01
+    
+    def do(self, agent):
+        super().do(agent)
+        agent.loc.city.public_opinion -= (agent.loc.city.public_opinion - agent.loc.city.po_min) / 2
+        agent.coa.city.public_opinion = max(0, agent.coa.city.public_opinion)
 
 class Study(Activity):
     HEALTH_THRESHOLD = 40.0

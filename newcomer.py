@@ -59,7 +59,7 @@ class Newcomer(Agent):
             self.second = 1
                                   
         # new comer values
-        self.values = Values(10, 40, 30, 60, 55, self)
+        self.values = Values(10, 56, 30, 50, 55, self)
         self.testing_activities = False
         self.budget = 0
         self.acculturation = .2
@@ -137,6 +137,8 @@ class Newcomer(Agent):
                     else:
                         self.model.confusionMatrix['FP'] += 1
                         self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
+                        self.coa.city.public_opinion = max(0, self.coa.city.public_opinion)
+                
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -156,7 +158,7 @@ class Newcomer(Agent):
                     else:
                         self.model.confusionMatrix['FP'] += 1
                         self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
-                
+                        self.coa.city.public_opinion = max(0, self.coa.city.public_opinion)
                 #if negative decision
                 else:
                     if self.second == 0:
@@ -253,9 +255,12 @@ class Newcomer(Agent):
             if self.current != None:
                     break
         
+        
+       
         #update v_sat
         if self.current != None:
             self.current[0].do(self)
+
             self.model.action_agents.append(self)
             self.model.actions.append(self.current)
 
@@ -269,9 +274,9 @@ class Newcomer(Agent):
             self.sn.decayRelationships()
             self.sn.maintainNetwork()
          
-        if self.check_for_crime():
-            self.coa.city.public_opinion -= Newcomer.PUBLIC_OPINION_DROP_BASED_ON_CRIME
-            self.coa.city.public_opinion = min(0, self.coa.city.public_opinion)
+        #if self.check_for_crime():
+            #self.coa.city.public_opinion -= Newcomer.PUBLIC_OPINION_DROP_BASED_ON_CRIME
+            #self.coa.city.public_opinion = min(0, self.coa.city.public_opinion)
             # offending agent is quarintined but currently this causes errors: self.model.Remove(self)
 
     def check_for_family(self):
