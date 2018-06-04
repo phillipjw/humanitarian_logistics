@@ -307,7 +307,7 @@ class NGO(Organization):
                 self.actions.add(activity.Prioritize(self.action_names[i], self, i))
             elif i == 9:
                 self.actions.add(activity.customActivity(self.action_names[i], self, i))
-            elif i == 9:
+            elif i == 0:
                 self.actions.add(activity.marketingCampaign(self.action_names[i], self, i))
             elif i == 2:
                 self.actions.add(activity.Fundraise(self.action_names[i], self, i))
@@ -358,8 +358,10 @@ class NGO(Organization):
         
         #the action of marketing gives PO a big boost, but than wanes over time
         if self.campaign > 0:
-            self.campaign -= .1
-            self.city.public_opinion -= self.campaign
+            print('degrade')
+            degrade = (self.campaign/10)
+            self.campaign -= degrade
+            self.city.public_opinion -= degrade
         
         #prioritize
         priority = self.values.prioritize()

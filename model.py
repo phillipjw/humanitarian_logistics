@@ -170,12 +170,16 @@ class HumanitarianLogistics(Model):
         ### Staff data collector
         self.staff_index = -1
         staff_functions = {}
+        po_functions = {}
         self.staff = self.modalities
         for i in range(0, len(self.staff)):
             self.staff_index = i
             staff_functions[self.staff[self.staff_index]] = staff
+            po_functions[self.staff[self.staff_index]] = po
         
         self.staff_dc = DataCollector(model_reporters = staff_functions)
+        self.po_dc = DataCollector(model_reporters = po_functions)
+    
         
         self.ind_statement = 1
         
@@ -208,6 +212,7 @@ class HumanitarianLogistics(Model):
         #self.staff_dc.collect(self)
         self.ls_dc.collect(self)
         self.network_dc.collect(self)
+        self.po_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -405,7 +410,7 @@ def get_distress(model, idx):
                    type(nc) is Newcomer and
                    nc.ls == model.ls[idx]])
     return ncs
-
+'''
 def funds(model):
     model.ls_index += 1
     if model.ls_index == len(model.ls):
@@ -417,6 +422,19 @@ def get_funds(model, idx):
     ncs = np.mean([ngo.funds for ngo in model.schedule.agents if
                    type(ngo) is NGO and
                    nc.ls == model.ls[idx]])
+    return ncs
+'''
+def po(model):
+    model.staff_index += 1
+    if model.staff_index == len(model.modalities):
+        model.staff_index = 0
+    return get_po(model, model.staff_index)
+
+def get_po(model, idx):
+    
+    ncs = np.mean([ngo.city.public_opinion for ngo in model.schedule.agents if
+                   type(ngo) is NGO and
+                   ngo.city.modality == model.modalities[idx]])
     return ncs
 
 def network_size(model):
