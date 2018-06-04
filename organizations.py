@@ -286,7 +286,7 @@ class NGO(Organization):
         self.model.schedule.add(self)
         self.city = city
         self.pos = self.city.pos
-        self.values = Values(10,45,61,35,40, self)
+        self.values = Values(10,55,50,40,45, self)
         self.funds = 0
         self.cost_per_activity = .05
         self.activities = set([])
@@ -303,11 +303,11 @@ class NGO(Organization):
         
         for i in range(0, len(self.action_names)):
             
-            if i == 3:
+            if i == 9:
                 self.actions.add(activity.Prioritize(self.action_names[i], self, i))
-            elif i == 1:
+            elif i == 9:
                 self.actions.add(activity.customActivity(self.action_names[i], self, i))
-            elif i == 0:
+            elif i == 9:
                 self.actions.add(activity.marketingCampaign(self.action_names[i], self, i))
             elif i == 2:
                 self.actions.add(activity.Fundraise(self.action_names[i], self, i))
@@ -348,9 +348,7 @@ class NGO(Organization):
         if self.activities:
             for act in self.activities:
                 if day in act.frequency:
-                    print(day, act.frequency)
                     if act.name in self.activity_records.keys():
-                        print(self.activity_records, day)
                         self.activity_records[act.name][day] += 1
 
         
@@ -382,9 +380,7 @@ class NGO(Organization):
             #update v_sat
             if current != None:
                 print(current.name)
-                print(self.funds)
                 current.do()
-        
         
         
 

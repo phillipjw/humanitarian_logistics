@@ -132,7 +132,7 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
-                        self.coa.city.public_opinion -= (self.coa.city.po_min - self.coa.city.public_opinion) / 2
+                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
@@ -151,7 +151,7 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
-                        self.coa.city.public_opinion -= (self.coa.city.po_min - self.coa.city.public_opinion) / 2
+                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
                 
                 #if negative decision
                 else:
@@ -189,12 +189,9 @@ class Newcomer(Agent):
                     type(azc) is AZC and azc.modality != 'COL' and
                     azc.activity_center != None and
                     azc.activity_center.activities_available != None]
-            
-            
         
         #check if enough for intracity
         elif self.budget > self.coa.city.cost_of_bus_within_city:
-            
             
             azcs = [azc for azc in self.coa.city.azcs if
                     azc.modality != 'COL' and azc.activity_center != None and

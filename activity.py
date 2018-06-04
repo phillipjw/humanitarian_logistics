@@ -49,37 +49,40 @@ class Fundraise(Action):
                 
         #if too small, just raise funds        
         if capital < self.agent.overhead:
-            self.agent.funds += self.agent.city.public_opinion
+            self.agent.funds += (1 - self.agent.funds) * self.agent.city.public_opinion
+            print('po:', self.agent.city.public_opinion, ' funds: ',self.agent.funds)
         
-        #If room to grow, grow.
-        elif self.agent.city.public_opinion > activity_cost + campaign_cost:
-            self.agent.funds += self.agent.city.public_opinion - (activity_cost + campaign_cost)
-            print(self.agent.city.public_opinion, activity_cost, campaign_cost)
         else: 
-
+            print('Too big', self.agent.city.public_opinion, self.agent.funds)
             #case two: if have existing activities
-            while self.agent.funds < self.agent.overhead:
-                self.agent.get_average_attendance()
-                mini = np.inf
+            if self.agent.activities:
             
-                for activity in self.agent.activities:
-                    for day in activity.frequency:
-                        if self.agent.activity_attendance[activity.name][day] < mini:
-                            mini = self.agent.activity_attendance[activity.name][day]
-                            worst, when = activity.name, day
+                while self.agent.funds < self.agent.overhead:
+                    self.agent.get_avg_attendance()
+                    mini = np.inf
                 
-                #remove min
-                if len(worst.frequency) == 1:
-                    #if only one session p week, remove the whole activity
-                    self.agent.activities.remove(worst)
-                    self.agent.activity_attendance.pop(worst)
-                    self.agent.activity_records.pop(worst)
-                else:
-                    #otherwise just remove one session. 
-                    self.agent.activity_attendance[worst].pop(when)
-                    self.agent.activity_records[worst].pop(when)
-                #increase funds
-                self.agent.funds += self.agent.cost_per_activity
+                    for activity in self.agent.activities:
+                        for day in activity.frequency:
+                            if self.agent.activity_attendance[activity.name][day] < mini:
+                                mini = self.agent.activity_attendance[activity.name][day]
+                                worst, when = activity.name, day
+                    
+                    #remove min
+                    if len(worst.frequency) == 1:
+                        #if only one session p week, remove the whole activity
+                        self.agent.activities.remove(worst)
+                        self.agent.activity_attendance.pop(worst)
+                        self.agent.activity_records.pop(worst)
+                    else:
+                        #otherwise just remove one session. 
+                        self.agent.activity_attendance[worst].pop(when)
+                        self.agent.activity_records[worst].pop(when)
+                    #increase funds
+                    self.agent.funds += self.agent.cost_per_activity
+            else: 
+                self.agent.funds += self.agent.campaign
+                self.agent.city.public_opinion -= self.agent.campaign
+                self.agent.campaign = 0
             
             
 
@@ -97,9 +100,12 @@ class marketingCampaign(Action):
     
     def do(self):
         super().do()
-        self.agent.city.public_opinion += self.agent.funds
-        self.agent.campaign = self.agent.funds * (self.agent.values.v_tau[0] / np.sum(self.agent.values.v_tau))
+        print('Marketing before', self.agent.city.public_opinion, self.agent.funds)
+        self.agent.campaign = (self.agent.city.po_max - self.agent.city.public_opinion) / (100 - self.agent.values.v_tau[0])
+        self.agent.city.public_opinion += self.agent.campaign
         self.agent.funds -= self.agent.campaign
+        print('Marketing after', self.agent.city.public_opinion, self.agent.funds)
+
         
 class customActivity(Action):
     '''
@@ -127,6 +133,7 @@ class customActivity(Action):
                 break
         #add session to existing activity
         if additional_session != None:
+            print('New Session')
             new_day = self.possible_days.difference(act.frequency).pop()
             act.frequency.add(new_day)
             act.attendance[new_day] = 0
@@ -138,6 +145,7 @@ class customActivity(Action):
         #otherwise create new activity
         else:
             day = np.random.randint(0,6)
+            print('New Activity')
             activity = Activity(self.agent.unique_id, self.agent.model, {day}, need)
             activity.name = 'custom'+str(need)
             self.agent.activities.add(activity)
@@ -973,7 +981,7 @@ class Volunteer(Activity):
         
         po_max = agent.current[1].coa.city.po_max
         current = agent.current[1].coa.city.public_opinion
-        agent.current[1].coa.city.public_opinion += (po_max - current) / 10
+        #agent.current[1].coa.city.public_opinion += (po_max - current) * current
         #possible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):

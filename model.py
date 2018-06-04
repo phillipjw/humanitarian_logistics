@@ -13,7 +13,7 @@ from random import uniform
 import numpy as np
 
 from newcomer import Newcomer
-from organizations import COA, AZC, Hotel, Empty, City, IND
+from organizations import COA, AZC, Hotel, Empty, City, IND, NGO
 from viz import AZC_Viz
 from socialrelationship import SocialRelationship
 
@@ -261,16 +261,16 @@ class HumanitarianLogistics(Model):
                        if action_i.name == action_j.name:
                            if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
 
-                               if action_i.name == 'Socialize':
-                                   #OTC dependent bias against other culture relationship formation
-                                   relationship = SocialRelationship(agent_j)
-                                   if (relationship in agent_i.sn.network) == False:
-                                       if agent_i.coo != agent_j.coo:
-                                           if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
-                                               agent_i.sn.bondWithAgent(agent_j)
-                                       else:
-                                           if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
-                                               agent_i.sn.bondWithAgent(agent_j)
+                               
+                               #OTC dependent bias against other culture relationship formation
+                               relationship = SocialRelationship(agent_j)
+                               if (relationship in agent_i.sn.network) == False:
+                                   if agent_i.coo != agent_j.coo:
+                                       if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                           agent_i.sn.bondWithAgent(agent_j)
+                                   else:
+                                       if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
+                                           agent_i.sn.bondWithAgent(agent_j)
     
                                else: 
                                    agent_i.sn.bondWithAgent(agent_j)
@@ -402,6 +402,19 @@ def get_distress(model, idx):
     
     ncs = np.mean([nc.values.health for nc in model.schedule.agents if
                    type(nc) is Newcomer and
+                   nc.ls == model.ls[idx]])
+    return ncs
+
+def funds(model):
+    model.ls_index += 1
+    if model.ls_index == len(model.ls):
+        model.ls_index = 0
+    return get_funds(model, model.ls_index)
+
+def get_funds(model, idx):
+    
+    ncs = np.mean([ngo.funds for ngo in model.schedule.agents if
+                   type(ngo) is NGO and
                    nc.ls == model.ls[idx]])
     return ncs
 
