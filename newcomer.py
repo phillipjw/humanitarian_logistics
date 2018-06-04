@@ -1,4 +1,5 @@
-import mesa 
+import mesa
+import math
 from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
@@ -11,6 +12,7 @@ class Newcomer(Agent):
     
     
     UID=1
+    PUBLIC_OPINION_DROP_BASED_ON_CRIME = 0.15
     def get_truncated_normal(mean=50, sd=10, low=0, upp=100):
         return truncnorm(
             (low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
@@ -61,7 +63,7 @@ class Newcomer(Agent):
         self.testing_activities = False
         self.budget = 0
         self.acculturation = .2
-        self.max_acc = 1.
+        self.max_acc = 1.0
         
         
         self.integrated = False
@@ -98,6 +100,8 @@ class Newcomer(Agent):
         #Education
         self.education = .5
         self.max_education = 1
+        
+        self.has_family_here = self.check_for_family()
 
     def COA_Interaction(self):
         
@@ -264,3 +268,48 @@ class Newcomer(Agent):
         if self.model.include_social_networks:
             self.sn.decayRelationships()
             self.sn.maintainNetwork()
+         
+        if self.check_for_crime():
+            self.coa.city.public_opinion -= Newcomer.PUBLIC_OPINION_DROP_BASED_ON_CRIME
+            self.coa.city.public_opinion = min(0, self.coa.city.public_opinion)
+            # offending agent is quarintined but currently this causes errors: self.model.Remove(self)
+
+    def check_for_family(self):
+        family_educuation_threshold = 0.66
+        chance_with_education = 0.3
+        chance_without_education = 0.1
+        random_draw = np.random.uniform(low=0, high=1)
+        if self.education > family_educuation_threshold:
+            return chance_with_education < random_draw
+        else:
+            return chance_without_education < random_draw
+    
+    def is_desperate(self):
+        stablizing_number_of_steps = 50
+        poor_health_threshold = 0.2
+        low_budget_threshold = 1
+        # wait for model to stabilize
+        if self.model.schedule.steps > stablizing_number_of_steps:
+            nc_outcome = self.outcome()
+            # remove any nans
+            nc_outcome = [0 if math.isnan(x) else x for x in nc_outcome]
+            # normalize everything to 0-1
+            nc_outcome = [(x/100) if x > 1 else x for x in nc_outcome]
+            # no family
+            if self.has_family_here == False:
+                # if in bad shape for all outcome measures
+                if all(i < poor_health_threshold for i in nc_outcome):
+                    # budget
+                    if self.budget < low_budget_threshold:
+                        return True
+        
+        return False
+    
+    def check_for_crime(self):
+        chance_for_crime = 0.01
+        if self.is_desperate():
+            random_draw = np.random.uniform(low=0, high=1)
+            if random_draw < chance_for_crime:
+                return True
+        
+        return False

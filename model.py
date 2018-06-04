@@ -255,25 +255,26 @@ class HumanitarianLogistics(Model):
                agent_j = self.action_agents[j]
                action_j = self.actions[j][0]
                city_j = self.actions[j][1]
-               
                if i != j:
                    if city_i == city_j:
                        if action_i.name == action_j.name:
                            if action_i.name in HumanitarianLogistics.SOCIAL_ACTIVITIES:
-
-                               
-                               #OTC dependent bias against other culture relationship formation
-                               relationship = SocialRelationship(agent_j)
-                               if (relationship in agent_i.sn.network) == False:
-                                   if agent_i.coo != agent_j.coo:
-                                       if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
-                                           agent_i.sn.bondWithAgent(agent_j)
-                                   else:
-                                       if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
-                                           agent_i.sn.bondWithAgent(agent_j)
+                               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
+                               if action_i.name == 'Socialize':
+                                   #OTC dependent bias against other culture relationship formation
+                                   relationship = SocialRelationship(agent_j, similarity)
+                                   if (relationship in agent_i.sn.network) == False:
+                                       if agent_i.coo != agent_j.coo:
+                                           if np.random.uniform(0,100) < agent_i.values.v_tau[3]:
+                                               similarity = 1-(abs(agent_i.values.v_tau[3]-agent_j.values.v_tau[3])/100)
+                                               agent_i.sn.bondWithAgent(agent_j, similarity)
+                                       else:
+                                           if abs(agent_i.political_polarity - agent_j.political_polarity) < (1-(agent_i.values.v_tau[2]/100)):
+                                               similarity = 1-(abs(agent_i.values.v_tau[2]-agent_j.values.v_tau[2])/100)
+                                               agent_i.sn.bondWithAgent(agent_j, similarity)
     
-                               else: 
-                                   agent_i.sn.bondWithAgent(agent_j)
+                                   else: 
+                                       agent_i.sn.bondWithAgent(agent_j, similarity)
         self.reset_social_network_lists()
 
                 
