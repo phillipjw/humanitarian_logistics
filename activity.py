@@ -50,19 +50,27 @@ class Prioritize(Action):
         h_sum = np.sum(health)
         capital = self.agent.funds + self.num_activities*self.agent_cost_per_activity
         for val in health:
-            val = val/h_sum * capital
+            val = val/h_sum 
         
         funding_allocation = np.zeros(4)
-        
+        difference = np.zeros(4)
         #distribution of values p activities
         for act in self.agent.activities:
             for day in act.frequency:
                 funding_allocation[act.v_index] += 1
+            
         f_sum = np.sum(funding_allocation)
         
         #proportion of funding per val
-        for val in funding_allocation:
-            val = val / f_sum
+        for val in range(len(funding_allocation)):
+            funding_allocation[val] /= f_sum
+            difference[val] = health[val] - funding_allocation[val]
+            if difference[val] < 0 and difference[val] * self.num_activities > -1:
+                adjustment_size = np.floor(abs(difference[val]*self.num_activities))
+                # for adjustment size
+                
+                #remove sessions
+        #then go through difference in order of biggest positive difference, adding as newly acquired funds allow. 
         print('true dist',health)
         print('funding dist', funding_allocation)
       
@@ -216,9 +224,22 @@ class adjustStaff_COA(Action):
         return True
     def do(self):
         super().do()
-        
-        self.agent.staff = self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio
-    
+        required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
+        adjustment = required_staff - self.agent.staff
+        if adjustment > 0:
+            print('need more', 'adj', adjustment,'budj', self.agent.staff_budget)
+            while self.agent.staff_budget > 0 and adjustment > 0:
+                self.agent.staff += 1
+                self.agent.staff_budget -= 1
+                adjustment -= 1
+        else: 
+            print('need less', 'adj', adjustment,'budj', self.agent.staff_budget)
+
+            while adjustment < 0:
+                self.agent.staff -= 1
+                self.agent.staff_budget += 1
+                adjustment += 1
+            
 class improveFacilities(Action):
     '''
     Value: Self-Enhancement
@@ -1054,7 +1075,7 @@ class Crime(Activity):
     
     def precondition(self, agent):
         
-        return  np.random.uniform(0,1) < .01
+        return  np.random.uniform(0,1) < .0001
     
     def do(self, agent):
         super().do(agent)

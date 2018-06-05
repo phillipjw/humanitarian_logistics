@@ -199,20 +199,20 @@ class HumanitarianLogistics(Model):
         
         self.action_agents = []
         self.actions = []
-        self.include_social_networks = True
+        self.include_social_networks = False
        
 
 
     def step(self):
         self.schedule.step()
-        self.sr.collect(self)
+        #self.sr.collect(self)
         #self.azc_health.collect(self)
         self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
-        #self.staff_dc.collect(self)
-        self.ls_dc.collect(self)
-        self.network_dc.collect(self)
-        self.po_dc.collect(self)
+        self.staff_dc.collect(self)
+        #self.ls_dc.collect(self)
+        #self.network_dc.collect(self)
+        #self.po_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -387,7 +387,7 @@ def cm(model):
 
 def get_staff(model, idx):
     
-    staff =  np.mean([building.city.ind.staff for building in
+    staff =  np.mean([building.city.coa.staff for building in
                          model.schedule.agents if
                          type(building) is AZC and
                          building.modality == model.modalities[idx]])

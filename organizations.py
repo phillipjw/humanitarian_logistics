@@ -26,19 +26,19 @@ class City(Agent):
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = .05
+            po = .60
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = .05
+            po = .60
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
             if np.random.uniform(0,1) < .2:
-                po = .05
+                po = .60
                 
             else:
-                po = .05
+                po = .60
                 
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -134,7 +134,7 @@ class COA(Organization):
         self.state = 'Normal'
         self.staff_to_resident_ratio = .15
         
-        self.staff = 15
+        self.staff = 10
         self.checkin = activity.Checkin('Checkin', self, 3)
         self.current_policy = self.find_house
         
@@ -143,6 +143,9 @@ class COA(Organization):
         self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff']
         
         self.budget = 0
+        self.staff_budget = 12
+        self.num_hires = 0
+        self.num_fires = 0
         
                     
 
@@ -160,6 +163,15 @@ class COA(Organization):
         new.procedure_duration = 35
         self.model.schedule.add(new)
         self.model.grid.place_agent(new, new.pos)
+        
+    def get_working_conditions(self):
+        
+        health = []
+        #distress = []
+        for azc in self.city.azcs:
+            health.append(np.mean([(nc.values.health + nc.health / 2) for nc in azc.occupants]))
+            #distress.append(np.mean([nc.health for nc in azc.occupants]))
+        return np.mean(health)
     
     def min_house(self, newcomer):
         '''finds min occupancy building regardless of legal status
@@ -255,6 +267,7 @@ class COA(Organization):
         #decay
         self.values.decay_val()
         
+        
         #prioritize
         priority = self.values.prioritize()
         
@@ -273,7 +286,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
         
 
@@ -381,7 +394,7 @@ class NGO(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
         
         
