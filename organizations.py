@@ -133,7 +133,7 @@ class COA(Organization):
         self.checkin_frequency =  int(365/(self.self_transcendence*52/100))
         self.state = 'Normal'
         self.staff_to_resident_ratio = .15
-        
+        self.staff_estimation_frequency = 90
         self.staff = 10
         self.checkin = activity.Checkin('Checkin', self, 3)
         self.current_policy = self.find_house
@@ -144,8 +144,10 @@ class COA(Organization):
         
         self.budget = 0
         self.staff_budget = 12
-        self.num_hires = 0
-        self.num_fires = 0
+        self.housing_costs = 0
+        self.housing_cost_history = []
+        self.housing_budget = 50
+
         
                     
 
@@ -266,6 +268,25 @@ class COA(Organization):
         
         #decay
         self.values.decay_val()
+        
+        if self.model.schedule.steps > 102 + 3*self.assessment_frequency and day % self.staff_estimation_frequency == 0:
+            #update budget
+            
+            #estimated number of staff
+            estimated_staff = 0
+            for azc in self.city.azcs:
+                estimated_staff += int(np.mean(azc.occupancies)*self.staff_to_resident_ratio)
+            
+            self.staff_budget = estimated_staff - self.staff     
+            
+            self.housing_budget = self.housing_costs
+            self.housing_costs = 0
+                
+        
+            
+        
+
+        
         
         
         #prioritize
@@ -657,6 +678,7 @@ class AZC(Building):
                     
                     #check for anomalies in amount of incoming newcomer
                     self.shock_check_procedure()
+                    self.occupancies.append(self.occupancy)
             
                     
         ###If not COL Just report for estimation purposes.
@@ -729,6 +751,7 @@ class AZC(Building):
         
         #update state
         self.get_state()
+        
         
         
 

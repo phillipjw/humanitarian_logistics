@@ -227,13 +227,11 @@ class adjustStaff_COA(Action):
         required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
         adjustment = required_staff - self.agent.staff
         if adjustment > 0:
-            print('need more', 'adj', adjustment,'budj', self.agent.staff_budget)
             while self.agent.staff_budget > 0 and adjustment > 0:
                 self.agent.staff += 1
                 self.agent.staff_budget -= 1
                 adjustment -= 1
         else: 
-            print('need less', 'adj', adjustment,'budj', self.agent.staff_budget)
 
             while adjustment < 0:
                 self.agent.staff -= 1
@@ -255,10 +253,19 @@ class improveFacilities(Action):
         return True
     def do(self):
         super().do()
+        total_spent = 0
         for azc in self.agent.city.azcs:
             increase_amount = (azc.max_health - azc.health)*(self.agent.conservatism/100)
-            azc.health = max(azc.operational_health, azc.health + increase_amount)
-        
+            new_health = max(azc.operational_health, azc.health + increase_amount)
+            while self.agent.housing_budget > 0 and new_health > 0:
+                azc.health += 1
+                new_health -= 1
+                self.agent.housing_budget -= 1
+                total_spent += 1
+                
+                
+ 
+        self.agent.housing_costs += total_spent
     
 class Checkin(Action):
     
