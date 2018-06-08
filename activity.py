@@ -217,11 +217,15 @@ class adjustStaff_COA(Action):
     def __init__(self,name, agent, v_index):
         super().__init__(name, agent, v_index)
         self.counter = 0
+        
     def precondition(self):
         '''
         COA can do this theoretically whenever, but we could also put a budget constraint
         '''
-        return True
+        self.required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
+        self.adjustment = self.required_staff - self.agent.staff
+        
+        return self.adjustment < 0 or self.agent.budget.accounts['Staff'] > 0
     def do(self):
         super().do()
         required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
@@ -769,9 +773,16 @@ class adjustStaff(Action):
         
     def precondition(self):
         '''
-        Indeed, ind can do this whenever.
+        IND can do this when it has the funds or when laying staff off
         '''
-        return True
+        if self.agent.city.azc.shock_state != 'Problematic':
+            ratio = self.agent.staff_to_resident_ratio
+        else:
+            ratio = self.agent.staff_to_resident_ratio/2
+        
+        required_staff = int(self.agent.city.coa.get_total_occupancy()/ratio)
+        adjustment = required_staff - self.agent.staff
+        return adjustment < 0 or self.agent.budget.accounts['Staff'] > 0
         
     def do(self):
         
@@ -779,15 +790,33 @@ class adjustStaff(Action):
         # Adjust current staff to be in accordance with actual occupancy levels
         # here occupants reside in azc?
         
+        if self.agent.city.azc.shock_state != 'Problematic': 
+            ratio = self.agent.staff_to_resident_ratio
+        else:
+            ratio = self.agent.staff_to_resident_ratio/2
         
-        currentOccupants = len(self.agent.city.azc.occupants)
-        currentStaff = self.agent.city.ind.staff+1 # to ensure no divide by zero
-        #if (currentOccupants/currentStaff) >= self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO:
-        self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.LOW_OCCUPANCY_OCC_TO_STAFF_RATIO
-        # this simulates bottle necking highering additional staff when occupancy is high    
-        if (currentOccupants/currentStaff) > self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO:
-            self.agent.city.ind.staff = len(self.agent.city.azc.occupants) / self.HIGH_OCCUPANCY_OCC_TO_STAFF_RATIO 
+        required_staff = int(self.agent.city.coa.get_total_occupancy()/ratio)
+        adjustment = required_staff - self.agent.staff
+        print('Adjustemnt', adjustment)
+        if adjustment > 0:
+            print('Adjustment Positive')
+            if adjustment > self.agent.budget.accounts['Staff']:
+                print('Adjustment under budget')
+                print(adjustment, self.agent.budget.accounts['Staff'])
+                self.agent.staff += self.agent.budget.accounts['Staff']
+                self.agent.budget.accounts['Staff'] =  0
+            else:
+                print('Adjustment within budget')
+                print(adjustment, self.agent.budget.accounts['Staff'])
+                self.agent.staff += adjustment
+                self.agent.budget.accounts['Staff'] -= adjustment
 
+        else: 
+
+    
+            self.agent.staff += adjustment
+            self.agent.budget.accounts['Staff'] -= adjustment
+        
 class issueStatement(Action):
 
     def __init__(self, name, agent, v_index):

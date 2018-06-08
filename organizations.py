@@ -145,9 +145,12 @@ class COA(Organization):
         
         accounts = {
                 'Housing': 25,
-                'Staff'  : 12}
+                'Staff'  : 5}
         self.budget = Budget(accounts, 90)
         self.housing_costs = 0
+        self.mean_occs = 0
+        self.occ_to_housing_ratio = 4
+        self.occ_to_staff_ratio = 20
         
                     
 
@@ -268,17 +271,18 @@ class COA(Organization):
         
         #decay
         self.values.decay_val()
-                
+           
+        #Update budget at regular intervals to allow for flexibility
         if day > 5 and day % self.budget.frequency == 0:
             #update budget
+            self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
+                                      self.city.azcs])
+            
+            self.budget.replenish_amounts['Housing'] = self.mean_occs / self.occ_to_housing_ratio
+            self.budget.replenish_amounts['Staff'] = self.mean_occs / self.occ_to_staff_ratio            
             self.budget.replenish()
                 
-        
-            
-        
-
-        
-        
+ 
         
         #prioritize
         priority = self.values.prioritize()
@@ -298,7 +302,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
         
 
@@ -434,8 +438,13 @@ class IND(Organization):
         self.openness_to_change = 60
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
-        self.staff = 50
+        self.staff = 20
         self.action_frequency = int(365/(self.openness_to_change*52/100))
+        accounts = {'Staff': 10}
+        self.budget_frequency = 365
+        self.budget = Budget(accounts, self.budget_frequency)
+        self.staff_budget = 0
+        self.staff_to_resident_ratio = 4
 
         
         #####ACTIONS######
@@ -490,12 +499,18 @@ class IND(Organization):
     
     def step(self):
         
-        day = self.model.schedule.steps % 7
+        day = self.model.schedule.steps 
         
         self.values.decay_val()
         
         #prioritize
         priority = self.values.prioritize()
+        
+        #updates funding request based on historical trajectory
+        if day > 5 and day % self.budget_frequency == 0:
+            self.budget.replenish_amounts['Staff'] = np.mean([np.mean(azc.occupancies) for
+                                         azc in self.city.azcs]) / 4
+            self.budget.replenish()
         
         if day % self.action_frequency == 0:
             #act
@@ -512,7 +527,7 @@ class IND(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
     
                            
@@ -664,6 +679,8 @@ class AZC(Building):
         if self.modality == 'COL':
             if self.model.schedule.steps < 100:
                 self.variance_ta, self.squared_ta, self.sum_ta = self.online_variance_ta(self)             
+                self.occupancies.append(self.occupancy)
+
             else:
                 if self.model.schedule.steps % self.city.coa.assessment_frequency == 0:
                     
@@ -742,19 +759,7 @@ class AZC(Building):
         
         #update state
         self.get_state()
-        
-        
-        
-
-        
-        
-        
-        
-        
-                    
-
-
-         
+               
 
 class Hotel(Building):
     '''
