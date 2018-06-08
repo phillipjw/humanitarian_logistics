@@ -9,6 +9,7 @@ from Values import Values
 from fractions import Fraction
 import activity
 import newcomer
+from budget import Budget
 
 
 
@@ -142,12 +143,11 @@ class COA(Organization):
         self.actions = set([])
         self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff']
         
-        self.budget = 0
-        self.staff_budget = 12
+        accounts = {
+                'Housing': 25,
+                'Staff'  : 12}
+        self.budget = Budget(accounts, 90)
         self.housing_costs = 0
-        self.housing_cost_history = []
-        self.housing_budget = 50
-
         
                     
 
@@ -268,19 +268,10 @@ class COA(Organization):
         
         #decay
         self.values.decay_val()
-        
-        if self.model.schedule.steps > 102 + 3*self.assessment_frequency and day % self.staff_estimation_frequency == 0:
+                
+        if day > 5 and day % self.budget.frequency == 0:
             #update budget
-            
-            #estimated number of staff
-            estimated_staff = 0
-            for azc in self.city.azcs:
-                estimated_staff += int(np.mean(azc.occupancies)*self.staff_to_resident_ratio)
-            
-            self.staff_budget = estimated_staff - self.staff     
-            
-            self.housing_budget = self.housing_costs
-            self.housing_costs = 0
+            self.budget.replenish()
                 
         
             
@@ -540,7 +531,7 @@ class Building(Agent):
         self.max_health = 100
     
     def step(self):
-        self.health = self.health - (1*self.occupancy/self.capacity)
+        self.health = max(0,self.health - (1*self.occupancy/self.capacity))
 
 
 class AZC(Building):

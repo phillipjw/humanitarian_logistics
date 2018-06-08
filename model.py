@@ -387,7 +387,7 @@ def cm(model):
 
 def get_staff(model, idx):
     
-    staff =  np.mean([building.city.coa.staff for building in
+    staff =  np.mean([building.health for building in
                          model.schedule.agents if
                          type(building) is AZC and
                          building.modality == model.modalities[idx]])

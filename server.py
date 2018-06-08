@@ -14,10 +14,10 @@ num_pol = 2
 
 azc_display_size = 20
 
-st = UserSettableParameter('slider', 'Self-Transcendence', 70,0,100,5)
-se = UserSettableParameter('slider', 'Self-Enhancement', 60,0,100, 5)
-c = UserSettableParameter('slider', 'Conservatism', 55, 0, 100, 5)
-otc = UserSettableParameter('slider', 'Openness-to-Change',75,0,100, 5)
+st = UserSettableParameter('slider', 'Self-Transcendence', 45,0,100,5)
+se = UserSettableParameter('slider', 'Self-Enhancement', 65,0,100, 5)
+c = UserSettableParameter('slider', 'Conservatism', 46, 0, 100, 5)
+otc = UserSettableParameter('slider', 'Openness-to-Change',64,0,100, 5)
 
 
 def agent_portrayal(agent):
