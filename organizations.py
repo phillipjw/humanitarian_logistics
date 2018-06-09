@@ -157,6 +157,8 @@ class COA(Organization):
         self.mean_occs = 0
         self.occ_to_housing_ratio = 4
         self.occ_to_staff_ratio = 20
+        self.hotel_costs = 0
+        self.building_costs = 0
         
                     
 
@@ -176,6 +178,7 @@ class COA(Organization):
         self.model.schedule.add(new)
         self.model.grid.place_agent(new, new.pos)
         print('UNDER CONSTRUCTION', new.construction_time)
+        self.building_costs += size*20000
         
     def get_working_conditions(self):
         
@@ -317,7 +320,6 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
                 current.do()
         
 
@@ -455,9 +457,9 @@ class IND(Organization):
                              self.conservatism, self.openness_to_change,self)
         self.staff = 20
         self.action_frequency = int(365/(self.openness_to_change*52/100))
-        accounts = {'Staff': 10}
+        self.accounts = {'Staff': 10}
         self.budget_frequency = 365
-        self.budget = Budget(accounts, self.budget_frequency)
+        self.budget = Budget(self.accounts, self.budget_frequency)
         self.staff_budget = 0
         self.staff_to_resident_ratio = 4
 
@@ -484,7 +486,7 @@ class IND(Organization):
         
     def set_time(self, newcomer):
         capacity = self.city.coa.get_occupancy_pct()
-        staff_adjustment = 1 - (self.staff)/100
+        staff_adjustment = 1 - ((self.staff)/(np.sum([azc.capacity for azc in self.city.azcs])/self.staff_to_resident_ratio))
         if newcomer.ls == 'as':
             time = staff_adjustment*27*capacity + 8
             newcomer.current_procedure_time = int(time)
@@ -494,6 +496,10 @@ class IND(Organization):
             newcomer.current_procedure_time = 100
         elif newcomer.ls == 'edp':
             newcomer.current_procedure_time = 2
+        if type(newcomer.loc) is Hotel:
+            hotel_cost_per_month = 1000
+            time_in_months = newcomer.current_procedure_time / 30
+            newcomer.coa.hotel_costs += hotel_cost_per_month * time_in_months
 
     
     def decide(self, first, newcomer, dq):
@@ -784,10 +790,8 @@ class AZC(Building):
         
         if self.under_construction:
             self.construction_time -= 1
-            print(self.construction_time)
             if self.construction_time == 0:
                 self.under_construction = False
-                print('OPEN FOR BUISINESS')
                
 
 class Hotel(Building):
