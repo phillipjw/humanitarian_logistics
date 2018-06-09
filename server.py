@@ -39,7 +39,11 @@ def agent_portrayal(agent):
         portrayal['Shape'] = "circle"
         portrayal['Filled'] = 'False'
         portrayal['Layer'] = 1
-        portrayal['Color'] = 'red'
+        if agent.under_construction:
+            portrayal['Color'] = 'green'
+        else:
+            portrayal['Color'] = 'red'
+        
         portrayal['r'] = int(agent.occupancy*azc_display_size / agent.capacity)
         
         

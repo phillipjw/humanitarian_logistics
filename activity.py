@@ -337,7 +337,7 @@ class BuildCentral(Action):
         need = self.agent.city.azc.estimate(int(180/self.agent.assessment_frequency))
         
         #build for that amount
-        self.agent.build(need)
+        self.agent.build(need, max(30, time))
         
         
 

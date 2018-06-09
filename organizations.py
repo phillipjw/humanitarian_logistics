@@ -161,7 +161,7 @@ class COA(Organization):
                     
 
     
-    def build(self, size):
+    def build(self, size, time):
         '''
         Build adds a building of a given size to the simulation
         '''
@@ -171,10 +171,11 @@ class COA(Organization):
         new.capacity = size
         new.pos = new.city.hotel.pos
         new.city.azcs.add(new)
-        new.procedure_duration = 35
+        new.under_construction = True
+        new.construction_time = time        
         self.model.schedule.add(new)
         self.model.grid.place_agent(new, new.pos)
-        print(new.city, new.city.ind)
+        print('UNDER CONSTRUCTION', new.construction_time)
         
     def get_working_conditions(self):
         
@@ -190,7 +191,7 @@ class COA(Organization):
         '''
         candidates = [building for building in self.model.schedule.agents if
                     type(building) is AZC and building.modality != 'COL' and
-                    building.occupancy < building.max_capacity*building.capacity]
+                    building.occupancy < building.max_capacity*building.capacity and not building.under_construction]
         
         if not candidates:
             #hotel house
@@ -210,7 +211,7 @@ class COA(Organization):
         candidates = [building for building in self.model.schedule.agents if
                     type(building) is AZC and
                     newcomer.ls in building.occupant_type and
-                    building.occupancy < building.capacity]
+                    building.occupancy < building.capacity and not building.under_construction]
         if not candidates:
             #hotel house
             min_type = self.city.hotel
@@ -573,6 +574,8 @@ class AZC(Building):
         self.capacity = 400
         self.occupants = set([])
         self.occupant_type = occupant_type
+        self.under_construction = False
+        self.construction_time = 0
         self.procedure_duration = None
         self.city = city
         self.coa = self.city.coa
@@ -756,7 +759,7 @@ class AZC(Building):
         total_estimated_occupancies = sum([azc.estimate(max(3, self.shock_position)) for
                                        azc in self.model.schedule.agents if
                                        type(azc) is AZC and azc.modality != 'COL'])
-        need = total_estimated_occupancies - .95*(total_capacity)
+        need = total_estimated_occupancies - .80*(total_capacity)
         
         if need > 0:
             self.state = 'Crisis'
@@ -778,6 +781,13 @@ class AZC(Building):
         
         #update state
         self.get_state()
+        
+        if self.under_construction:
+            self.construction_time -= 1
+            print(self.construction_time)
+            if self.construction_time == 0:
+                self.under_construction = False
+                print('OPEN FOR BUISINESS')
                
 
 class Hotel(Building):
