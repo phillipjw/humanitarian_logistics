@@ -44,7 +44,7 @@ class HumanitarianLogistics(Model):
         self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = False #flag to run sim without shocks
+        self.shock_flag = True #flag to run sim without shocks
         self.shock_inverse = False
         
         self.coa_values = {'SE':se,

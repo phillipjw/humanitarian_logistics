@@ -80,14 +80,20 @@ class City(Agent):
                 elif action == 2:
                     current_action = activity.Segregate(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
+                    current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
                 
                 elif action == 0:
                     
                     current_action = activity.improveFacilities(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
+                    current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
                 
                 elif action == 3:
                     current_action = activity.adjustStaff_COA(self.coa.action_names[action], self.coa,action)
+                    self.coa.actions.add(current_action)
+                    current_action = activity.BuildCentral(self.coa.action_names[action], self.coa,action)
                     self.coa.actions.add(current_action)
                 
         
@@ -168,6 +174,7 @@ class COA(Organization):
         new.procedure_duration = 35
         self.model.schedule.add(new)
         self.model.grid.place_agent(new, new.pos)
+        print(new.city, new.city.ind)
         
     def get_working_conditions(self):
         
@@ -202,8 +209,15 @@ class COA(Organization):
         '''
         candidates = [building for building in self.model.schedule.agents if
                     type(building) is AZC and
-                    newcomer.ls in building.occupant_type]
-        min_type = min(candidates, key = attrgetter('occupancy'))
+                    newcomer.ls in building.occupant_type and
+                    building.occupancy < building.capacity]
+        if not candidates:
+            #hotel house
+            min_type = self.city.hotel
+            #min_type.procedure_duration = self.model.procedures_duration[newcomer.ls]
+        else:
+            
+            min_type = min(candidates, key = attrgetter('occupancy'))
         return min_type
     
     def get_total_cap(self):
@@ -276,7 +290,7 @@ class COA(Organization):
         if day > 5 and day % self.budget.frequency == 0:
             #update budget
             self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
-                                      self.city.azcs])
+                                      self.city.azcs if len(azc.occupancies) > 3])
             
             self.budget.replenish_amounts['Housing'] = self.mean_occs / self.occ_to_housing_ratio
             self.budget.replenish_amounts['Staff'] = self.mean_occs / self.occ_to_staff_ratio            
@@ -302,7 +316,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
         
 
@@ -477,6 +491,9 @@ class IND(Organization):
             newcomer.current_procedure_time = staff_adjustment*int(180*capacity + 90)
         elif newcomer.ls == 'tr':
             newcomer.current_procedure_time = 100
+        elif newcomer.ls == 'edp':
+            newcomer.current_procedure_time = 2
+
     
     def decide(self, first, newcomer, dq):
         
@@ -527,7 +544,7 @@ class IND(Organization):
             
             #update v_sat
             if current != None:
-                print(current.name)
+                #print(current.name)
                 current.do()
     
                            
@@ -699,6 +716,7 @@ class AZC(Building):
                 self.problematic_check()
             #Crisis check
             if self.shock_state == 'Problematic':
+                print('problematic')
                 self.crisis_check()
             
                 
@@ -738,10 +756,11 @@ class AZC(Building):
         total_estimated_occupancies = sum([azc.estimate(max(3, self.shock_position)) for
                                        azc in self.model.schedule.agents if
                                        type(azc) is AZC and azc.modality != 'COL'])
-        need = total_estimated_occupancies - total_capacity
+        need = total_estimated_occupancies - .95*(total_capacity)
         
         if need > 0:
             self.state = 'Crisis'
+            print('Crisis')
             self.need = need
         else:
             self.problematic_check()

@@ -118,9 +118,9 @@ class Newcomer(Agent):
                 self.ls = 'as'
                 self.coa.house(self)
                 self.coa.city.ind.set_time(self)
-                #self.current_procedure_time = self.coa.city.ind.set_time(self)
         #AZ to TR
         elif self.ls == 'as':
+            
             self.current_procedure_time -= 1
             
             #increase DQ
@@ -142,7 +142,7 @@ class Newcomer(Agent):
                 else:
                     self.ls = 'as_ext'
                 self.coa.house(self)
-                self.current_procedure_time = self.model.procedure_durations[self.ls]
+                self.coa.city.ind.set_time(self)
         elif self.ls == 'as_ext':
             self.current_procedure_time -= 1
             if self.current_procedure_time == 0:
@@ -152,7 +152,7 @@ class Newcomer(Agent):
                 if self.coa.city.ind.decide(False, self, self.model.dq):
                     self.ls = 'tr'
                     self.model.country_success[self.model.country_list.index(self.coo)] += 1
-                    self.current_procedure_time = self.loc.procedure_duration
+                    self.coa.city.ind.set_time(self)
                     if self.second == 1:
                         self.model.confusionMatrix['TP'] += 1
                     else:
@@ -235,6 +235,11 @@ class Newcomer(Agent):
     def step(self):
         
         day = self.model.schedule.steps % 7
+        
+        if self.current_procedure_time == None:
+                print(self.loc)
+                print(self.ls)
+                print(self.coa.city.ind)
 
         
         #value decay

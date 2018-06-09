@@ -797,17 +797,12 @@ class adjustStaff(Action):
         
         required_staff = int(self.agent.city.coa.get_total_occupancy()/ratio)
         adjustment = required_staff - self.agent.staff
-        print('Adjustemnt', adjustment)
         if adjustment > 0:
-            print('Adjustment Positive')
             if adjustment > self.agent.budget.accounts['Staff']:
-                print('Adjustment under budget')
                 print(adjustment, self.agent.budget.accounts['Staff'])
                 self.agent.staff += self.agent.budget.accounts['Staff']
                 self.agent.budget.accounts['Staff'] =  0
             else:
-                print('Adjustment within budget')
-                print(adjustment, self.agent.budget.accounts['Staff'])
                 self.agent.staff += adjustment
                 self.agent.budget.accounts['Staff'] -= adjustment
 
