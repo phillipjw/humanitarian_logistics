@@ -235,17 +235,15 @@ class Newcomer(Agent):
     def step(self):
         
         day = self.model.schedule.steps % 7
-        
-        if self.current_procedure_time == None:
-                print(self.loc)
-                print(self.ls)
-                print(self.coa.city.ind)
+        # qol is Quality of life, depends on staff:occupants and building health
+        self.qol = (self.loc.health/100)*1 - ((self.coa.staff)/(np.sum([azc.capacity for azc in self.coa.city.azcs])/self.coa.staff_to_resident_ratio))
 
-        
         #value decay
         self.values.decay_val()
         
         possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
+        
+        
         
         #do activity
         priority = self.values.prioritize()
@@ -263,7 +261,7 @@ class Newcomer(Agent):
         
        
         #update v_sat
-        if self.current != None:
+        if self.current != None and np.random.uniform(0,1) < self.qol:
             self.current[0].do(self)
 
             self.model.action_agents.append(self)
@@ -272,8 +270,7 @@ class Newcomer(Agent):
         
         #update procedings 
         self.COA_Interaction()
-        
-        self.health -= self.health_decay
+        self.health -= self.health_decay*self.qol
         
         if self.model.include_social_networks:
             self.sn.decayRelationships()

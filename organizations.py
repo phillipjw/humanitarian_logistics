@@ -591,7 +591,6 @@ class AZC(Building):
         self.operational_health = 50
         self.operational_cost = self.occupancy/self.capacity + self.health/self.max_health
         self.occupancy = 0
-        self.health = 100
         self.max_health = 100
         self.modality = modality
         self.state = 'Normal'
