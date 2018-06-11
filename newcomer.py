@@ -4,7 +4,7 @@ from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
 from Values import Values
-from organizations import AZC
+from organizations import AZC, Hotel
 from scipy.stats import truncnorm
 from socialnetwork import SocialNetwork
 
@@ -62,10 +62,13 @@ class Newcomer(Agent):
         self.values = Values(10, 56, 30, 50, 55, self)
         self.testing_activities = False
         self.budget = 0
+        self.allowance = 50
+        self.cost_of_food = 30
         self.acculturation = .2
         self.max_acc = 1.0
         
         
+        self.invested = False
         self.integrated = False
         #measure of quality o
         self.doc_quality = 0
@@ -183,29 +186,43 @@ class Newcomer(Agent):
         
         #Add default activities such as work once written
         possible_activities = []
-        
-        #deduct for food
-        self.budget -= 8
-        
-        #check if enough for intercity
-        if self.budget > self.coa.city.cost_of_bus_to_another_city:
+        azcs = []
+        if type(self.loc) is Hotel:
+            
+            '''
+            If nc lives in a hotel, must pay to travel to do activities
+            '''
+                
+            if self.budget > self.coa.city.cost_of_bus_to_another_city:
             
             
-            azcs = [azc for azc in self.model.schedule.agents if
-                    type(azc) is AZC and azc.modality != 'COL' and
-                    azc.activity_center != None and
-                    azc.activity_center.activities_available != None]
-        
-        #check if enough for intracity
-        elif self.budget > self.coa.city.cost_of_bus_within_city:
-            
-            azcs = [azc for azc in self.coa.city.azcs if
-                    azc.modality != 'COL' and azc.activity_center != None and
-                    azc.activity_center.activities_available != None]
-            
-        #local
+                azcs = [azc for azc in self.model.schedule.agents if
+                        type(azc) is AZC and azc.modality != 'COL' and
+                        azc.activity_center != None and
+                        azc.activity_center.activities_available != None]
+
+                
         else:
-            azcs = [self.loc]
+            
+            #check if enough for intercity
+            if self.budget > self.coa.city.cost_of_bus_to_another_city:
+                
+                
+                azcs = [azc for azc in self.model.schedule.agents if
+                        type(azc) is AZC and azc.modality != 'COL' and
+                        azc.activity_center != None and
+                        azc.activity_center.activities_available != None]
+            
+            #check if enough for intracity
+            elif self.budget > self.coa.city.cost_of_bus_within_city:
+                
+                azcs = [azc for azc in self.coa.city.azcs if
+                        azc.modality != 'COL' and azc.activity_center != None and
+                        azc.activity_center.activities_available != None]
+                
+            #local
+            else:
+                azcs = [self.loc]
         
         if len(azcs) > 0 and azcs[0].activity_center != None:
             
@@ -236,13 +253,18 @@ class Newcomer(Agent):
         
         day = self.model.schedule.steps % 7
         # qol is Quality of life, depends on staff:occupants and building health
-        self.qol = (self.loc.health/100)*1 - ((self.coa.staff)/(np.sum([azc.capacity for azc in self.coa.city.azcs])/self.coa.staff_to_resident_ratio))
-
+        self.qol = self.coa.get_qol()
         #value decay
+        
         self.values.decay_val()
         
         possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
         
+        #eat
+        #deduct for food
+        if day == 0:
+            self.budget += self.allowance
+            self.budget -= self.cost_of_food
         
         
         #do activity
@@ -250,18 +272,19 @@ class Newcomer(Agent):
         
         #find action that corresponds to priority
         self.current = None
-        for value in priority:
-            for action in possible_activities:
-                if value == action[0].v_index:
-                    self.current = action
-                    break
-            if self.current != None:
-                    break
+        if possible_activities:
+            for value in priority:
+                for action in possible_activities:
+                    if value == action[0].v_index and np.random.uniform(0,1) < self.qol:
+                        self.current = action
+                        break
+                if self.current != None:
+                        break
         
         
        
         #update v_sat
-        if self.current != None and np.random.uniform(0,1) < self.qol:
+        if self.current != None:
             self.current[0].do(self)
 
             self.model.action_agents.append(self)

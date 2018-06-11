@@ -14,7 +14,7 @@ num_pol = 2
 
 azc_display_size = 20
 
-st = UserSettableParameter('slider', 'Self-Transcendence', 45,0,100,5)
+st = UserSettableParameter('slider', 'Self-Transcendence', 60,0,100,5)
 se = UserSettableParameter('slider', 'Self-Enhancement', 65,0,100, 5)
 c = UserSettableParameter('slider', 'Conservatism', 46, 0, 100, 5)
 otc = UserSettableParameter('slider', 'Openness-to-Change',64,0,100, 5)
@@ -140,7 +140,7 @@ test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas,  chart_modality_occupancy, chart_modality_staff],
+                       [continuous_canvas,  chart_ls, chart_modality_staff],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})

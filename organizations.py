@@ -141,9 +141,10 @@ class COA(Organization):
         self.state = 'Normal'
         self.staff_to_resident_ratio = .15
         self.staff_estimation_frequency = 90
-        self.staff = 10
+        self.staff = 25
         self.checkin = activity.Checkin('Checkin', self, 3)
         self.current_policy = self.find_house
+        self.voucher_requests = set([])
         
         #####ACTIONS######
         self.actions = set([])
@@ -151,7 +152,9 @@ class COA(Organization):
         
         accounts = {
                 'Housing': 25,
-                'Staff'  : 5}
+                'Staff'  : 15,
+                'Hotel'  : 10000,
+                'Building': 2000000}
         self.budget = Budget(accounts, 90)
         self.housing_costs = 0
         self.mean_occs = 0
@@ -185,7 +188,7 @@ class COA(Organization):
         health = []
         #distress = []
         for azc in self.city.azcs:
-            health.append(np.mean([(nc.values.health + nc.health / 2) for nc in azc.occupants]))
+            health.append(np.mean([(nc.values.health + (nc.health/100) / 2) for nc in azc.occupants]))
             #distress.append(np.mean([nc.health for nc in azc.occupants]))
         return np.mean(health)
     
@@ -196,9 +199,10 @@ class COA(Organization):
                     type(building) is AZC and building.modality != 'COL' and
                     building.occupancy < building.max_capacity*building.capacity and not building.under_construction]
         
-        if not candidates:
+        if not candidates: 
             #hotel house
             min_type = self.city.hotel
+            min_type.periodic_occ += 1
             #min_type.procedure_duration = self.model.procedures_duration[newcomer.ls]
         else:
             
@@ -218,6 +222,7 @@ class COA(Organization):
         if not candidates:
             #hotel house
             min_type = self.city.hotel
+            min_type.periodic_occ += 1
             #min_type.procedure_duration = self.model.procedures_duration[newcomer.ls]
         else:
             
@@ -277,6 +282,27 @@ class COA(Organization):
         
         newcomer.loc = destination
         newcomer.coa = destination.coa
+    
+    def get_qol(self):
+        avg_health = np.mean([azc.health for azc in self.city.azcs])/100
+        total_occ = np.sum([azc.occupancy for azc in self.city.azcs]) + self.city.hotel.occupancy
+        
+        staff_fitness = self.staff / (total_occ*self.staff_to_resident_ratio)
+        
+        return avg_health * staff_fitness
+    
+    def get_working_conditions2(self):
+        
+        '''
+        Same as Working Conditions but includes staff to occupant ratio as a measure of
+        how overworked COA employees are. tends to be ~30% lower than working_conditions()
+        '''
+        total_occ = np.sum([azc.occupancy for azc in self.city.azcs]) + self.city.hotel.occupancy
+        staff_fitness = self.staff / (total_occ*self.staff_to_resident_ratio)
+        ncs = [nc for azc in self.city.azcs for nc in azc.occupants]  
+        avg_nc_wellbeing = np.mean([np.mean([nc.health/100, nc.values.health]) for nc in ncs])
+        
+        return staff_fitness * avg_nc_wellbeing
         
 
     def step(self):
@@ -289,6 +315,9 @@ class COA(Organization):
         
         #decay
         self.values.decay_val()
+        
+        
+
            
         #Update budget at regular intervals to allow for flexibility
         if day > 5 and day % self.budget.frequency == 0:
@@ -296,8 +325,25 @@ class COA(Organization):
             self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
                                       self.city.azcs if len(azc.occupancies) > 3])
             
-            self.budget.replenish_amounts['Housing'] = self.mean_occs / self.occ_to_housing_ratio
-            self.budget.replenish_amounts['Staff'] = self.mean_occs / self.occ_to_staff_ratio            
+            punishment = 1
+            #punish
+            if self.hotel_costs > self.budget.replenish_amounts['Hotel']:
+                
+                punishment = .50
+            
+            
+            #update replenish
+            self.budget.replenish_amounts['Housing'] = (punishment) * (self.mean_occs / self.occ_to_housing_ratio)
+            self.budget.replenish_amounts['Staff'] = (punishment) * (self.mean_occs / self.occ_to_staff_ratio)          
+            self.budget.replenish_amounts['Hotel'] = self.hotel_costs
+            self.budget.replenish_amounts['Building'] = self.building_costs
+
+            self.building_costs = 0
+            self.hotel_costs = 0
+            self.city.hotel.periodic_occ = 1
+                
+            
+     
             self.budget.replenish()
                 
  
@@ -320,6 +366,7 @@ class COA(Organization):
             
             #update v_sat
             if current != None:
+                print(current.name)
                 current.do()
         
 
@@ -500,6 +547,7 @@ class IND(Organization):
             hotel_cost_per_month = 1000
             time_in_months = newcomer.current_procedure_time / 30
             newcomer.coa.hotel_costs += hotel_cost_per_month * time_in_months
+            newcomer.loc.mean_wait_time = newcomer.coa.hotel_costs / newcomer.loc.periodic_occ
 
     
     def decide(self, first, newcomer, dq):
@@ -586,7 +634,7 @@ class AZC(Building):
         self.city = city
         self.coa = self.city.coa
         self.operating_capacity = None
-        self.health = 60
+        self.health = 90
         self.max_health = 100
         self.operational_health = 50
         self.operational_cost = self.occupancy/self.capacity + self.health/self.max_health
@@ -814,6 +862,8 @@ class Hotel(Building):
         self.model.grid.place_agent(self, self.pos)
         self.ind = city.ind
         self.procedure_duration = None
+        self.periodic_occ = 1
+        self.mean_wait_time = 0
         
     
  

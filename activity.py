@@ -108,7 +108,6 @@ class Fundraise(Action):
             self.agent.funds += (1 - self.agent.funds) * self.agent.city.public_opinion
         
         else: 
-            print('Too big', self.agent.city.public_opinion, self.agent.funds)
             #case two: if have existing activities
             if self.agent.activities:
             
@@ -228,12 +227,15 @@ class adjustStaff_COA(Action):
         return self.adjustment < 0 or self.agent.budget.accounts['Staff'] > 0
     def do(self):
         super().do()
+        working_conditions = self.agent.get_working_conditions()
         required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
         adjustment = required_staff - self.agent.staff
         if adjustment > 0:
             while self.agent.budget.accounts['Staff'] > 0 and adjustment > 0:
-                self.agent.staff += 1
-                self.agent.budget.accounts['Staff'] -= 1
+                
+                if np.random.uniform(0,1) < working_conditions:
+                    self.agent.staff += 1
+                    self.agent.budget.accounts['Staff'] -= 1
                 adjustment -= 1
         else: 
 
@@ -305,12 +307,34 @@ class Checkin(Action):
         for newcomer in self.agent.city.azc.occupants:
             #probability of error depends on number of staff
             
-            if np.random.uniform(0,1) < error_probability:
+            if not newcomer.invested and newcomer.values.health < .3 and np.random.uniform(0,1) < error_probability:
                 #do checkin
-                if newcomer.values.health < self.healthy_threshold:
-                    pass
-                    #placeholder value satisfaction
-                    #newcomer.values.val_t += np.array([50,50,50,50])
+                
+                #identify need
+                lack = newcomer.values.v_tau - newcomer.values.val_t
+                need = np.where(lack == max(lack))[0][0]
+                
+                #option is a placeholder for the other location needed
+                option = None
+                #search through other cities
+                cities = [coa.city for coa in self.agent.model.schedule.agents if 
+                      type(coa) is organizations.COA and coa.city != self.agent.city]
+                for city in cities:
+                    #check AZC Activity Center for Matching activity
+                    for azc in city.azcs:
+                        for activity in azc.activity_center.activities_available:
+                            
+                            if activity.v_index == need:
+                                option = activity
+                                break
+                        if option != None:
+                            break
+                   
+
+                if option != None and newcomer not in self.agent.voucher_requests:
+                    self.agent.voucher_requests.add(newcomer)
+                                        
+                
         
 
 class BuildCentral(Action):
@@ -580,8 +604,14 @@ class Invest(Action):
         
         super().do()
         
-    
-        
+        voucher_budget = int((self.agent.self_transcendence/100)*len(self.agent.voucher_requests))
+        while self.agent.voucher_requests and voucher_budget > 0:
+            current = self.agent.voucher_requests.pop()
+            current.allowance += self.agent.city.cost_of_bus_to_another_city
+            current.invested = True
+            voucher_budget -= 1
+            
+        '''    
         between_city_travel = True # we will want to parameterize this somehow
         travel_voucher = self.agent.city.cost_of_bus_within_city 
         if not between_city_travel:
@@ -591,7 +621,7 @@ class Invest(Action):
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
                      newcomer.integrated = True
-                
+        '''        
 
 class Segregate(Action):
         
@@ -799,7 +829,6 @@ class adjustStaff(Action):
         adjustment = required_staff - self.agent.staff
         if adjustment > 0:
             if adjustment > self.agent.budget.accounts['Staff']:
-                print(adjustment, self.agent.budget.accounts['Staff'])
                 self.agent.staff += self.agent.budget.accounts['Staff']
                 self.agent.budget.accounts['Staff'] =  0
             else:
@@ -893,6 +922,15 @@ class Activity(Agent):
         else:
 
             agent.current[1].activity_center.counter[self.name] = 1
+        
+        #add finances for out of town activities
+        # if same city but diff location, charge intra city costs
+        # if same city same location charge nothing
+        # if diff city charge intercity costs
+        if agent.loc != agent.current[1] and agent.coa.city == agent.current[1].city:
+            agent.budget -= 4
+        elif agent.coa.city != agent.current[1].city:
+            agent.budget -= 20
             
         agent.acculturation += self.local_involvement*((agent.max_acc - agent.acculturation)/50)
             

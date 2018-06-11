@@ -32,6 +32,7 @@ class HumanitarianLogistics(Model):
         self.height = height
         self.number_pols = num_pols
         self.city_size = city_size
+        self.test = 'A'
         
         #test health params
         #health param
@@ -44,7 +45,7 @@ class HumanitarianLogistics(Model):
         self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = True #flag to run sim without shocks
+        self.shock_flag = False #flag to run sim without shocks
         self.shock_inverse = False
         
         self.coa_values = {'SE':se,
@@ -207,10 +208,10 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         #self.sr.collect(self)
         #self.azc_health.collect(self)
-        self.modality_occ.collect(self)
+        #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         self.staff_dc.collect(self)
-        #self.ls_dc.collect(self)
+        self.ls_dc.collect(self)
         #self.network_dc.collect(self)
         #self.po_dc.collect(self)
         
@@ -387,7 +388,7 @@ def cm(model):
 
 def get_staff(model, idx):
     
-    staff =  np.mean([building.city.ind.staff for building in
+    staff =  np.mean([building.city.coa.staff for building in
                          model.schedule.agents if
                          type(building) is AZC and
                          building.modality == model.modalities[idx]])
