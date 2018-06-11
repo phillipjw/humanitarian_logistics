@@ -603,8 +603,8 @@ class Invest(Action):
     def do(self):
         
         super().do()
-        
-        voucher_budget = int((self.agent.self_transcendence/100)*len(self.agent.voucher_requests))
+        gravity = 1-self.agent.gravity
+        voucher_budget = int(gravity*(self.agent.self_transcendence/100)*len(self.agent.voucher_requests))
         while self.agent.voucher_requests and voucher_budget > 0:
             current = self.agent.voucher_requests.pop()
             current.allowance += self.agent.city.cost_of_bus_to_another_city
