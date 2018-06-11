@@ -289,6 +289,7 @@ class Newcomer(Agent):
 
             self.model.action_agents.append(self)
             self.model.actions.append(self.current)
+            
 
         
         #update procedings 

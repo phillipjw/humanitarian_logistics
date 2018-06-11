@@ -145,7 +145,9 @@ class COA(Organization):
         self.checkin = activity.Checkin('Checkin', self, 3)
         self.current_policy = self.find_house
         self.voucher_requests = set([])
-        
+        self.gravity = 0
+        self.nc_local_count = 0
+        self.hotel_count = 0
         #####ACTIONS######
         self.actions = set([])
         self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff']
@@ -266,6 +268,11 @@ class COA(Organization):
         newcomer.loc = destination
         newcomer.coa = destination.city.coa
         
+        self.nc_local_count += 1
+        if type(newcomer.loc) is Hotel:
+            self.hotel_count += 1
+        self.gravity = self.hotel_count / self.nc_local_count
+        
         
         
     def move(self, newcomer, destination):
@@ -316,6 +323,7 @@ class COA(Organization):
         #decay
         self.values.decay_val()
         
+        print(self.gravity)
         
 
            
@@ -325,11 +333,8 @@ class COA(Organization):
             self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
                                       self.city.azcs if len(azc.occupancies) > 3])
             
-            punishment = 1
-            #punish
-            if self.hotel_costs > self.budget.replenish_amounts['Hotel']:
-                
-                punishment = .50
+            punishment = 1 - self.gravity
+            
             
             
             #update replenish
@@ -340,7 +345,9 @@ class COA(Organization):
 
             self.building_costs = 0
             self.hotel_costs = 0
-            self.city.hotel.periodic_occ = 1
+            self.nc_local_count = 0
+            self.hotel_count = 0
+            self.gravity = 0
                 
             
      

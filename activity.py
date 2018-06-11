@@ -300,14 +300,14 @@ class Checkin(Action):
         '''
         super().do()
         
-        current_ratio = self.agent.staff / np.sum([azc.occupancy for azc in
-                                                   self.agent.city.azcs])
-        error_probability = current_ratio / self.agent.staff_to_resident_ratio
+        total_occ = np.sum([azc.occupancy for azc in self.agent.city.azcs]) + self.agent.city.hotel.occupancy
+        
+        staff_fitness = self.agent.staff / (total_occ*self.agent.staff_to_resident_ratio)
         #iterate through newcomers
         for newcomer in self.agent.city.azc.occupants:
             #probability of error depends on number of staff
             
-            if not newcomer.invested and newcomer.values.health < .3 and np.random.uniform(0,1) < error_probability:
+            if not newcomer.invested and newcomer.values.health < .3 and np.random.uniform(0,1) < staff_fitness:
                 #do checkin
                 
                 #identify need

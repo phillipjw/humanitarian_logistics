@@ -32,7 +32,6 @@ class HumanitarianLogistics(Model):
         self.height = height
         self.number_pols = num_pols
         self.city_size = city_size
-        self.test = 'A'
         
         #test health params
         #health param
@@ -40,12 +39,12 @@ class HumanitarianLogistics(Model):
         self.football_increase = 4
         
         ##### Shock
-        self.shock_duration = 100
+        self.shock_duration = 50
         self.shock_position = 0
-        self.shock_period = 200
+        self.shock_period = 100
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = False #flag to run sim without shocks
+        self.shock_flag = True #flag to run sim without shocks
         self.shock_inverse = False
         
         self.coa_values = {'SE':se,
