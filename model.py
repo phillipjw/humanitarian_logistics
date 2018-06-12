@@ -44,8 +44,9 @@ class HumanitarianLogistics(Model):
         self.shock_period = 100
         self.shock = False
         self.shock_rate = 100
-        self.shock_flag = True #flag to run sim without shocks
+        self.shock_flag = False #flag to run sim without shocks
         self.shock_inverse = False
+        self.dq = False #flag for which type of IND decision to make
         
         self.coa_values = {'SE':se,
                            'ST': st,
@@ -96,7 +97,7 @@ class HumanitarianLogistics(Model):
         self.nc_count = 0  
         self.var = 10
         self.freq = 60
-        self.dq = True #flag for which type of IND decision to make
+        
         
         #dict of probabilities of first/second decision success rates by country
         self.specs = {}

@@ -46,7 +46,9 @@ class Prioritize(Action):
         #gather distribution of unmet value satisfaction
         for azc in self.agent.city.azcs:
             for nc in azc.occupants:
-                health += nc.values.health
+                lack = nc.values.v_tau - nc.values.val_t
+                lack[lack<0] = 0
+                health += lack
         h_sum = np.sum(health)
         capital = self.agent.funds + self.num_activities*self.agent_cost_per_activity
         for val in health:

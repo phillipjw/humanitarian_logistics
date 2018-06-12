@@ -164,6 +164,10 @@ class COA(Organization):
         self.occ_to_staff_ratio = 20
         self.hotel_costs = 0
         self.building_costs = 0
+        self.current = 0
+        self.prior = 0
+        self.counter = 0
+        self.active = True
         
                     
 
@@ -296,7 +300,7 @@ class COA(Organization):
         
         staff_fitness = self.staff / (total_occ*self.staff_to_resident_ratio)
         
-        return avg_health * staff_fitness
+        return min(1,avg_health * staff_fitness)
     
     def get_working_conditions2(self):
         
@@ -315,68 +319,73 @@ class COA(Organization):
     def step(self):
                 
         day = self.model.schedule.steps
-        
-        #Obligations - Checkins
-        if day % self.checkin_frequency == 0:
-            self.checkin.do()
-        
-        #decay
-        self.values.decay_val()
-        
-        print(self.gravity)
-        
-
-           
-        #Update budget at regular intervals to allow for flexibility
-        if day > 5 and day % self.budget.frequency == 0:
-            #update budget
-            self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
-                                      self.city.azcs if len(azc.occupancies) > 3])
+        if self.active:
             
-            punishment = 1 - self.gravity
+        
+            #Obligations - Checkins
+            if day % self.checkin_frequency == 0:
+                self.checkin.do()
             
+            #decay
+            self.values.decay_val()
             
-            
-            #update replenish
-            self.budget.replenish_amounts['Housing'] = (punishment) * (self.mean_occs / self.occ_to_housing_ratio)
-            self.budget.replenish_amounts['Staff'] = (punishment) * (self.mean_occs / self.occ_to_staff_ratio)          
-            self.budget.replenish_amounts['Hotel'] = self.hotel_costs
-            self.budget.replenish_amounts['Building'] = self.building_costs
-
-            self.building_costs = 0
-            self.hotel_costs = 0
-            self.nc_local_count = 0
-            self.hotel_count = 0
-            self.gravity = 0
+            self.current = day
                 
             
+    
+               
+            #Update budget at regular intervals to allow for flexibility
+            if day > 5 and day % self.budget.frequency == 0:
+                #update budget
+                self.mean_occs = np.mean([np.mean(azc.occupancies[-3]) for azc in
+                                          self.city.azcs if len(azc.occupancies) > 3])
+                
+                punishment = 1 - self.gravity
+                
+                
+                
+                #update replenish
+                self.budget.replenish_amounts['Housing'] = (punishment) * (self.mean_occs / self.occ_to_housing_ratio)
+                self.budget.replenish_amounts['Staff'] = (punishment) * (self.mean_occs / self.occ_to_staff_ratio)          
+                self.budget.replenish_amounts['Hotel'] = self.hotel_costs
+                self.budget.replenish_amounts['Building'] = self.building_costs
+    
+                self.building_costs = 0
+                self.hotel_costs = 0
+                self.nc_local_count = 0
+                self.hotel_count = 0
+                self.gravity = 0
+                    
+                
+         
+                self.budget.replenish()
+                    
      
-            self.budget.replenish()
-                
- 
-        
-        #prioritize
-        priority = self.values.prioritize()
-        
-        if day % self.action_frequency == 0:
-            #act
-            #find action that corresponds to priority
-            current = None
-            possible_actions = set(filter(lambda x: x.precondition(), self.actions))
-            for value in priority:
-                    for action in possible_actions:
-                        if value == action.v_index:
-                            current = action
-                            break
-                    if current != None:
-                        break
             
-            #update v_sat
-            if current != None:
-                print(current.name)
-                current.do()
-        
-
+            #prioritize
+            priority = self.values.prioritize()
+            
+            if day % self.action_frequency == 0:
+                #act
+                #find action that corresponds to priority
+                current = None
+                possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+                for value in priority:
+                        for action in possible_actions:
+                            if value == action.v_index:
+                                current = action
+                                break
+                        if current != None:
+                            break
+                
+                #update v_sat
+                if current != None:
+                    print(current.name)
+                    current.do()
+            self.active = False
+        else:
+            if self.current != day:
+                self.active = True
         
 class NGO(Organization):
     
@@ -396,6 +405,7 @@ class NGO(Organization):
         self.action_frequency = int(365/(self.values.v_tau[3]*52/100))
         self.campaign = 0
         self.overhead = .2
+        self.active = True
         
 
         #actions
@@ -440,49 +450,55 @@ class NGO(Organization):
         
     
     def step(self):
-        
         day = self.model.schedule.steps % 7
+        if self.active:
         
-        self.values.decay_val()
-        
-        #update attendance records
-        if self.activities:
-            for act in self.activities:
-                if day in act.frequency:
-                    if act.name in self.activity_records.keys():
-                        self.activity_records[act.name][day] += 1
-
-        
-        
+            self.current = day
             
-
-        
-        #the action of marketing gives PO a big boost, but than wanes over time
-        if self.campaign > 0:
-            degrade = (self.campaign/10)
-            self.campaign -= degrade
-            self.city.public_opinion -= degrade
-        
-        #prioritize
-        priority = self.values.prioritize()
-        
-        if day % self.action_frequency == 0:
-            #act
-            #find action that corresponds to priority
-            current = None
-            possible_actions = set(filter(lambda x: x.precondition(), self.actions))
-            for value in priority:
-                    for action in possible_actions:
-                        if value == action.v_index:
-                            current = action
+            self.values.decay_val()
+            
+            #update attendance records
+            if self.activities:
+                for act in self.activities:
+                    if day in act.frequency:
+                        if act.name in self.activity_records.keys():
+                            self.activity_records[act.name][day] += 1
+    
+            
+            
+                
+    
+            
+            #the action of marketing gives PO a big boost, but than wanes over time
+            if self.campaign > 0:
+                degrade = (self.campaign/10)
+                self.campaign -= degrade
+                self.city.public_opinion -= degrade
+            
+            #prioritize
+            priority = self.values.prioritize()
+            
+            if day % self.action_frequency == 0:
+                #act
+                #find action that corresponds to priority
+                current = None
+                possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+                for value in priority:
+                        for action in possible_actions:
+                            if value == action.v_index:
+                                current = action
+                                break
+                        if current != None:
                             break
-                    if current != None:
-                        break
-            
-            #update v_sat
-            if current != None:
-                #print(current.name)
-                current.do()
+                
+                #update v_sat
+                if current != None:
+                    #print(current.name)
+                    current.do()
+                self.actve = True
+        else:
+            if self.current != day:
+                self.active = True
         
         
 
@@ -585,6 +601,7 @@ class IND(Organization):
         #prioritize
         priority = self.values.prioritize()
         
+        
         #updates funding request based on historical trajectory
         if day > 5 and day % self.budget_frequency == 0:
             self.budget.replenish_amounts['Staff'] = np.mean([np.mean(azc.occupancies) for
@@ -606,7 +623,7 @@ class IND(Organization):
             
             #update v_sat
             if current != None:
-                #print(current.name)
+                print(current.name)
                 current.do()
     
                            
@@ -672,6 +689,7 @@ class AZC(Building):
         self.period = 3
         self.shock_position = 0
         self.problematic_threshold = .60
+        self.active = True
         
         
         
@@ -836,16 +854,24 @@ class AZC(Building):
             
     
     def step(self):
+        day = self.model.schedule.steps
         
-        super().step()
+        if self.active:
+            self.current = day
         
-        #update state
-        self.get_state()
-        
-        if self.under_construction:
-            self.construction_time -= 1
-            if self.construction_time == 0:
-                self.under_construction = False
+            super().step()
+            
+            #update state
+            self.get_state()
+            
+            if self.under_construction:
+                self.construction_time -= 1
+                if self.construction_time == 0:
+                    self.under_construction = False
+            self.active = False
+        else:
+            if self.current != day:
+                self.active = True
                
 
 class Hotel(Building):
@@ -911,8 +937,8 @@ class ActivityCenter(Building):
         
         #NGO activities if available
         if self.azc.city.ngo != None:
-            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,5}, 3))
-            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,5}, 1))
+            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,4,5}, 3))
+            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
 
         self.counter = {}
         

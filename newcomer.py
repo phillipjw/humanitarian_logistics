@@ -37,7 +37,7 @@ class Newcomer(Agent):
         
         self.coa = coa
         self.pos = self.coa.pos
-        
+        self.active = True
         #ls is Legal Status
         self.ls = 'edp' #externally displaced person
         self.current_procedure_time = None
@@ -252,59 +252,66 @@ class Newcomer(Agent):
     def step(self):
         
         day = self.model.schedule.steps % 7
-        # qol is Quality of life, depends on staff:occupants and building health
-        self.qol = self.coa.get_qol()
-        #value decay
-        
-        self.values.decay_val()
-        
-        possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
-        
-        #eat
-        #deduct for food
-        if day == 0:
-            self.budget += self.allowance
-            self.budget -= self.cost_of_food
-        
-        
-        #do activity
-        priority = self.values.prioritize()
-        
-        #find action that corresponds to priority
-        self.current = None
-        if possible_activities:
-            for value in priority:
-                for action in possible_activities:
-                    if value == action[0].v_index and np.random.uniform(0,1) < self.qol:
-                        self.current = action
-                        break
-                if self.current != None:
-                        break
-        
-        
-       
-        #update v_sat
-        if self.current != None:
-            self.current[0].do(self)
-
-            self.model.action_agents.append(self)
-            self.model.actions.append(self.current)
+        if self.active:
+            # qol is Quality of life, depends on staff:occupants and building health
+            self.current = day
+            self.qol = self.coa.get_qol()
+            #value decay
             
-
+            self.values.decay_val()
+            
+            possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
+            
+            #eat
+            #deduct for food
+            if day == 0:
+                self.budget += self.allowance
+                self.budget -= self.cost_of_food
+            
+            
+            #do activity
+            priority = self.values.prioritize()
+            
+            #find action that corresponds to priority
+            self.current = None
+            if possible_activities:
+                for value in priority:
+                    for action in possible_activities:
+                        if value == action[0].v_index and np.random.uniform(0,1) < self.qol:
+                            self.current = action
+                            break
+                    if self.current != None:
+                            break
+            
+            
+            
+           
+            #update v_sat
+            if self.current != None:
+                self.current[0].do(self)
+    
+                self.model.action_agents.append(self)
+                self.model.actions.append(self.current)
+                
+    
+            
+            #update procedings 
+            self.COA_Interaction()
+            self.health -= self.health_decay*self.qol
+            
+            if self.model.include_social_networks:
+                self.sn.decayRelationships()
+                self.sn.maintainNetwork()
+             
+            #if self.check_for_crime():
+                #self.coa.city.public_opinion -= Newcomer.PUBLIC_OPINION_DROP_BASED_ON_CRIME
+                #self.coa.city.public_opinion = min(0, self.coa.city.public_opinion)
+                # offending agent is quarintined but currently this causes errors: self.model.Remove(self)
+            self.active = False
+        else:
+            if self.current != day:
+                self.active = True
         
-        #update procedings 
-        self.COA_Interaction()
-        self.health -= self.health_decay*self.qol
-        
-        if self.model.include_social_networks:
-            self.sn.decayRelationships()
-            self.sn.maintainNetwork()
-         
-        #if self.check_for_crime():
-            #self.coa.city.public_opinion -= Newcomer.PUBLIC_OPINION_DROP_BASED_ON_CRIME
-            #self.coa.city.public_opinion = min(0, self.coa.city.public_opinion)
-            # offending agent is quarintined but currently this causes errors: self.model.Remove(self)
-
     def check_for_family(self):
         family_educuation_threshold = 0.66
         chance_with_education = 0.3
