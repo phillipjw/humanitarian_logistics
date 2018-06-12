@@ -888,7 +888,8 @@ class Activity(Agent):
         self.name = None
 
         self.local_involvement = 0  #number between 0 and 1 indicating what percent of participants are locals
-
+        self.obligatory = False
+        self.critical = False
         self.effect = None
         self.current_day = None
         self.attendance = {}
@@ -957,6 +958,8 @@ class Doctor(Activity):
         self.healthiness_threshold = 30
         self.name = 'Doctor'
         self.HEALTH_INCREASE = 10
+        self.obligatory = True
+        self.critical = True
         
     def precondition(self, agent):
         '''
@@ -967,7 +970,7 @@ class Doctor(Activity):
     
     def do(self, agent):
         super().do(agent)
-        agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
+        agent.health = min(agent.health+self.HEALTH_INCREASE, self.healthiness_threshold)
         
 class Football(Activity):
     
@@ -1042,6 +1045,7 @@ class Language_Class(Activity):
         self.occupant_type = {'tr'}
         self.HEALTH_THRESHOLD = 30.0
         self.name = 'languageClass'
+        self.obligatory = True
 
         self.v_index = v_index
     

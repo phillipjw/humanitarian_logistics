@@ -248,19 +248,36 @@ class Newcomer(Agent):
         return (distress, physical_health, local_interaction, social_health)
                  
 
-        
+     
+    def obligation_filter(self, possible_activities_):
+        obligations = []
+        for act in possible_activities_:
+            if act[0].obligatory:
+                obligations.append(act)
+        if obligations:
+            for act in obligations:
+                if act[0].name == 'Doctor':
+                    return [act]
+            
+            return obligations
+                
+        else:
+            return possible_activities_
+    
     def step(self):
         
         day = self.model.schedule.steps % 7
         if self.active:
             # qol is Quality of life, depends on staff:occupants and building health
-            self.current = day
+            self.today = day
             self.qol = self.coa.get_qol()
             #value decay
             
             self.values.decay_val()
             
-            possible_activities = self.get_activities(day = self.model.schedule.steps % 7)
+            possible_activities_ = self.get_activities(day = self.model.schedule.steps % 7)
+            possible_activities = self.obligation_filter(possible_activities_)
+            
             
             #eat
             #deduct for food
@@ -275,9 +292,10 @@ class Newcomer(Agent):
             #find action that corresponds to priority
             self.current = None
             if possible_activities:
+                
                 for value in priority:
                     for action in possible_activities:
-                        if value == action[0].v_index and np.random.uniform(0,1) < self.qol:
+                        if value == action[0].v_index:# and np.random.uniform(0,1) < self.qol:
                             self.current = action
                             break
                     if self.current != None:
@@ -309,7 +327,7 @@ class Newcomer(Agent):
                 # offending agent is quarintined but currently this causes errors: self.model.Remove(self)
             self.active = False
         else:
-            if self.current != day:
+            if self.today != day:
                 self.active = True
         
     def check_for_family(self):
