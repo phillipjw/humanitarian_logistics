@@ -328,8 +328,7 @@ class COA(Organization):
             if day % self.checkin_frequency == 0:
                 self.checkin.do()
             
-            #decay
-            self.values.decay_val()
+            
             
             self.today = day
                 
@@ -368,6 +367,10 @@ class COA(Organization):
             priority = self.values.prioritize()
             
             if day % self.action_frequency == 0:
+                
+                #decay
+                self.values.decay_val()
+                
                 #act
                 #find action that corresponds to priority
                 current = None
@@ -454,12 +457,12 @@ class NGO(Organization):
     
     def step(self):
         if self.testing:
-            day = self.model.schedule.steps % 7
+            day = self.model.schedule.steps
             if self.active:
             
                 self.today = day
                 
-                self.values.decay_val()
+                
                 
                 #update attendance records
                 if self.activities:
@@ -483,6 +486,8 @@ class NGO(Organization):
                 priority = self.values.prioritize()
                 
                 if day % self.action_frequency == 0:
+                    
+                    self.values.decay_val()
                     #act
                     #find action that corresponds to priority
                     current = None
@@ -604,7 +609,7 @@ class IND(Organization):
         
         if self.active:
             
-            self.values.decay_val()
+            
             self.today = day
             
             #prioritize
@@ -618,6 +623,8 @@ class IND(Organization):
                 self.budget.replenish()
             
             if day % self.action_frequency == 0:
+                #decay
+                self.values.decay_val()
                 #act
                 #find action that corresponds to priority
                 current = None
