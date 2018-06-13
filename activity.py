@@ -186,7 +186,7 @@ class customActivity(Action):
                 additional_session = act
                 break
         #add session to existing activity
-        if additional_session != None:
+        if additional_session != None and self.possible_days.difference(act.frequency):
             print('New Session')
             new_day = self.possible_days.difference(act.frequency).pop()
             act.frequency.add(new_day)
