@@ -315,7 +315,7 @@ class Newcomer(Agent):
             
             #update procedings 
             self.COA_Interaction()
-            self.health -= self.health_decay*self.qol
+            self.health -= self.health_decay*(1-self.qol)
             
             if self.model.include_social_networks:
                 self.sn.decayRelationships()

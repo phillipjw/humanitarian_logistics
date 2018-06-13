@@ -49,10 +49,8 @@ class City(Agent):
         self.model.schedule.add(self.ind)
         self.hotel = Hotel(self.unique_id, self.model, 1000,self ) 
         self.model.schedule.add(self.coa)
-        self.azc = AZC(unique_id, model, occupant_type, modality, self)
-        self.azc.procedure_duration = procedure_time
-        self.azcs = set([self.azc])
-        self.model.schedule.add(self.azc)
+        
+        
         
         
         self.auxiliary_housing = 0
@@ -62,6 +60,10 @@ class City(Agent):
         self.public_opinion = po           #cities start out neutral regarding PO of NC.
     
         self.ngo = NGO(self.unique_id, self.model, self)
+        self.azc = AZC(unique_id, model, occupant_type, modality, self)
+        self.azc.procedure_duration = procedure_time
+        self.azcs = set([self.azc])
+        self.model.schedule.add(self.azc)
         self.po_max = 1.
         self.po_min = 0
         action_testing = True
@@ -380,7 +382,7 @@ class COA(Organization):
                 
                 #update v_sat
                 if current != None:
-                    #print(current.name)
+                    print(current.name)
                     current.do()
             self.active = False
         else:
@@ -495,7 +497,7 @@ class NGO(Organization):
                     
                     #update v_sat
                     if current != None:
-                        print(current.name)
+                        #print(current.name)
                         current.do()
                 self.active = False
             else:
@@ -947,7 +949,7 @@ class ActivityCenter(Building):
                 activity.Crime(self.unique_id, self.model, {1,2,3,4,5,6}, 0)])
         
         #NGO activities if available
-        if self.azc.city.ngo != None:
+        if self.azc.city.ngo.testing:
             self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,4,5}, 3))
             self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
 

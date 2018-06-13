@@ -121,18 +121,18 @@ class Fundraise(Action):
                         for day in activity.frequency:
                             if self.agent.activity_attendance[activity.name][day] < mini:
                                 mini = self.agent.activity_attendance[activity.name][day]
-                                worst, when = activity.name, day
+                                worst, when = activity, day
                     
                     #remove min
                     if len(worst.frequency) == 1:
                         #if only one session p week, remove the whole activity
                         self.agent.activities.remove(worst)
-                        self.agent.activity_attendance.pop(worst)
-                        self.agent.activity_records.pop(worst)
+                        self.agent.activity_attendance.pop(worst.name)
+                        self.agent.activity_records.pop(worst.name)
                     else:
                         #otherwise just remove one session. 
-                        self.agent.activity_attendance[worst].pop(when)
-                        self.agent.activity_records[worst].pop(when)
+                        self.agent.activity_attendance[worst.name].pop(when)
+                        self.agent.activity_records[worst.name].pop(when)
                     #increase funds
                     self.agent.funds += self.agent.cost_per_activity
             else: 
