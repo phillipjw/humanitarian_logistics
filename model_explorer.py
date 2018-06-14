@@ -9,29 +9,29 @@ import csv
 
 class ModelExplorer():
 
-    def __init__(self):
-        # initializes an empty social network
-          
-        #initial config
-        self.width = 200
-        self.height = 200
-        self.num_pols = 2
-        self.city_size = 20
+    def __init__(self, p_width=200, p_height=200, p_num_pols=2, p_city_size=20, p_number_steps=100,
+                 p_se_min=1, p_se_max=100, p_st_min=1, p_st_max=100, p_c_min=1, p_c_max=100, p_otc_min=1, p_otc_max=100,
+                 p_num_random_sample_params_to_do=100):
+
+        self.width = p_width
+        self.height = p_height
+        self.num_pols = p_num_pols
+        self.city_size = p_city_size
         self.number_steps = 100
 
-        self.se_min = 1
-        self.se_max = 100
+        self.se_min = p_se_min
+        self.se_max = p_se_max
 
-        self.st_min = 1
-        self.st_max = 100
+        self.st_min = p_st_min
+        self.st_max = p_st_max
 
-        self.c_min=1
-        self.c_max = 100
+        self.c_min= p_c_min
+        self.c_max = p_c_max
 
-        self.otc_min = 1
-        self.otc_max = 100
+        self.otc_min = p_otc_min
+        self.otc_max = p_otc_max
 
-        self.num_random_sample_params_to_do = 2
+        self.num_random_sample_params_to_do = p_num_random_sample_params_to_do
 
     def explore_summary(self, filename = 'summary-exploration.csv', exp_all_time_steps=False):
         myData = [["trial", "step", "social_networks", "se_value", "st_value", "c_value", "otc_value", "ng", "ct", "bh", "ac", "staff"]]
