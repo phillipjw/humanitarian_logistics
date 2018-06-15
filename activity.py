@@ -32,49 +32,80 @@ class Prioritize(Action):
         super().__init__(name, agent, v_index)
         self.counter = 0
     def precondition(self):
-        self.num_activities = 0
-        if self.agent.activities:
-            for activity in self.agent.activities:
-                for day in activity.frequency:
-                    self.num_activities += 1
-        return self.num_activities > 2
+        '''
+        There's a minimum number of sessions for this to be feasible        
+        '''
+        print(self.agent.get_num_sessions())
+        return self.agent.get_num_sessions() > 2
     
     def do(self):
         super().do()
-        health = np.zeros(4)
         
-        #gather distribution of unmet value satisfaction
-        for azc in self.agent.city.azcs:
-            for nc in azc.occupants:
-                lack = nc.values.v_tau - nc.values.val_t
-                lack[lack<0] = 0
-                health += lack
-        h_sum = np.sum(health)
-        capital = self.agent.funds + self.num_activities*self.agent_cost_per_activity
-        for val in health:
-            val = val/h_sum 
         
+        #gather data re: how NGO allocates its funds        
         funding_allocation = np.zeros(4)
-        difference = np.zeros(4)
         #distribution of values p activities
         for act in self.agent.activities:
             for day in act.frequency:
                 funding_allocation[act.v_index] += 1
             
         f_sum = np.sum(funding_allocation)
+        funding_allocation /= f_sum
         
-        #proportion of funding per val
-        for val in range(len(funding_allocation)):
-            funding_allocation[val] /= f_sum
-            difference[val] = health[val] - funding_allocation[val]
-            if difference[val] < 0 and difference[val] * self.num_activities > -1:
-                adjustment_size = np.floor(abs(difference[val]*self.num_activities))
-                # for adjustment size
+        freed_up_capital = 0
+        non_empty_funds = np.where(funding_allocation> 0)[0]
+        
+        health = np.zeros(4)
+        #Gather data regarding distress of those addressed values
+        for nc in self.agent.city.coa.get_residents(False):
+            nc_lack = nc.values.v_tau - nc.values.val_t
+            for nef in non_empty_funds:
+                health[nef] += nc_lack[nef]
+        health /= sum(health)
                 
-                #remove sessions
-        #then go through difference in order of biggest positive difference, adding as newly acquired funds allow. 
-        print('true dist',health)
-        print('funding dist', funding_allocation)
+        #first remove sessions where funding is over allocated
+
+        diff = np.zeros(4)
+        for nef in non_empty_funds:
+            diff[nef] = health[nef] - funding_allocation[nef]
+            if diff[nef] < -self.agent.cost_per_activity:
+                freed_up_capital += abs(diff[nef])
+                act = self.agent.get_activity(nef)
+                self.agent.remove_session(act)
+        
+        #translate freed up capital into cost of session terms
+        freed_up_capital /= self.agent.cost_per_activity
+        
+        #isolate under allocation of funding
+        diff[diff <0] = 0
+        #transforms into distribution of under allocation
+        diff /= sum(diff)
+        print(health, 'HEALTH')
+        print(funding_allocation, 'FUNDING_ALLO')
+        print(freed_up_capital, 'FUC')
+        print(diff, 'DIFF VECTOR')
+        #adds sessions where funding is under allocated
+        for value in diff:
+            if value*freed_up_capital >= 1:
+                act = self.agent.get_activity(np.where(diff == value)[0][0])
+                for i in range(int(np.floor(value*freed_up_capital))):
+                    if self.agent.session_possible(act):
+                        self.agent.add_session(act)
+                        print('Session Added')
+                    else:
+                        self.agent.funds += self.agent.cost_per_activity
+                        print('Funds increased')
+                        
+                    
+                
+            
+            
+        
+        
+        
+        
+        
+        
       
         
         
@@ -191,7 +222,7 @@ class customActivity(Action):
             new_day = self.possible_days.difference(act.frequency).pop()
             act.frequency.add(new_day)
             act.attendance[new_day] = 0
-            self.agent.activity_records[act.name][new_day] = 0
+            self.agent.activity_records[act.name][new_day] = 1
             self.agent.activity_attendance[act.name][new_day] = 0
             self.agent.funds -= self.agent.cost_per_activity
 
@@ -225,7 +256,7 @@ class adjustStaff_COA(Action):
         '''
         self.required_staff = int(self.agent.get_total_occupancy()*self.agent.staff_to_resident_ratio)
         self.adjustment = self.required_staff - self.agent.staff
-        
+
         return self.adjustment < 0 or self.agent.budget.accounts['Staff'] > 0
     def do(self):
         super().do()
@@ -1045,7 +1076,7 @@ class Language_Class(Activity):
         self.occupant_type = {'tr'}
         self.HEALTH_THRESHOLD = 30.0
         self.name = 'languageClass'
-        self.obligatory = True
+        self.obligatory = False
 
         self.v_index = v_index
     

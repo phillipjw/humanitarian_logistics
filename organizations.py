@@ -27,19 +27,19 @@ class City(Agent):
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = .5
+            po = 1
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = .50
+            po = 1
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
             if np.random.uniform(0,1) < .2:
-                po = .5
+                po = 1
                 
             else:
-                po = .2
+                po = 1
                 
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -152,7 +152,7 @@ class COA(Organization):
         self.hotel_count = 0
         #####ACTIONS######
         self.actions = set([])
-        self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff']
+        self.action_names = ['improveFacilities', 'Invest', 'Segregate', 'adjustStaff_COA']
         
         accounts = {
                 'Housing': 25,
@@ -170,6 +170,13 @@ class COA(Organization):
         self.prior = 0
         self.counter = 0
         self.active = True
+        
+    def get_residents(self,include_hotel):
+        
+        residents = [nc for azc in self.city.azcs for nc in azc.occupants]
+        if include_hotel:
+            [residents.append(nc) for nc in self.city.hotel.occupants]
+        return residents
         
                     
 
@@ -319,22 +326,19 @@ class COA(Organization):
         
 
     def step(self):
-                
+        #shortened for brevity, also used to prevent double actions       
         day = self.model.schedule.steps
+
+        #prevents double actions
         if self.active:
-            
-        
+
             #Obligations - Checkins
             if day % self.checkin_frequency == 0:
                 self.checkin.do()
-            
-            
-            
+                  
             self.today = day
                 
-            
-    
-               
+
             #Update budget at regular intervals to allow for flexibility
             if day > 5 and day % self.budget.frequency == 0:
                 #update budget
@@ -350,22 +354,20 @@ class COA(Organization):
                 self.budget.replenish_amounts['Staff'] = (punishment) * (self.mean_occs / self.occ_to_staff_ratio)          
                 self.budget.replenish_amounts['Hotel'] = self.hotel_costs
                 self.budget.replenish_amounts['Building'] = self.building_costs
-    
+                
+                #reset periodic costs
                 self.building_costs = 0
                 self.hotel_costs = 0
                 self.nc_local_count = 0
                 self.hotel_count = 0
                 self.gravity = 0
                     
-                
-         
+                #update budget
                 self.budget.replenish()
-                    
-     
+
             
             #prioritize
             priority = self.values.prioritize()
-            
             if day % self.action_frequency == 0:
                 
                 #decay
@@ -401,7 +403,7 @@ class NGO(Organization):
         self.model.schedule.add(self)
         self.city = city
         self.pos = self.city.pos
-        self.values = Values(10,55,50,40,45, self)
+        self.values = Values(10,35,55,40,60, self)
         self.funds = self.city.public_opinion
         self.cost_per_activity = .05
         self.activities = set([])
@@ -412,6 +414,7 @@ class NGO(Organization):
         self.overhead = .2
         self.testing = True
         self.active = True
+        self.possible_days = set(range(0,6))
         
 
         #actions
@@ -443,6 +446,55 @@ class NGO(Organization):
         
         return np.where(totals == max(totals))[0][0]
         
+    def get_num_sessions(self):
+        num_activities = 0
+        if self.activities:
+            for act in self.activities:
+                for day in act.frequency:
+                    num_activities += 1
+        return num_activities
+    
+    def get_activity(self, val):
+        for act in self.activities:
+            if act.v_index == val:
+                return act
+    
+    def remove_session(self, act):
+        self.get_avg_attendance()
+        mini = np.inf
+        for day in act.frequency:
+            if self.activity_attendance[act.name][day] < mini:
+                    mini = self.activity_attendance[act.name][day]
+                    worst, when = act, day
+
+        #remove min
+        if len(worst.frequency) == 1:
+            #if only one session p week, remove the whole activity
+            self.activities.remove(worst)
+            self.activity_attendance.pop(worst.name)
+            self.activity_records.pop(worst.name)
+        else:
+            #otherwise just remove one session. 
+            self.activity_attendance[worst.name].pop(when)
+            self.activity_records[worst.name].pop(when)
+        #increase funds
+        self.funds += self.cost_per_activity
+
+    def session_possible(self, act):
+        
+        return len(self.possible_days.difference(act.frequency)) > 0
+    
+    def add_session(self, act):
+        
+        
+        new_day = self.possible_days.difference(act.frequency).pop()
+        act.frequency.add(new_day)
+        act.attendance[new_day] = 0
+        self.activity_records[act.name][new_day] = 1
+        self.activity_attendance[act.name][new_day] = 0
+        self.funds -= self.cost_per_activity
+
+    
     def get_avg_attendance(self):
         
         '''
@@ -451,7 +503,6 @@ class NGO(Organization):
         if self.activity_attendance:
             for act in self.activities:
                 for day in act.frequency:
-                    
                     self.activity_attendance[act.name][day] = act.attendance[day] / self.activity_records[act.name][day]
         
     
@@ -492,6 +543,7 @@ class NGO(Organization):
                     #find action that corresponds to priority
                     current = None
                     possible_actions = set(filter(lambda x: x.precondition(), self.actions))
+                    print(possible_actions)
                     for value in priority:
                             for action in possible_actions:
                                 if value == action.v_index:
@@ -502,7 +554,7 @@ class NGO(Organization):
                     
                     #update v_sat
                     if current != None:
-                        #print(current.name)
+                        print(current.name)
                         current.do()
                 self.active = False
             else:

@@ -208,12 +208,12 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         #self.sr.collect(self)
         #self.azc_health.collect(self)
-        #self.modality_occ.collect(self)
+        self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
         self.staff_dc.collect(self)
         self.ls_dc.collect(self)
         #self.network_dc.collect(self)
-        #self.po_dc.collect(self)
+        self.po_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
