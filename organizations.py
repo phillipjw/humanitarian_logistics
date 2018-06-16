@@ -423,7 +423,7 @@ class NGO(Organization):
         
         for i in range(0, len(self.action_names)):
             
-            if i == 9:
+            if i == 3:
                 self.actions.add(activity.Prioritize(self.action_names[i], self, i))
             elif i == 1:
                 self.actions.add(activity.customActivity(self.action_names[i], self, i))
@@ -455,9 +455,14 @@ class NGO(Organization):
         return num_activities
     
     def get_activity(self, val):
+        activity = None
         for act in self.activities:
             if act.v_index == val:
-                return act
+                activity = act
+        if activity != None:
+            return activity
+        else:
+            print('ERROR, Activity not found val: ', val)
     
     def remove_session(self, act):
         self.get_avg_attendance()
@@ -473,10 +478,13 @@ class NGO(Organization):
             self.activities.remove(worst)
             self.activity_attendance.pop(worst.name)
             self.activity_records.pop(worst.name)
+            print('REMOVING WHOLE ACT')
         else:
             #otherwise just remove one session. 
             self.activity_attendance[worst.name].pop(when)
             self.activity_records[worst.name].pop(when)
+            worst.frequency.remove(when)
+            print('REMOVING ONE SESSIONS')
         #increase funds
         self.funds += self.cost_per_activity
 
@@ -500,6 +508,9 @@ class NGO(Organization):
         '''
         gets avg attendance p day of each activity. 
         '''
+        print(self.unique_id)
+        print('ACTATT',self.activity_attendance)
+        print('ACTREC',self.activity_records)
         if self.activity_attendance:
             for act in self.activities:
                 for day in act.frequency:

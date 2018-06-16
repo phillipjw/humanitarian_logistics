@@ -25,6 +25,7 @@ class Action():
 class Prioritize(Action):
     '''
     An action to re-allocate resources to best meet the needs of Newcomers
+    Value: OTC
     '''
     
     def __init__(self, name, agent, v_index):
@@ -39,6 +40,11 @@ class Prioritize(Action):
         return self.agent.get_num_sessions() > 2
     
     def do(self):
+        
+        '''
+        Function removes sessions where funding is over allocated
+        adding them to either NGO funds or activities where funding is under allocated        
+        '''
         super().do()
         
         
@@ -64,14 +70,22 @@ class Prioritize(Action):
         health /= sum(health)
                 
         #first remove sessions where funding is over allocated
-
         diff = np.zeros(4)
         for nef in non_empty_funds:
+            
             diff[nef] = health[nef] - funding_allocation[nef]
-            if diff[nef] < -self.agent.cost_per_activity:
-                freed_up_capital += abs(diff[nef])
+
+            if diff[nef] > 1/f_sum:
+                
+                #translates difference into number of session terms
+                diff_in_sessions = int(np.floor(diff[nef]*f_sum))
                 act = self.agent.get_activity(nef)
-                self.agent.remove_session(act)
+                #only remove if more than 2 sessions in act frequency
+                if diff_in_sessions >= 2 and len(act.frequency) >= 2:
+                    for session in range(min(len(act.frequency)-1,
+                                             diff_in_sessions-1)):
+                        freed_up_capital += 1
+                        self.agent.remove_session(act)
         
         #translate freed up capital into cost of session terms
         freed_up_capital /= self.agent.cost_per_activity
@@ -80,13 +94,11 @@ class Prioritize(Action):
         diff[diff <0] = 0
         #transforms into distribution of under allocation
         diff /= sum(diff)
-        print(health, 'HEALTH')
-        print(funding_allocation, 'FUNDING_ALLO')
-        print(freed_up_capital, 'FUC')
-        print(diff, 'DIFF VECTOR')
+
         #adds sessions where funding is under allocated
         for value in diff:
             if value*freed_up_capital >= 1:
+                print('VAL num is_:', np.where(diff == value)[0][0])
                 act = self.agent.get_activity(np.where(diff == value)[0][0])
                 for i in range(int(np.floor(value*freed_up_capital))):
                     if self.agent.session_possible(act):
@@ -95,6 +107,8 @@ class Prioritize(Action):
                     else:
                         self.agent.funds += self.agent.cost_per_activity
                         print('Funds increased')
+            else:
+                self.agent.funds += value*freed_up_capital
                         
                     
                 
