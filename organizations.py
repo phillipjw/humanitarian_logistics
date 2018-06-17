@@ -52,7 +52,8 @@ class City(Agent):
         
         
         
-        
+        self.costs = 0
+        self.crime = 0
         self.auxiliary_housing = 0
         self.model.city_count += 1
         self.cost_of_bus_within_city = 5
@@ -442,7 +443,11 @@ class NGO(Organization):
         totals = np.array([0,0,0,0])
         
         for nc in self.city.azc.occupants:
-            totals += nc.values.v_tau - nc.values.val_t
+            #public opinion is a proxy for funds, (as funds can be tied up in capital)
+            #so high funds means more accurate readings of whats most needed
+            
+            if np.random.uniform(0,1) < self.city.public_opinion:
+                totals += nc.values.v_tau - nc.values.val_t
         
         return np.where(totals == max(totals))[0][0]
         
@@ -498,7 +503,7 @@ class NGO(Organization):
         new_day = self.possible_days.difference(act.frequency).pop()
         act.frequency.add(new_day)
         act.attendance[new_day] = 0
-        self.activity_records[act.name][new_day] = 1
+        self.activity_records[act.name][new_day] = 0
         self.activity_attendance[act.name][new_day] = 0
         self.funds -= self.cost_per_activity
 
@@ -514,7 +519,7 @@ class NGO(Organization):
         if self.activity_attendance:
             for act in self.activities:
                 for day in act.frequency:
-                    self.activity_attendance[act.name][day] = act.attendance[day] / self.activity_records[act.name][day]
+                    self.activity_attendance[act.name][day] = act.attendance[day] / (self.activity_records[act.name][day] +1)
         
     
     def step(self):
@@ -525,13 +530,14 @@ class NGO(Organization):
                 self.today = day
                 
                 
-                
+                day_of_the_week = day % 7
                 #update attendance records
                 if self.activities:
                     for act in self.activities:
-                        if day in act.frequency:
+                        print(act.name, act.frequency)
+                        if day_of_the_week in act.frequency:
                             if act.name in self.activity_records.keys():
-                                self.activity_records[act.name][day] += 1
+                                self.activity_records[act.name][day_of_the_week] += 1
         
                 
                 
@@ -548,6 +554,12 @@ class NGO(Organization):
                 priority = self.values.prioritize()
                 
                 if day % self.action_frequency == 0:
+                    
+                    #update football n volunteer
+                    for azc in self.city.azcs:
+                        for act in azc.activity_center.activities_available:
+                            if act.name == 'Volunteer' or act.name == 'Football':
+                                act.frequency = set(np.arange(0,int(np.ceil(azc.city.public_opinion))))
                     
                     self.values.decay_val()
                     #act
@@ -1020,8 +1032,8 @@ class ActivityCenter(Building):
         
         #NGO activities if available
         if self.azc.city.ngo.testing:
-            self.activities_available.add(activity.Football(self.unique_id, self.model, {1,3,4,5}, 3))
-            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, {1,2,3,4,5}, 1))
+            self.activities_available.add(activity.Football(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 3))
+            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 1))
 
         self.counter = {}
         

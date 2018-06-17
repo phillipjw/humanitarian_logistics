@@ -140,7 +140,7 @@ test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas,  chart_ls, chart_modality_staff, chart_modality_occupancy, chart_modality_po],
+                       [continuous_canvas,  chart_ls,  chart_modality_po],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})

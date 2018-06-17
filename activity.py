@@ -25,7 +25,7 @@ class Action():
 class Prioritize(Action):
     '''
     An action to re-allocate resources to best meet the needs of Newcomers
-    Value: OTC
+    Value: OTCDO
     '''
     
     def __init__(self, name, agent, v_index):
@@ -947,7 +947,7 @@ class Activity(Agent):
     
     def precondition(self, agent):
         
-        return agent.health > .3
+        return agent.health > .2
         
     def do(self, agent):
         '''
@@ -1016,6 +1016,7 @@ class Doctor(Activity):
     def do(self, agent):
         super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, self.healthiness_threshold)
+        agent.loc.city.costs += 1
         
 class Football(Activity):
     
@@ -1100,8 +1101,11 @@ class Language_Class(Activity):
 
     
     def do(self, agent):
+
         super().do(agent)
-        agent.acculturation += (agent.max_acc - agent.acculturation) / 10
+        self.local_involvement = agent.current[1].coa.city.public_opinion
+
+        agent.acculturation += agent.values.health*self.local_involvement*(agent.max_acc - agent.acculturation) / 10
         #possible additions: AGENT.INTEGRATION ++ also opportunity to socialize
     
 class Socialize(Activity):
@@ -1208,6 +1212,7 @@ class Crime(Activity):
         super().do(agent)
         agent.loc.city.public_opinion -= (agent.loc.city.public_opinion - agent.loc.city.po_min) / 2
         agent.coa.city.public_opinion = max(0, agent.coa.city.public_opinion)
+        agent.coa.city.crime += 1
 
 class Study(Activity):
     HEALTH_THRESHOLD = 40.0
@@ -1226,7 +1231,7 @@ class Study(Activity):
         return  agent.ls in self.occupant_type and agent.health > Work.HEALTH_THRESHOLD and agent.age < 18
 
     def do(self, agent):
-        self.local_involvement = agent.current[1].coa.city.public_opinion
+        self.local_involvement = agent.values.health*agent.current[1].coa.city.public_opinion
         super().do(agent)
         agent.education += (agent.max_education - agent.education) / (100-agent.values.v_tau[0])
         

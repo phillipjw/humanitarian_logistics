@@ -59,7 +59,16 @@ class Newcomer(Agent):
             self.second = 1
                                   
         # new comer values
-        self.values = Values(10, 56, 30, 50, 55, self)
+        v_set = [np.random.randint(50,60), np.random.randint(30,40),
+                             np.random.randint(40,50), np.random.randint(60,70)]
+        v_set_2 = [np.random.randint(30,40), np.random.randint(60,70),
+                             np.random.randint(50,60), np.random.randint(30,40)]
+        if self.model.schedule.steps > 150:
+            self.values = Values(10,v_set_2[0],v_set_2[1],v_set_2[2],v_set_2[3],self)
+        else:
+            self.values = Values(10,v_set[0],v_set[1],v_set[2],v_set[3],self)
+
+
         self.testing_activities = False
         self.budget = 0
         self.allowance = 50
@@ -246,6 +255,9 @@ class Newcomer(Agent):
         social_health = np.mean([relationship.weight for relationship in
                                  self.sn.network])
         return (distress, physical_health, local_interaction, social_health)
+    
+    def get_social_health(self):
+        return np.mean([relationship.weight for relationship in self.sn.network])
                  
 
      
@@ -315,7 +327,7 @@ class Newcomer(Agent):
             
             #update procedings 
             self.COA_Interaction()
-            self.health -= self.health_decay*(1-self.qol)
+            self.health -= self.health_decay*(1-self.qol)*(1-self.values.health)
             
             if self.model.include_social_networks:
                 self.sn.decayRelationships()
