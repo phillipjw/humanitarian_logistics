@@ -24,22 +24,23 @@ class City(Agent):
         super().__init__(unique_id, model)
         self.ngo = None
         self.modality = modality
+        
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = 1
+            po = np.random.uniform(0,1)
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = 1
+            po = np.random.uniform(0,1)
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            if np.random.uniform(0,1) < .2:
-                po = 1
+            if np.random.uniform(0,1) < .5:
+                po = np.random.uniform(0,.2)
                 
             else:
-                po = 1
+                po = np.random.uniform(0,1)
                 
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -170,8 +171,11 @@ class COA(Organization):
         self.today = 0
         self.prior = 0
         self.counter = 0
+        self.net_investment = 0
         self.active = True
-        
+        self.net_costs = 0
+        self.net_house = 0
+        self.net_build = 0
     def get_residents(self,include_hotel):
         
         residents = [nc for azc in self.city.azcs for nc in azc.occupants]
@@ -310,7 +314,9 @@ class COA(Organization):
         
         staff_fitness = self.staff / (total_occ*self.staff_to_resident_ratio)
         
-        return avg_health#min(1,avg_health * staff_fitness)
+        hotel_health = .45 #placeholder, but idea that it is static and low
+        
+        return np.mean([avg_health, hotel_health])#min(1,avg_health * staff_fitness)
     
     def get_working_conditions2(self):
         
@@ -338,6 +344,7 @@ class COA(Organization):
                 self.checkin.do()
                   
             self.today = day
+            
                 
 
             #Update budget at regular intervals to allow for flexibility
@@ -356,6 +363,11 @@ class COA(Organization):
                 self.budget.replenish_amounts['Hotel'] = self.hotel_costs
                 self.budget.replenish_amounts['Building'] = self.building_costs
                 
+                self.net_house += self.hotel_costs
+                self.net_build += self.building_costs
+                
+                
+                self.net_costs += self.hotel_costs + self.building_costs
                 #reset periodic costs
                 self.building_costs = 0
                 self.hotel_costs = 0
@@ -489,7 +501,7 @@ class NGO(Organization):
             self.activity_attendance[worst.name].pop(when)
             self.activity_records[worst.name].pop(when)
             worst.frequency.remove(when)
-            print('REMOVING ONE SESSIONS')
+            print('REMOVING ONE SESSION')
         #increase funds
         self.funds += self.cost_per_activity
 
@@ -514,8 +526,7 @@ class NGO(Organization):
         gets avg attendance p day of each activity. 
         '''
         print(self.unique_id)
-        print('ACTATT',self.activity_attendance)
-        print('ACTREC',self.activity_records)
+
         if self.activity_attendance:
             for act in self.activities:
                 for day in act.frequency:
@@ -534,10 +545,12 @@ class NGO(Organization):
                 #update attendance records
                 if self.activities:
                     for act in self.activities:
-                        print(act.name, act.frequency)
                         if day_of_the_week in act.frequency:
                             if act.name in self.activity_records.keys():
-                                self.activity_records[act.name][day_of_the_week] += 1
+                                if day_of_the_week in self.activity_records[act.name].keys():
+                                    self.activity_records[act.name][day_of_the_week] += 1
+                                else:
+                                    self.activity_records[act.name][day_of_the_week] = 1
         
                 
                 
@@ -566,7 +579,6 @@ class NGO(Organization):
                     #find action that corresponds to priority
                     current = None
                     possible_actions = set(filter(lambda x: x.precondition(), self.actions))
-                    print(possible_actions)
                     for value in priority:
                             for action in possible_actions:
                                 if value == action.v_index:
@@ -577,7 +589,7 @@ class NGO(Organization):
                     
                     #update v_sat
                     if current != None:
-                        print(current.name)
+                        #print(current.name)
                         current.do()
                 self.active = False
             else:
@@ -942,10 +954,19 @@ class AZC(Building):
             self.problematic_check()
             
     def get_operational_cost(self):
-        occupancy = self.occupancy / self.capacity
         health = self.health/ self.max_health
-        
-        self.operational_cost = health + occupancy
+        max_num_activities = -np.inf
+        azcs = [azc for azc in self.model.schedule.agents if type(azc) is AZC]
+        for azc in azcs:
+            count = 0
+            count += azc.activity_center.get_num_sessions()
+            count += azc.city.ngo.get_num_sessions()
+            
+            if count > max_num_activities:
+                max_num_activities = count
+        local_num_activities = self.activity_center.get_num_sessions() + self.city.ngo.get_num_sessions()
+        print(local_num_activities/max_num_activities)
+        self.operational_cost = local_num_activities/max_num_activities
             
     
     def step(self):
@@ -1025,10 +1046,10 @@ class ActivityCenter(Building):
         self.activities_available = set([
                 activity.Language_Class(self.unique_id, self.model, {2,4,5}, 0),
                 activity.Work(self.unique_id, self.model, {1,2,3,4,5}, 0),
-                activity.Doctor(self.unique_id, self.model, {1,2,3,4,5,6,7}, 2),
+                activity.Doctor(self.unique_id, self.model, {0,1,2,3,4,5,6,7}, 2),
                 activity.Socialize(self.unique_id, self.model, {1,2,6,7},2),
                 activity.Study(self.unique_id, self.model, {1,2,3,4,5}, 0),
-                activity.Crime(self.unique_id, self.model, {1,2,3,4,5,6}, 0)])
+                activity.Crime(self.unique_id, self.model, {0,1,2,3,4,5,6}, 0)])
         
         #NGO activities if available
         if self.azc.city.ngo.testing:
@@ -1038,7 +1059,13 @@ class ActivityCenter(Building):
         self.counter = {}
         
         self.active_participants = set([])
-        
+    
+    def get_num_sessions(self):
+        count = 0
+        for act in self.activities_available:
+            for day in act.frequency:
+                count += 1
+        return count
     def step(self):
         pass        
 

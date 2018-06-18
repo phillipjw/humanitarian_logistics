@@ -30,7 +30,7 @@ class Values():
         self.val_sat = np.repeat(100, 4) - self.v_tau
         
         #current value satisfaction level at time t
-        self.val_t = np.repeat(60, 4)
+        self.val_t = np.repeat(np.random.randint(40,60), 4)
         
         #val_decay
         self.val_decay = np.repeat(decay, 4)

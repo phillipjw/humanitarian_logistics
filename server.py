@@ -15,9 +15,9 @@ num_pol = 2
 azc_display_size = 20
 
 st = UserSettableParameter('slider', 'Self-Transcendence', 50,0,100,5)
-se = UserSettableParameter('slider', 'Self-Enhancement', 60,0,100, 5)
-c = UserSettableParameter('slider', 'Conservatism', 55, 0, 100, 5)
-otc = UserSettableParameter('slider', 'Openness-to-Change',80,0,100, 5)
+se = UserSettableParameter('slider', 'Self-Enhancement', 40,0,100, 5)
+c = UserSettableParameter('slider', 'Conservatism', 70, 0, 100, 5)
+otc = UserSettableParameter('slider', 'Openness-to-Change',60,0,100, 5)
 
 
 def agent_portrayal(agent):
@@ -136,11 +136,16 @@ chart_network = ChartModule([{'Label': 'edp',
                                   {'Label': 'tr',
                                    'Color': 'yellow'}], data_collector_name = 'network_dc')
 
+chart_int = ChartModule([{'Label': 'True',
+                          'Color': 'red'},
+                         {'Label': 'False',
+                          'Color': 'black'}], data_collector_name='int_dc')
+
 test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas,  chart_ls,  chart_modality_po],
+                       [continuous_canvas, chart_int],
                        "Humanitarian Logistics",
                        {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})

@@ -49,6 +49,7 @@ class Newcomer(Agent):
         self.specs = self.model.specs[self.coo] #specs contains bournoulli distribution params
         self.ext_time = 90 #duration of extended procedure
         self.tr_time = None
+        self.segregated = False
         
         #draw first decision outcome
         self.first = bernoulli.rvs(self.specs[0], size = 1)[0] 
@@ -73,6 +74,9 @@ class Newcomer(Agent):
         self.budget = 0
         self.allowance = 50
         self.cost_of_food = 30
+        self.trust = 0
+        if np.random.uniform(0,1) < .3:
+            self.trust = 5
         self.acculturation = .2
         self.max_acc = 1.0
         
@@ -290,11 +294,11 @@ class Newcomer(Agent):
             possible_activities_ = self.get_activities(day = self.model.schedule.steps % 7)
             possible_activities = self.obligation_filter(possible_activities_)
             
-            
             #eat
             #deduct for food
             if day == 0:
                 self.budget += self.allowance
+                self.budget += self.trust
                 self.budget -= self.cost_of_food
             
             

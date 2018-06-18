@@ -39,9 +39,9 @@ class HumanitarianLogistics(Model):
         self.football_increase = 4
         
         ##### Shock
-        self.shock_duration = 50
+        self.shock_duration = 100
         self.shock_position = 0
-        self.shock_period = 100
+        self.shock_period = 200
         self.shock = False
         self.shock_rate = 100
         self.shock_flag = False #flag to run sim without shocks
@@ -196,6 +196,15 @@ class HumanitarianLogistics(Model):
         self.ls_dc = DataCollector(model_reporters = ls_functions)
         self.network_dc = DataCollector(model_reporters= network_functions)
         
+        self.int = ['True','False']
+        int_functions = {}
+        self.int_index =  -1
+        for i in range(0, len(self.int)):
+            self.int_index = i
+            int_functions[self.int[self.int_index]] = integrated
+        
+        self.int_dc = DataCollector(model_reporters = int_functions)
+        
         
         
         self.action_agents = []
@@ -208,12 +217,13 @@ class HumanitarianLogistics(Model):
         self.schedule.step()
         #self.sr.collect(self)
         #self.azc_health.collect(self)
-        self.modality_occ.collect(self)
+        #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
-        self.staff_dc.collect(self)
-        self.ls_dc.collect(self)
+        #self.staff_dc.collect(self)
+        #self.ls_dc.collect(self)
         #self.network_dc.collect(self)
-        self.po_dc.collect(self)
+        #self.po_dc.collect(self)
+        self.int_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -436,6 +446,20 @@ def get_po(model, idx):
     ncs = np.mean([ngo.city.public_opinion for ngo in model.schedule.agents if
                    type(ngo) is NGO and
                    ngo.city.modality == model.modalities[idx]])
+    return ncs
+
+def integrated(model):
+    model.int_index += 1
+    if model.int_index == (len(model.int)):
+        model.int_index = 0
+    return get_integrated(model, model.int_index)
+
+def get_integrated(model, integrated):
+    
+    ncs = np.mean([nc.values.health for nc in model.schedule.agents if type(nc) is
+                   Newcomer and str(nc.segregated) == model.int[integrated]])
+    if np.isnan(ncs):
+        return 0
     return ncs
 
 def network_size(model):

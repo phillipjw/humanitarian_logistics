@@ -36,7 +36,6 @@ class Prioritize(Action):
         '''
         There's a minimum number of sessions for this to be feasible        
         '''
-        print(self.agent.get_num_sessions())
         return self.agent.get_num_sessions() > 2
     
     def do(self):
@@ -98,15 +97,12 @@ class Prioritize(Action):
         #adds sessions where funding is under allocated
         for value in diff:
             if value*freed_up_capital >= 1:
-                print('VAL num is_:', np.where(diff == value)[0][0])
                 act = self.agent.get_activity(np.where(diff == value)[0][0])
                 for i in range(int(np.floor(value*freed_up_capital))):
                     if self.agent.session_possible(act):
                         self.agent.add_session(act)
-                        print('Session Added')
                     else:
                         self.agent.funds += self.agent.cost_per_activity
-                        print('Funds increased')
             else:
                 self.agent.funds += value*freed_up_capital
                         
@@ -232,7 +228,6 @@ class customActivity(Action):
                 break
         #add session to existing activity
         if additional_session != None and self.possible_days.difference(act.frequency):
-            print('New Session')
             new_day = self.possible_days.difference(act.frequency).pop()
             act.frequency.add(new_day)
             act.attendance[new_day] = 0
@@ -244,7 +239,6 @@ class customActivity(Action):
         #otherwise create new activity
         else:
             day = np.random.randint(0,6)
-            print('New Activity')
             activity = Activity(self.agent.unique_id, self.agent.model, {day}, need)
             activity.name = 'custom'+str(need)
             self.agent.activities.add(activity)
@@ -348,13 +342,12 @@ class Checkin(Action):
         super().do()
         
         total_occ = np.sum([azc.occupancy for azc in self.agent.city.azcs]) + self.agent.city.hotel.occupancy
-        
         staff_fitness = self.agent.staff / (total_occ*self.agent.staff_to_resident_ratio)
         #iterate through newcomers
         for newcomer in self.agent.city.azc.occupants:
             #probability of error depends on number of staff
             
-            if not newcomer.invested and newcomer.values.health < .3 and np.random.uniform(0,1) < staff_fitness:
+            if not newcomer.invested and newcomer.values.health < .5 and np.random.uniform(0,1) < staff_fitness:
                 #do checkin
                 
                 #identify need
@@ -651,11 +644,15 @@ class Invest(Action):
         
         super().do()
         gravity = 1-self.agent.gravity
+        counter = 0
         voucher_budget = int(gravity*(self.agent.self_transcendence/100)*len(self.agent.voucher_requests))
         while self.agent.voucher_requests and voucher_budget > 0:
             current = self.agent.voucher_requests.pop()
             current.allowance += self.agent.city.cost_of_bus_to_another_city
             current.invested = True
+            counter += 1
+            self.agent.net_investment += 1
+            self.agent.net_costs += 1
             voucher_budget -= 1
             
         '''    
@@ -688,42 +685,51 @@ class Segregate(Action):
         self.effect = self.do
         self.counter = 0              #for histogramming purposes
         self.unlikely_status_holders = []
-        for azc in self.agent.city.azcs:
-            for newcomer in azc.occupants:
-                if newcomer.second == 0:
-                    self.unlikely_status_holders.append(newcomer)
+        
         
         
     def precondition(self):
         
         #check if not crisis
+        for azc in self.agent.city.azcs:
+            for newcomer in azc.occupants:
+                if newcomer.second == 0:
+                    self.unlikely_status_holders.append(newcomer)
         return self.agent.state != 'Crisis' 
         
     
     def do(self):
         super().do()
-        cheapest_azc_to_maintain = None
         
         #gets a cost per azc from health + occupancy + activities + proximity
-        [azc.get_operational_cost() for azc in 
+        candidates = [azc for azc in 
          self.agent.model.schedule.agents if
          type(azc) is organizations.AZC and
          azc.modality != 'COL']
         
-        cheapest_azc_to_maintain = min([azc for azc in self.agent.city.azcs], key = attrgetter('operational_cost'))
+        [azc.get_operational_cost() for azc in candidates]
         
-        if cheapest_azc_to_maintain != None:
-            
-            
-            count = 0
-            
-            while count < len(self.unlikely_status_holders):
-                newcomer = self.agent.newcomers.pop()
+        candidates.sort(key = lambda x: x.operational_cost)
+        count = 0
+        candidate_idx = 0
+        cheapest_azc_to_maintain = candidates[candidate_idx]
+        
+        while count < len(self.unlikely_status_holders) and candidate_idx < len(candidates):
+            cheapest_azc_to_maintain = candidates[candidate_idx]
+            if cheapest_azc_to_maintain.occupancy/cheapest_azc_to_maintain.capacity < .9:
+                
+                newcomer = self.unlikely_status_holders.pop()
                 if newcomer.second == 0:
-                    self.agent.move(newcomer, cheapest_azc_to_maintain)
-                    count += 1
+                    
+                        
+                        self.agent.move(newcomer, cheapest_azc_to_maintain)
+                        newcomer.segregated = True
+                        count += 1
                 else:
                     self.agent.newcomers.add(newcomer)
+            else:
+                candidate_idx += 1
+                
                 
            
         
@@ -763,27 +769,7 @@ class Integrate(Action):
                  for newcomer in azc.occupants:
                      newcomer.budget = newcomer.budget + travel_voucher
 
-class OpenToNGO(Action):
-    
-    # Value: Openness to change
-    # Effect: Allow local NGO to add an activity to AZC schedule.
-    # Expected result: Locals interact with newcomers, some Newcomer values get satisfied. 
-    
-    def __init__(self, name, agent, v_index):
-        
-        super().__init__(name, agent, v_index)
-        
-    def precondition(self):
-        # test to see if an ngo exits. this is right, correct. A coa would have an NGO
-        return self.agent.city.ngo != None
-    
-    
-    def do(self):
-        super().do()
-        # right now the activity is just a language class but can be changed to randomly pick one of ours
-        # or allow the NGO to design an activity for the AZC
-        self.agent.city.azc.activity_center.activities_available.add(activity.Language_Class(self.unique_id, 
-                                                                     self.model, {1,2,3,4,5}, 0))
+
 
 class raiseThreshold(Action):
     
@@ -1010,12 +996,17 @@ class Doctor(Activity):
         '''
         Available to those who need it, ie health below threshold
         '''
-        return agent.ls in self.occupant_type and agent.health < self.healthiness_threshold
+        if type(agent.loc) is organizations.Hotel:
+            budget = agent.budget > 1.5*agent.coa.city.cost_of_bus_within_city
+        else:
+            budget = agent.budget > agent.coa.city.cost_of_bus_within_city
+        return agent.ls in self.occupant_type and agent.health < self.healthiness_threshold and budget
 
     
     def do(self, agent):
         super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, self.healthiness_threshold)
+        agent.budget -= agent.coa.city.cost_of_bus_within_city
         agent.loc.city.costs += 1
         
 class Football(Activity):
@@ -1164,7 +1155,7 @@ class Volunteer(Activity):
         
         po_max = agent.current[1].coa.city.po_max
         current = agent.current[1].coa.city.public_opinion
-        agent.current[1].coa.city.public_opinion += (po_max - current) / 1000
+        agent.current[1].coa.city.public_opinion += (po_max - current) / 1000 * (1-agent.coa.gravity)
         #ossible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):
