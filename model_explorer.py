@@ -88,6 +88,7 @@ class ModelExplorer():
         toReturn = []
         test = HumanitarianLogistics(self.width, self.height, self.num_pols, self.city_size, coa_se_value, coa_st_value, coa_c_value, coa_otc_value)
         test.shock_flag = self.shock_flag
+        test.dq = self.dq
         test.include_social_networks = False
         ngo = [x for x in test.schedule.agents if type(x) is NGO]
         for unit in ngo:
