@@ -924,7 +924,6 @@ class Activity(Agent):
         self.obligatory = False
         self.critical = False
         self.effect = None
-        self.current_day = None
         self.attendance = {}
         self.basic = 1
         for day in frequency:
