@@ -46,7 +46,7 @@ class HumanitarianLogistics(Model):
         self.shock_rate = 100
         self.shock_flag = False #flag to run sim without shocks
         self.shock_inverse = False
-        self.dq = False #flag for which type of IND decision to make
+        self.dq = True #flag for which type of IND decision to make
         
         self.coa_values = {'SE':se,
                            'ST': st,
@@ -66,7 +66,7 @@ class HumanitarianLogistics(Model):
                                     'as':4,
                                     'as_ext':90,
                                     'tr': 35}
-        self.pol_to_azc_ratio = int(self.coa_values['C']/10)
+        self.pol_to_azc_ratio = 4 
         self.space_per_city = int(self.width / self.number_pols)
         self.num_azc = self.number_pols * self.pol_to_azc_ratio
         self.space_per_azc = int(self.width / self.num_azc)
@@ -93,9 +93,9 @@ class HumanitarianLogistics(Model):
         
             
         ####flow in
-        self.in_rate = 20 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
+        self.in_rate = 10 #int(self.number_pols * pol_op_capacity * pol_size / pol_duration)
         self.nc_count = 0  
-        self.var = 10
+        self.var = 5
         self.freq = 60
         
         
@@ -398,7 +398,7 @@ def cm(model):
 
 def get_staff(model, idx):
     
-    staff =  np.mean([building.city.coa.staff for building in
+    staff =  np.mean([building.city.ind.staff for building in
                          model.schedule.agents if
                          type(building) is AZC and
                          building.modality == model.modalities[idx]])
@@ -458,6 +458,7 @@ def get_integrated(model, integrated):
     
     ncs = np.mean([nc.values.health for nc in model.schedule.agents if type(nc) is
                    Newcomer and str(nc.segregated) == model.int[integrated]])
+
     if np.isnan(ncs):
         return 0
     return ncs

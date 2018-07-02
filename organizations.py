@@ -37,7 +37,11 @@ class City(Agent):
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
             if np.random.uniform(0,1) < .5:
-                po = np.random.uniform(0,.2)
+                if np.random.uniform(0,1) < .5:
+                    po = 0
+                else:
+                    po = .01
+                    
                 
             else:
                 po = np.random.uniform(0,1)
@@ -62,6 +66,8 @@ class City(Agent):
         self.public_opinion = po           #cities start out neutral regarding PO of NC.
     
         self.ngo = NGO(self.unique_id, self.model, self)
+        if po == 0:
+            self.ngo.testing = False
         self.azc = AZC(unique_id, model, occupant_type, modality, self)
         self.azc.procedure_duration = procedure_time
         self.azcs = set([self.azc])
@@ -525,7 +531,6 @@ class NGO(Organization):
         '''
         gets avg attendance p day of each activity. 
         '''
-        print(self.unique_id)
 
         if self.activity_attendance:
             for act in self.activities:
@@ -619,13 +624,13 @@ class IND(Organization):
         self.conservatism = 52
         self.self_enhancement = 45
         self.self_transcendence = 49
-        self.openness_to_change = 60
+        self.openness_to_change = 70
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         self.staff = 20
         self.action_frequency = int(365/(self.openness_to_change*52/100))
         self.accounts = {'Staff': 10}
-        self.budget_frequency = 365
+        self.budget_frequency = 90
         self.budget = Budget(self.accounts, self.budget_frequency)
         self.staff_budget = 0
         self.staff_to_resident_ratio = 4
@@ -965,7 +970,6 @@ class AZC(Building):
             if count > max_num_activities:
                 max_num_activities = count
         local_num_activities = self.activity_center.get_num_sessions() + self.city.ngo.get_num_sessions()
-        print(local_num_activities/max_num_activities)
         self.operational_cost = local_num_activities/max_num_activities
             
     
@@ -1052,9 +1056,19 @@ class ActivityCenter(Building):
                 activity.Crime(self.unique_id, self.model, {0,1,2,3,4,5,6}, 0)])
         
         #NGO activities if available
-        if self.azc.city.ngo.testing:
-            self.activities_available.add(activity.Football(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 3))
-            self.activities_available.add(activity.Volunteer(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 1))
+        if self.azc.city.ngo.testing and self.azc.city.public_opinion > .5:
+            football = activity.Football(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 3)
+            volunteer = activity.Volunteer(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 1)
+            self.activities_available.add(football)
+            self.activities_available.add(volunteer)
+            self.azc.city.ngo.activities.add(football)
+            self.azc.city.ngo.activities.add(volunteer)
+            for act in [football, volunteer]:
+                for day in act.frequency:
+                    self.azc.city.ngo.activity_records[act.name] = {day:1}
+                    self.azc.city.ngo.activity_attendance[act.name] = {day:0}
+
+       
 
         self.counter = {}
         

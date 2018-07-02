@@ -241,6 +241,7 @@ class customActivity(Action):
             day = np.random.randint(0,6)
             activity = Activity(self.agent.unique_id, self.agent.model, {day}, need)
             activity.name = 'custom'+str(need)
+            activity.basic = 0
             self.agent.activities.add(activity)
             self.agent.activity_records[activity.name] = {day:1}
             self.agent.activity_attendance[activity.name] = {day:0}
@@ -845,7 +846,8 @@ class adjustStaff(Action):
         
         required_staff = int(self.agent.city.coa.get_total_occupancy()/ratio)
         adjustment = required_staff - self.agent.staff
-        return adjustment < 0 or self.agent.budget.accounts['Staff'] > 0
+        occupied = self.agent.city.coa.get_total_occupancy() > 0
+        return (adjustment < 0 or self.agent.budget.accounts['Staff'] > 0) and occupied
         
     def do(self):
         
@@ -924,6 +926,7 @@ class Activity(Agent):
         self.effect = None
         self.current_day = None
         self.attendance = {}
+        self.basic = 1
         for day in frequency:
             self.attendance[day] = 0
     
@@ -1025,7 +1028,7 @@ class Football(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'as', 'as_ext', 'tr'}
-        self.HEALTH_THRESHOLD = 70.0
+        self.HEALTH_THRESHOLD = 60.0
         self.HEALTH_INCREASE = 4
         self.name = 'Football'
         
@@ -1194,6 +1197,7 @@ class Crime(Activity):
         self.name = 'Crime'
         self.occupant_type = {'tr', 'as', 'as_ext'}
         self.v_index = v_index
+        self.basic = 0
     
     def precondition(self, agent):
         

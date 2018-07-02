@@ -4,6 +4,8 @@ from mesa import Agent, Model
 from scipy.stats import bernoulli
 import numpy as np
 from Values import Values
+from operator import attrgetter
+
 from organizations import AZC, Hotel
 from scipy.stats import truncnorm
 from socialnetwork import SocialNetwork
@@ -310,8 +312,11 @@ class Newcomer(Agent):
             if possible_activities:
                 
                 for value in priority:
-                    for action in possible_activities:
-                        if value == action[0].v_index:# and np.random.uniform(0,1) < self.qol:
+                    activities_at_value = [x for x in possible_activities if
+                                           x[0].v_index == value]
+                    if len(activities_at_value) > 0:
+                        activities_at_value.sort(key = lambda x: x[0].basic, reverse = True)
+                        for action in activities_at_value:
                             self.current = action
                             break
                     if self.current != None:
@@ -323,7 +328,7 @@ class Newcomer(Agent):
             #update v_sat
             if self.current != None:
                 self.current[0].do(self)
-    
+
                 self.model.action_agents.append(self)
                 self.model.actions.append(self.current)
                 
