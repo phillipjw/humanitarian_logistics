@@ -32,15 +32,15 @@ class ModelExplorer():
         coa_c_part = "coa_c"+str(coa_c[0])+'-'+str(coa_c[len(coa_c)-1])+'-'
         coa_otc_part = "coa_otc"+str(coa_otc[0])+'-'+str(coa_otc[len(coa_otc)-1])+'-'
         
-        ngo_se_part = "ngo_se"+str(coa_se[0])+'-'+str(ngo_se[len(ngo_se)-1])+'-'
-        ngo_st_part = "ngo_st"+str(coa_st[0])+'-'+str(ngo_st[len(ngo_st)-1])+'-'
-        ngo_c_part = "ngo_c"+str(coa_c[0])+'-'+str(ngo_c[len(ngo_c)-1])+'-'
-        ngo_otc_part = "ngo_otc"+str(coa_otc[0])+'-'+str(ngo_otc[len(ngo_otc)-1])
+        ngo_se_part = "ngo_se"+str(ngo_se[0])+'-'+str(ngo_se[len(ngo_se)-1])+'-'
+        ngo_st_part = "ngo_st"+str(ngo_se[0])+'-'+str(ngo_st[len(ngo_st)-1])+'-'
+        ngo_c_part = "ngo_c"+str(ngo_c[0])+'-'+str(ngo_c[len(ngo_c)-1])+'-'
+        ngo_otc_part = "ngo_otc"+str(ngo_otc[0])+'-'+str(ngo_otc[len(ngo_otc)-1])
         
-        ind_se_part = "ind_se"+str(coa_se[0])+'-'+str(ind_se[len(ind_se)-1])+'-'
-        ind_st_part = "ind_st"+str(coa_st[0])+'-'+str(ind_st[len(ind_st)-1])+'-'
-        ind_c_part = "ind_c"+str(coa_c[0])+'-'+str(ind_c[len(ind_c)-1])+'-'
-        ind_otc_part = "ind_otc"+str(coa_otc[0])+'-'+str(ind_otc[len(ind_otc)-1])
+        ind_se_part = "ind_se"+str(ind_se[0])+'-'+str(ind_se[len(ind_se)-1])+'-'
+        ind_st_part = "ind_st"+str(ind_st[0])+'-'+str(ind_st[len(ind_st)-1])+'-'
+        ind_c_part = "ind_c"+str(ind_c[0])+'-'+str(ind_c[len(ind_c)-1])+'-'
+        ind_otc_part = "ind_otc"+str(ind_otc[0])+'-'+str(ind_otc[len(ind_otc)-1])
         
         filename = fileprefix + coa_se_part + coa_st_part + coa_c_part + coa_otc_part 
         filename = filename +   ngo_se_part + ngo_st_part + ngo_c_part + ngo_otc_part 
