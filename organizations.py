@@ -535,8 +535,10 @@ class NGO(Organization):
         if self.activity_attendance:
             for act in self.activities:
                 for day in act.frequency:
-                    self.activity_attendance[act.name][day] = act.attendance[day] / (self.activity_records[act.name][day] +1)
-        
+                    try:
+                        self.activity_attendance[act.name][day] = act.attendance[day] / (self.activity_records[act.name][day] +1)
+                    except Exception:
+                        print ('Key Error on organizations line: 539')
     
     def step(self):
         if self.testing:

@@ -33,7 +33,7 @@ class ModelExplorer():
         coa_otc_part = "coa_otc"+str(coa_otc[0])+'-'+str(coa_otc[len(coa_otc)-1])+'-'
         
         ngo_se_part = "ngo_se"+str(ngo_se[0])+'-'+str(ngo_se[len(ngo_se)-1])+'-'
-        ngo_st_part = "ngo_st"+str(ngo_se[0])+'-'+str(ngo_st[len(ngo_st)-1])+'-'
+        ngo_st_part = "ngo_st"+str(ngo_st[0])+'-'+str(ngo_st[len(ngo_st)-1])+'-'
         ngo_c_part = "ngo_c"+str(ngo_c[0])+'-'+str(ngo_c[len(ngo_c)-1])+'-'
         ngo_otc_part = "ngo_otc"+str(ngo_otc[0])+'-'+str(ngo_otc[len(ngo_otc)-1])
         
@@ -85,57 +85,60 @@ class ModelExplorer():
     
     def run_sweep_trial(self, coa_se_value, coa_st_value, coa_c_value, coa_otc_value, ngo_se_value, ngo_st_value, ngo_c_value, ngo_otc_value, 
                            ind_se_value, ind_st_value, ind_c_value, ind_otc_value, trial_id, all_time_steps):
-        toReturn = []
-        test = HumanitarianLogistics(self.width, self.height, self.num_pols, self.city_size, coa_se_value, coa_st_value, coa_c_value, coa_otc_value)
-        test.shock_flag = self.shock_flag
-        test.dq = self.dq
-        test.include_social_networks = False
-        ngo = [x for x in test.schedule.agents if type(x) is NGO]
-        for unit in ngo:
-            unit.values = Values(10, ngo_se_value,ngo_st_value,ngo_c_value,ngo_otc_value, unit)
-        coa_array = [coa for coa in test.schedule.agents if type(coa) is COA and coa.city.modality == 'AZC']
+        try:
+            toReturn = []
+            test = HumanitarianLogistics(self.width, self.height, self.num_pols, self.city_size, coa_se_value, coa_st_value, coa_c_value, coa_otc_value)
+            test.shock_flag = self.shock_flag
+            test.dq = self.dq
+            test.include_social_networks = False
+            ngo = [x for x in test.schedule.agents if type(x) is NGO]
+            for unit in ngo:
+                unit.values = Values(10, ngo_se_value,ngo_st_value,ngo_c_value,ngo_otc_value, unit)
+            coa_array = [coa for coa in test.schedule.agents if type(coa) is COA and coa.city.modality == 'AZC']
             
-        inds = [ind for ind in test.schedule.agents if type(ind) is IND]
-        for unit in inds:
-            unit.values = Values(10, ind_se_value,ind_st_value,ind_c_value,ind_otc_value, unit)
-        cities = []
-        for coa in coa_array:
-            if coa.city is not None:
-                cities.append(coa.city)
-        for step in range(0,self.number_steps):
-            test.step()
-            buf_coa_cost = []
-            for ind_unit in inds:
-                buf_coa_cost.append([ind_unit.city.coa.housing_costs + ind_unit.city.coa.hotel_costs])
-            coa_costs = np.nansum(buf_coa_cost)
-            buf = []
+            inds = [ind for ind in test.schedule.agents if type(ind) is IND]
+            for unit in inds:
+                unit.values = Values(10, ind_se_value,ind_st_value,ind_c_value,ind_otc_value, unit)
+            cities = []
             for coa in coa_array:
-                for building in coa.city.azcs:
-                    if (np.isnan(building.health)==False):
-                        buf.append(building.health)
-            bh = np.mean(buf)
-            #bh = np.nanmean(buf)
-            buf_ac = []
-            buf_health = []
-            buf_distress = []
-            newcomers = [nc for nc in test.schedule.agents if type(nc) is Newcomer and nc.ls == 'as_ext']
-            for nc in newcomers:
-                buf_ac.append(nc.acculturation)
-                buf_health.append(nc.health)
-                buf_distress.append(nc.values.health)
-            ac = np.nanmean(buf_ac)
-            nc_health = np.nanmean(buf_health)
-            nc_distress = np.nanmean(buf_distress)
-            ng = np.nanmean([ngo.funds for ngo in ngo])
-            ct = np.nanmean([city.public_opinion for city in cities])
-            ct_costs = np.nanmean([city.costs for city in cities])
-            ct_crime = np.nanmean([city.crime for city in cities])
-            staff = np.nanmean([coa.staff for coa in coa_array])
-            values = [trial_id, step, coa_se_value, coa_st_value, coa_c_value, coa_otc_value, ngo_se_value, ngo_st_value, ngo_c_value, ngo_otc_value, ind_se_value, ind_st_value, ind_c_value, ind_otc_value, ng, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress]
-            if all_time_steps==True:
+                if coa.city is not None:
+                    cities.append(coa.city)
+            for step in range(0,self.number_steps):
+                test.step()
+                buf_coa_cost = []
+                for ind_unit in inds:
+                    buf_coa_cost.append([ind_unit.city.coa.housing_costs + ind_unit.city.coa.hotel_costs])
+                coa_costs = np.nansum(buf_coa_cost)
+                buf = []
+                for coa in coa_array:
+                    for building in coa.city.azcs:
+                        if (np.isnan(building.health)==False):
+                            buf.append(building.health)
+                bh = np.mean(buf)
+                #bh = np.nanmean(buf)
+                buf_ac = []
+                buf_health = []
+                buf_distress = []
+                newcomers = [nc for nc in test.schedule.agents if type(nc) is Newcomer and nc.ls == 'as_ext']
+                for nc in newcomers:
+                    buf_ac.append(nc.acculturation)
+                    buf_health.append(nc.health)
+                    buf_distress.append(nc.values.health)
+                ac = np.nanmean(buf_ac)
+                nc_health = np.nanmean(buf_health)
+                nc_distress = np.nanmean(buf_distress)
+                ng = np.nanmean([ngo.funds for ngo in ngo])
+                ct = np.nanmean([city.public_opinion for city in cities])
+                ct_costs = np.nanmean([city.costs for city in cities])
+                ct_crime = np.nanmean([city.crime for city in cities])
+                staff = np.nanmean([coa.staff for coa in coa_array])
+                values = [trial_id, step, coa_se_value, coa_st_value, coa_c_value, coa_otc_value, ngo_se_value, ngo_st_value, ngo_c_value, ngo_otc_value, ind_se_value, ind_st_value, ind_c_value, ind_otc_value, ng, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress]
+                if all_time_steps==True:
+                    toReturn.append(values)
+            if all_time_steps == False:
                 toReturn.append(values)
-        if all_time_steps == False:
-            toReturn.append(values)
-        return (toReturn)
+            return (toReturn)
+        except Exception:
+            return None
 
 
