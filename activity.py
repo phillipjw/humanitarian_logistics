@@ -1154,10 +1154,10 @@ class Volunteer(Activity):
     def do(self, agent):
         self.local_involvement = agent.current[1].coa.city.public_opinion
         super().do(agent)
-        
         po_max = agent.current[1].coa.city.po_max
         current = agent.current[1].coa.city.public_opinion
-        agent.current[1].coa.city.public_opinion += (po_max - current) / 1000 * (1-agent.coa.gravity)
+        print('Volunteering', agent.loc.modality, '_AMT_', (po_max - current) / 50)
+        agent.current[1].coa.city.public_opinion += (po_max - current) / 100#1000 * (1-agent.coa.gravity)
         #ossible additions: AGENT.WORK_EXPERIENCE ++ also opportunity to socialize
         
 class Work(Activity):
@@ -1199,11 +1199,19 @@ class Crime(Activity):
         self.basic = 0
     
     def precondition(self, agent):
-        
-        return  np.random.uniform(0,1) < .0001
+        val_hel = agent.values.health < .05
+        intent = agent.values.v_tau[0] > 58.9
+        conditions = agent.loc.health < 50
+        #bumps crime up to the the top of the activity stack
+        if np.random.randint(0,100)/2 > agent.qol:
+            self.basic = 1
+        if val_hel and intent and conditions:
+            print('CRIME CAN BE DONE')
+        return val_hel and conditions and intent #np.random.uniform(0,1) < .001 #
     
     def do(self, agent):
         super().do(agent)
+        print('CRIME BEING DONE', agent.loc.modality)
         agent.loc.city.public_opinion -= (agent.loc.city.public_opinion - agent.loc.city.po_min) / 2
         agent.coa.city.public_opinion = max(0, agent.coa.city.public_opinion)
         agent.coa.city.crime += 1

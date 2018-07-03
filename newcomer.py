@@ -154,8 +154,9 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
-                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
+                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 100
                         self.coa.city.public_opinion = max(0, self.coa.city.public_opinion)
+                        print('FP')
                 
                 else:
                     self.ls = 'as_ext'
@@ -175,8 +176,9 @@ class Newcomer(Agent):
                         self.model.confusionMatrix['TP'] += 1
                     else:
                         self.model.confusionMatrix['FP'] += 1
-                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 2
+                        self.coa.city.public_opinion -= (self.coa.city.public_opinion - self.coa.city.po_min) / 100
                         self.coa.city.public_opinion = max(0, self.coa.city.public_opinion)
+                        print('FFFPPPP')
                 #if negative decision
                 else:
                     if self.second == 0:

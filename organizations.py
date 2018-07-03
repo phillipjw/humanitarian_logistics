@@ -40,11 +40,11 @@ class City(Agent):
                 if np.random.uniform(0,1) < .5:
                     po = 0
                 else:
-                    po = .01
+                    po = .1
                     
                 
             else:
-                po = np.random.uniform(0,1)
+                po = np.random.uniform(.1,1)
                 
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
@@ -594,7 +594,7 @@ class NGO(Organization):
                     
                     #update v_sat
                     if current != None:
-                        #print(current.name)
+                        print(current.name)
                         current.do()
                 self.active = False
             else:
@@ -617,7 +617,7 @@ class IND(Organization):
         self.city = city
         self.pos = self.city.pos
         self.threshold_first = 1
-        self.margin = .25
+        self.margin = .05
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
@@ -770,7 +770,7 @@ class AZC(Building):
         self.city = city
         self.coa = self.city.coa
         self.operating_capacity = None
-        self.health = 90
+        self.health = np.random.randint(50,90)
         self.max_health = 100
         self.operational_health = 50
         self.operational_cost = self.occupancy/self.capacity + self.health/self.max_health

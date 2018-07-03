@@ -219,11 +219,11 @@ class HumanitarianLogistics(Model):
         #self.azc_health.collect(self)
         #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
-        #self.staff_dc.collect(self)
+        self.staff_dc.collect(self)
         #self.ls_dc.collect(self)
         #self.network_dc.collect(self)
-        #self.po_dc.collect(self)
-        self.int_dc.collect(self)
+        self.po_dc.collect(self)
+        #self.int_dc.collect(self)
         
         if self.shock_flag and self.shock:
             if self.shock_inverse:
@@ -398,7 +398,7 @@ def cm(model):
 
 def get_staff(model, idx):
     
-    staff =  np.mean([building.city.ind.staff for building in
+    staff =  np.mean([building.health for building in
                          model.schedule.agents if
                          type(building) is AZC and
                          building.modality == model.modalities[idx]])
@@ -421,20 +421,7 @@ def get_distress(model, idx):
                    type(nc) is Newcomer and
                    nc.ls == model.ls[idx]])
     return ncs
-'''
-def funds(model):
-    model.ls_index += 1
-    if model.ls_index == len(model.ls):
-        model.ls_index = 0
-    return get_funds(model, model.ls_index)
 
-def get_funds(model, idx):
-    
-    ncs = np.mean([ngo.funds for ngo in model.schedule.agents if
-                   type(ngo) is NGO and
-                   nc.ls == model.ls[idx]])
-    return ncs
-'''
 def po(model):
     model.staff_index += 1
     if model.staff_index == len(model.modalities):
@@ -455,13 +442,31 @@ def integrated(model):
     return get_integrated(model, model.int_index)
 
 def get_integrated(model, integrated):
-    
-    ncs = np.mean([nc.values.health for nc in model.schedule.agents if type(nc) is
-                   Newcomer and str(nc.segregated) == model.int[integrated]])
-
-    if np.isnan(ncs):
+    nc = [nc.values.health for nc in model.schedule.agents if type(nc) is
+                   Newcomer and nc.loc.modality == 'AZC']
+    if len(nc) == 0:
         return 0
-    return ncs
+    else:
+        
+    
+        if model.int[integrated] == 'True':
+            
+            #get max distress
+            ncs = np.max(nc)
+        else:
+            ncs = np.min(nc)
+        
+       # ncs = np.mean([nc.values.health for nc in model.schedule.agents if type(nc) is
+       #                Newcomer and str(nc.segregated) == model.int[integrated]])
+        print('VARIANCE', np.std(nc))
+        
+        zr = [z for z  in nc if z == 0.0]
+        print('PCT ZEROS', len(zr)/len(nc))
+        
+        
+        if np.isnan(ncs):
+            return 0
+        return ncs
 
 def network_size(model):
     model.ls_index += 1
