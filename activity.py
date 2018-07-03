@@ -77,7 +77,11 @@ class Prioritize(Action):
             if diff[nef] > 1/f_sum:
                 
                 #translates difference into number of session terms
-                diff_in_sessions = int(np.floor(diff[nef]*f_sum))
+                ALOT = 1e6
+                try:
+                	diff_in_sessions = int(np.floor(diff[nef]*f_sum))
+                except Exception:
+                	diff_in_sessions = ALOT
                 act = self.agent.get_activity(nef)
                 #only remove if more than 2 sessions in act frequency
                 if diff_in_sessions >= 2 and len(act.frequency) >= 2:
@@ -165,16 +169,20 @@ class Fundraise(Action):
                                 worst, when = activity, day
                     
                     #remove min
-                    if len(worst.frequency) == 1:
-                        #if only one session p week, remove the whole activity
-                        self.agent.activities.remove(worst)
-                        self.agent.activity_attendance.pop(worst.name)
-                        self.agent.activity_records.pop(worst.name)
-                    else:
-                        #otherwise just remove one session. 
-                        self.agent.activity_attendance[worst.name].pop(when)
-                        self.agent.activity_records[worst.name].pop(when)
-                    #increase funds
+                    try:
+                        if len(worst.frequency) == 1:
+                            #if only one session p week, remove the whole activity
+                            self.agent.activities.remove(worst)
+                            self.agent.activity_attendance.pop(worst.name)
+                            self.agent.activity_records.pop(worst.name)
+                        else:
+                            #otherwise just remove one session. 
+                            self.agent.activity_attendance[worst.name].pop(when)
+                            self.agent.activity_records[worst.name].pop(when)
+                            #increase funds
+                    except Exception:
+                        print("UnboundLocalError: local variable worst referenced before assignment")
+                        
                     self.agent.funds += self.agent.cost_per_activity
             else: 
                 self.agent.funds += self.agent.campaign
