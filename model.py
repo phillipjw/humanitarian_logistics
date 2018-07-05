@@ -25,14 +25,14 @@ class HumanitarianLogistics(Model):
         dimensions width and height"""
     SOCIAL_ACTIVITIES = set(["Football", "Craft", "LanguageClass", 'Volunteer', 'Socialize', 'Work'])
     
-    def __init__(self, width, height, num_pols, city_size, se,st,c,otc):
+    def __init__(self, po_uniform,width, height, num_pols, city_size, se,st,c,otc):
 
         #canvas info
         self.width = width
         self.height = height
         self.number_pols = num_pols
         self.city_size = city_size
-        
+        self.po_uniform = po_uniform
         #test health params
         #health param
         self.health_decay = .35
@@ -72,13 +72,16 @@ class HumanitarianLogistics(Model):
         self.space_per_azc = int(self.width / self.num_azc)
         self.fraction_ngo = .30
         self.num_nc = 0
-        
+        self.wait_times = []
 
         self.city_count = 1
         
         
         ####### Generate COLS
         self.ta = City(self.city_count,self, {'edp'}, 'COL')
+        
+        self.total_num_facilities = self.number_pols+self.number_pols*self.pol_to_azc_ratio
+        
 
         #### Generate POLS
         for i in range(1,self.number_pols+1):
@@ -219,10 +222,10 @@ class HumanitarianLogistics(Model):
         #self.azc_health.collect(self)
         #self.modality_occ.collect(self)
         #self.cm_dc.collect(self)
-        self.staff_dc.collect(self)
-        #self.ls_dc.collect(self)
+        #self.staff_dc.collect(self)
+        self.ls_dc.collect(self)
         #self.network_dc.collect(self)
-        self.po_dc.collect(self)
+        #self.po_dc.collect(self)
         #self.int_dc.collect(self)
         
         if self.shock_flag and self.shock:

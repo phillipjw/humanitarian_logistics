@@ -152,6 +152,7 @@ class Fundraise(Action):
                 
         #if too small, just raise funds        
         if capital < self.agent.overhead:
+            self.agent.cumulative_funds_raised += (1 - self.agent.funds) * self.agent.city.public_opinion
             self.agent.funds += (1 - self.agent.funds) * self.agent.city.public_opinion
         
         else: 
@@ -207,6 +208,7 @@ class marketingCampaign(Action):
         super().do()
         self.agent.campaign = (self.agent.city.po_max - self.agent.city.public_opinion) / (100 - self.agent.values.v_tau[0])
         self.agent.city.public_opinion += self.agent.campaign
+        self.agent.cumulative_marketing_expenditures += self.agent.campaign
         self.agent.funds -= self.agent.campaign
 
         
@@ -998,7 +1000,7 @@ class Doctor(Activity):
         self.v_index = v_index
         self.healthiness_threshold = 30
         self.name = 'Doctor'
-        self.HEALTH_INCREASE = 10
+        self.HEALTH_INCREASE = 20
         self.obligatory = True
         self.critical = True
         
@@ -1035,9 +1037,8 @@ class Football(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'as', 'as_ext', 'tr'}
-        self.HEALTH_THRESHOLD = 60.0
+        self.HEALTH_THRESHOLD = 60
         self.HEALTH_INCREASE = 4
-        self.name = 'Football'
         
         self.v_index = v_index
     
@@ -1047,7 +1048,6 @@ class Football(Activity):
 
     def do(self, agent):
         self.local_involvement = agent.current[1].city.public_opinion
-        
         super().do(agent)
         agent.health = min(agent.health+self.HEALTH_INCREASE, agent.HEALTH_MAX)
         
@@ -1150,7 +1150,7 @@ class Volunteer(Activity):
         self.effect = self.satisfaction
         self.frequency = frequency
         self.occupant_type = {'tr', 'as', 'as_ext'}
-        self.HEALTH_THRESHOLD = 60.0
+        self.HEALTH_THRESHOLD = 40.0
         self.v_index = v_index
         self.name = 'Volunteer'
     

@@ -11,7 +11,7 @@ import numpy as np
 canvas_width = 400
 canvas_height = 600
 num_pol = 2
-
+po_uniform = False
 azc_display_size = 20
 
 st = UserSettableParameter('slider', 'Self-Transcendence', 65,0,100,5)
@@ -145,8 +145,8 @@ test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
-                       [continuous_canvas, chart_modality_po, chart_modality_staff],
+                       [continuous_canvas, chart_ls],
                        "Humanitarian Logistics",
-                       {"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
+                       {'po_uniform': po_uniform,"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
                         "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})
 

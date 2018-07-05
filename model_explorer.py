@@ -9,8 +9,9 @@ import csv
 
 class ModelExplorer():
 
-    def __init__(self, p_width=200, p_height=200, p_num_pols=2, p_city_size=20, p_number_steps=500, p_shock_flag =False, p_decision_quality=True):
-
+    def __init__(self, p_po_uniform = True, p_width=200, p_height=200, p_num_pols=2, p_city_size=20, p_number_steps=500, p_shock_flag =False, p_decision_quality=True):
+        
+        self.po_uniform = p_po_uniform
         self.width = p_width
         self.height = p_height
         self.num_pols = p_num_pols
@@ -87,7 +88,7 @@ class ModelExplorer():
                            ind_se_value, ind_st_value, ind_c_value, ind_otc_value, trial_id, all_time_steps):
         try:
             toReturn = []
-            test = HumanitarianLogistics(self.width, self.height, self.num_pols, self.city_size, coa_se_value, coa_st_value, coa_c_value, coa_otc_value)
+            test = HumanitarianLogistics(self.po_uniform, self.width, self.height, self.num_pols, self.city_size, coa_se_value, coa_st_value, coa_c_value, coa_otc_value)
             test.shock_flag = self.shock_flag
             test.dq = self.dq
             test.include_social_networks = False
@@ -132,7 +133,30 @@ class ModelExplorer():
                 ct_costs = np.nanmean([city.costs for city in cities])
                 ct_crime = np.nanmean([city.crime for city in cities])
                 staff = np.nanmean([coa.staff for coa in coa_array])
-                values = [trial_id, step, coa_se_value, coa_st_value, coa_c_value, coa_otc_value, ngo_se_value, ngo_st_value, ngo_c_value, ngo_otc_value, ind_se_value, ind_st_value, ind_c_value, ind_otc_value, ng, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress]
+                ind_staff = np.nanmean([ind.staff for ind in inds])
+                fp = test.confusionMatrix['FP']
+                fn = test.confusionMatrix['FN']
+                wait_times = np.nanmean(test.wait_times)
+                pct_segregated = len([nc for nc in newcomers if nc.segregated])/(len(newcomers)+1)
+                
+                segregated_costs = np.nanmean([nc.loc.city.costs for nc in newcomers if nc.segregated])
+                segregated_buiding_health = np.nanmean([nc.loc.health for nc in newcomers if nc.segregated])
+                segregated_coa_costs = np.nanmean([nc.loc.coa.net_costs for nc in newcomers if nc.segregated])
+                segregated_crime = np.nanmean([nc.loc.city.crime for nc in newcomers if nc.segregated])
+                segregated_health = np.nanmean([nc.health for nc in newcomers if nc.segregated])
+                segregated_wellbeing = np.nanmean([nc.values.health for nc in newcomers if nc.segregated])
+                segregated_acc = np.nanmean([nc.acculturation for nc in newcomers if nc.segregated])
+                non_seg_costs = np.nanmean([nc.loc.city.costs for nc in newcomers if not nc.segregated])
+                non_seg_crime = np.nanmean([nc.loc.city.crime for nc in newcomers if not nc.segregated])
+                non_seg_health = np.nanmean([nc.health for nc in newcomers if not nc.segregated])
+                non_seg_wellbeing = np.nanmean([nc.values.health for nc in newcomers if not nc.segregated])
+                non_seg_acc = np.nanmean([nc.acculturation for nc in newcomers if not nc.segregated])
+                non_seg_building_health = np.nanmean([nc.loc.health for nc in newcomers if not nc.segregated])
+                non_seg_coa_costs = np.nanmean([nc.loc.coa.net_costs for nc in newcomers if not nc.segregated])               
+                ngo_activities = np.nanmean([ngo.get_num_sessions() for ngo in ngo])
+                ngo_cumu_funds = np.nanmean([ngo.cumulative_funds_raised for ngo in ngo])
+                ngo_cumu_marketing = np.nanmean([ngo.cumulative_marketing_expenditures for ngo in ngo])
+                values = [trial_id, step, coa_se_value, coa_st_value, coa_c_value, coa_otc_value, ngo_se_value, ngo_st_value, ngo_c_value, ngo_otc_value, ind_se_value, ind_st_value, ind_c_value, ind_otc_value,ind_staff, ng,ngo_activities,ngo_cumu_funds,ngo_cumu_marketing, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress, fp, fn, wait_times, pct_segregated, segregated_acc, segregated_costs,segregated_crime, segregated_health, segregated_wellbeing, segregated_buiding_health,segregated_coa_costs,non_seg_coa_costs, non_seg_building_health, non_seg_acc, non_seg_costs,non_seg_crime, non_seg_health, non_seg_wellbeing]
                 if all_time_steps==True:
                     toReturn.append(values)
             if all_time_steps == False:

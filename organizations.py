@@ -24,31 +24,28 @@ class City(Agent):
         super().__init__(unique_id, model)
         self.ngo = None
         self.modality = modality
-        
+        if self.model.po_uniform:
+                po = .5
+        else:
+            if self.modality == 'POL':
+                 po = self.unique_id / self.model.total_num_facilities
+            elif self.modality == 'COL':
+                po = .5
+            elif self.modality == 'AZC':
+                po = (self.unique_id + 2) / self.model.total_num_facilities
         if self.modality == 'POL':
             y = int(self.model.height - 5*self.model.height/8)
             procedure_time = 4
-            po = np.random.uniform(0,1)
         elif self.modality == 'COL':
             y = int(self.model.height - 7*self.model.height/8)
             procedure_time = 2
-            po = np.random.uniform(0,1)
         elif self.modality == 'AZC':
             y = int(self.model.height - 3*self.model.height/8)
             procedure_time = 180
-            if np.random.uniform(0,1) < .5:
-                if np.random.uniform(0,1) < .5:
-                    po = 0
-                else:
-                    po = .1
+            
                     
-                
-            else:
-                po = np.random.uniform(.1,1)
-                
         self.pos = (unique_id*(self.model.space_per_azc),y)
         self.coa = COA(self.unique_id, model, self)
-        
         self.model.schedule.add(self.coa)
         self.ind = IND(self.unique_id, model, self)
         self.model.schedule.add(self.ind)
@@ -315,6 +312,7 @@ class COA(Organization):
         newcomer.coa = destination.coa
     
     def get_qol(self):
+        #should be weighted by occupancy
         avg_health = np.mean([azc.health for azc in self.city.azcs])/100
         total_occ = np.sum([azc.occupancy for azc in self.city.azcs]) + self.city.hotel.occupancy
         
@@ -434,6 +432,8 @@ class NGO(Organization):
         self.testing = True
         self.active = True
         self.possible_days = set(range(0,6))
+        self.cumulative_funds_raised = 0
+        self.cumulative_marketing_expenditures = 0
         
 
         #actions
@@ -667,6 +667,7 @@ class IND(Organization):
             newcomer.current_procedure_time = int(time)
         elif newcomer.ls == 'as_ext':
             newcomer.current_procedure_time = staff_adjustment*int(180*capacity + 90)
+            self.model.wait_times.append(newcomer.current_procedure_time)
         elif newcomer.ls == 'tr':
             newcomer.current_procedure_time = 100
         elif newcomer.ls == 'edp':
@@ -1058,7 +1059,7 @@ class ActivityCenter(Building):
                 activity.Crime(self.unique_id, self.model, {0,1,2,3,4,5,6}, 0)])
         
         #NGO activities if available
-        if self.azc.city.ngo.testing and self.azc.city.public_opinion > .5:
+        if self.azc.city.ngo.testing and self.azc.city.public_opinion > .3:
             football = activity.Football(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 3)
             volunteer = activity.Volunteer(self.unique_id, self.model, set(np.arange(0,int(np.ceil(self.azc.city.public_opinion)))), 1)
             self.activities_available.add(football)
