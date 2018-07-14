@@ -149,17 +149,19 @@ class Fundraise(Action):
             for activity in self.agent.activities:
                 for day in activity.frequency:
                     activity_cost += self.agent.cost_per_activity
-                
-        #if too small, just raise funds        
-        if capital < self.agent.overhead:
+                    
+                    
+        if capital < self.agent.city.public_opinion:
             self.agent.cumulative_funds_raised += (1 - self.agent.funds) * self.agent.city.public_opinion
             self.agent.funds += (1 - self.agent.funds) * self.agent.city.public_opinion
-        
-        else: 
-            #case two: if have existing activities
-            if self.agent.activities:
             
-                while self.agent.funds < self.agent.overhead:
+        else: 
+            
+            #if have existing activities, shed them
+            if self.agent.activities:
+                difference = self.agent.city.public_opinion - capital
+            
+                while difference > 0:
                     self.agent.get_avg_attendance()
                     mini = np.inf
                 
@@ -185,6 +187,8 @@ class Fundraise(Action):
                         print("UnboundLocalError: local variable worst referenced before assignment")
                         
                     self.agent.funds += self.agent.cost_per_activity
+                    difference -= self.agent.cost_per_activity
+            #Otherwise, cancel the marketing campaign
             else: 
                 self.agent.funds += self.agent.campaign
                 self.agent.city.public_opinion -= self.agent.campaign
@@ -521,108 +525,7 @@ class BuildRobust(Action):
             self.agent.construct(decision)
         
         
-
-class RequestFunds(Action):
-    
-    def __init__(self, name, agent, v_index):
-        '''
-        Request Funds is a self-enhancement action
-        it involves petitioning the government for increased funding
-        '''
-        super().__init__(name, agent, v_index)
-        self.name = name
-        self.agent = agent            #tie it to a given agent
-        self.v_index = v_index          #index of value to be satisfied
-        self.effect = self.do
-        self.counter = 0              #for histogramming purposes
-        self.request_amount = 10000
-        
-    def precondition(self):
-        
-        return self.agent.shock
-    
-    def do(self):
-        
-        super().do()
-        
-        #increase budget
-        self.agent.budget += self.request_amount
-        
-        #satisfy values
-        self.satisfaction()
-        
-        
-class Consolidate(Action):
-    
-    def __init__(self, name, agent, v_index):
-        
-        '''
-        Consolidate is a self-enhancement action
-        It involves moving newcomers from multiple dispersed AZCs
-        into fewer, centralized AZCs
-        It frees up available capital for COA
-        '''
-        
-        super().__init__(name, agent, v_index)
-        self.name = name
-        self.agent = agent            #tie it to a given agent
-        self.v_index = v_index          #index of value to be satisfied
-        self.effect = self.do
-        self.counter = 0              #for histogramming purposes
-        
-
-        
-    def precondition(self):
-        
-        ''''
-        check if action is feasible in the first place
-        by ensuring that azcs's are non-empty
-        '''
-        
-        return self.agent.state != 'Crisis' and sum([azc.occupancy for azc in
-                                             self.agent.city.azcs]) > 0
-    
-    def do(self):
-        super().do()
-        #this is placeholder and should go outisde the function
-        if not self.precondition():
-            print('Cannot Consolidate')
-            pass
-        
-        #get all non-empty AZCs
-        azcs = [azc for azc in self.agent.model.schedule.agents if
-                type(azc) is organizations.AZC and not azc.modality != 'COL' and
-                azc.occupancy > 0]
-
-        
-        #Order non-empty Azcs by occupancy
-        azcs.sort(key = lambda x: x.occupancy)
-        
-        
-        #move occupants to central location
-        for current in self.agent.city.azcs:
-            
-            #take lowest capacity AZC and move its occupants to highest
-            #capacity AZC that can fit them
-            
-            amount = current.occupancy
-            
-           
-            if current.occupants:
-            
-                for other_azc in reversed(azcs):
-                    difference = other_azc.capacity - other_azc.occupancy
-
-                    while difference > 0 and amount > 0:
-                        try:
-                            occupant = current.occupants.pop()
-                            current.coa.move(occupant, other_azc)
-                            amount -= 1
-                            difference -= 1
-                        except TypeError:
-                            print('Typerror,',len(current.occupants))
-                    
-                        
+                     
 
         
 class Invest(Action):
@@ -665,18 +568,7 @@ class Invest(Action):
             self.agent.net_investment += 1
             self.agent.net_costs += 1
             voucher_budget -= 1
-            
-        '''    
-        between_city_travel = True # we will want to parameterize this somehow
-        travel_voucher = self.agent.city.cost_of_bus_within_city 
-        if not between_city_travel:
-            travel_voucher = self.agent.city.cost_of_bus_to_another_city 
-        
-        for azc in self.agent.city.azcs:
-                 for newcomer in azc.occupants:
-                     newcomer.budget = newcomer.budget + travel_voucher
-                     newcomer.integrated = True
-        '''        
+       
 
 class Segregate(Action):
         
@@ -743,44 +635,7 @@ class Segregate(Action):
                 
                 
            
-        
-class Integrate(Action):
-        
-    def __init__(self, name, agent, v_index):
-        
-        '''
-        COA integrates by setting activity permissions to setting activity permissions to
-        all legal statuses. That way all AS can participate in the same activities. It also obliges transfer
-        requests and will subsidize travel to participate in activities for AS that live far from activity
-        centers.
-        '''
-        
-        super().__init__(name, agent, v_index)
-        self.name = name
-        self.agent = agent            #tie it to a given agent
-        self.v_index = v_index          #index of value to be satisfied
-        self.effect = self.do
-        self.counter = 0              #for histogramming purposes
-        
-
-        
-    def precondition(self):
-        
-        #check if not shock and check if feasible
-        return self.agent.state != 'Crisis'
-    
-    def do(self):
-        super().do()
-        between_city_travel = True # we will want to parameterize this somehow
-        travel_voucher = self.agent.city.cost_of_bus_within_city 
-        if not between_city_travel:
-            travel_voucher = self.agent.city.cost_of_bus_to_another_city 
-        
-        for azc in self.agent.city.azcs:
-                 for newcomer in azc.occupants:
-                     newcomer.budget = newcomer.budget + travel_voucher
-
-
+ 
 
 class raiseThreshold(Action):
     
@@ -817,7 +672,7 @@ class lowerThreshold(Action):
         super().__init__(name, agent,v_index)
 
         self.counter = 0              #for histogramming purposes
-        self.marginal_increase = .15
+        self.marginal_increase = .05
         
     def precondition(self):
         '''
