@@ -149,7 +149,7 @@ class COA(Organization):
         self.staff_to_resident_ratio = .15
         self.staff_estimation_frequency = 90
         self.staff = 25
-        self.checkin = activity.Checkin('Checkin', self, 3)
+        self.checkin = activity.Checkin('Checkin', self, 1)
         self.current_policy = self.find_house
         self.voucher_requests = set([])
         self.gravity = 0
@@ -420,7 +420,13 @@ class NGO(Organization):
         self.model.schedule.add(self)
         self.city = city
         self.pos = self.city.pos
-        self.values = Values(10,35,55,40,60, self)
+        
+        self.self_enhancement = self.model.ngo_values['SE']
+        self.self_transcendence = self.model.ngo_values['ST']
+        self.conservatism = self.model.ngo_values['C']
+        self.openness_to_change = self.model.ngo_values['OTC']
+        self.values = Values(10, self.self_enhancement, self.self_transcendence,
+                             self.conservatism, self.openness_to_change,self)
         self.funds = self.city.public_opinion
         self.cost_per_activity = .05
         self.activities = set([])
@@ -623,10 +629,10 @@ class IND(Organization):
         self.threshold_second = 1.5
         self.number_asylum_interviews = 2
         self.case_error_rate = .05
-        self.conservatism = 52
-        self.self_enhancement = 45
-        self.self_transcendence = 49
-        self.openness_to_change = 70
+        self.self_enhancement = self.model.ind_values['SE']
+        self.self_transcendence = self.model.ind_values['ST']
+        self.conservatism = self.model.ind_values['C']
+        self.openness_to_change = self.model.ind_values['OTC']
         self.values = Values(10, self.self_enhancement, self.self_transcendence,
                              self.conservatism, self.openness_to_change,self)
         self.staff = 20
@@ -661,7 +667,7 @@ class IND(Organization):
         
     def set_time(self, newcomer):
         capacity = self.city.coa.get_occupancy_pct()
-        staff_adjustment = 1 - ((self.staff)/(np.sum([azc.capacity for azc in self.city.azcs])/self.staff_to_resident_ratio))
+        staff_adjustment = 1 - ((self.staff)/(np.sum([azc.occupancy for azc in self.city.azcs])/self.staff_to_resident_ratio))
         if newcomer.ls == 'as':
             time = staff_adjustment*27*capacity + 8
             newcomer.current_procedure_time = int(time)

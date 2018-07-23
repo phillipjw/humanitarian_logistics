@@ -14,10 +14,10 @@ num_pol = 2
 po_uniform = False
 azc_display_size = 20
 
-st = UserSettableParameter('slider', 'Self-Transcendence', 65,0,100,5)
-se = UserSettableParameter('slider', 'Self-Enhancement', 50,0,100, 5)
-c = UserSettableParameter('slider', 'Conservatism', 70, 0, 100, 5)
-otc = UserSettableParameter('slider', 'Openness-to-Change',45,0,100, 5)
+coa_st = UserSettableParameter('slider', 'Self-Transcendence', 65,0,100,5)
+coa_se = UserSettableParameter('slider', 'Self-Enhancement', 50,0,100, 5)
+coa_c = UserSettableParameter('slider', 'Conservatism', 70, 0, 100, 5)
+coa_otc = UserSettableParameter('slider', 'Openness-to-Change',45,0,100, 5)
 
 
 def agent_portrayal(agent):
@@ -141,12 +141,13 @@ chart_int = ChartModule([{'Label': 'True',
                          {'Label': 'False',
                           'Color': 'black'}], data_collector_name='int_dc')
 
-test = [se,st,c,otc]
 
 
 server = ModularServer(HumanitarianLogistics,
                        [continuous_canvas, chart_ls],
                        "Humanitarian Logistics",
                        {'po_uniform': po_uniform,"width": canvas_width, "height": canvas_height, "num_pols": num_pol, 
-                        "city_size": azc_display_size, 'se': se,'st': st,'c': c,'otc': otc})
+                        "city_size": azc_display_size, 'coa_se': coa_se,'coa_st': coa_st,'coa_c': coa_c,'coa_otc': coa_otc,
+                        'ind_se': 55,'ind_st': 50,'ind_c': 60,'ind_otc': 60,
+                        'ngo_se': 55,'ngo_st': 50,'ngo_c': 60,'ngo_otc': 60,})
 

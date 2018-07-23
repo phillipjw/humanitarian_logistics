@@ -25,7 +25,10 @@ class HumanitarianLogistics(Model):
         dimensions width and height"""
     SOCIAL_ACTIVITIES = set(["Football", "Craft", "LanguageClass", 'Volunteer', 'Socialize', 'Work'])
     
-    def __init__(self, po_uniform,width, height, num_pols, city_size, se,st,c,otc):
+    def __init__(self, po_uniform,width, height, num_pols, city_size,
+                 coa_se,coa_st,coa_c,coa_otc,
+                 ind_se,ind_st,ind_c,ind_otc,
+                 ngo_se,ngo_st,ngo_c,ngo_otc):
 
         #canvas info
         self.width = width
@@ -48,10 +51,20 @@ class HumanitarianLogistics(Model):
         self.shock_inverse = False
         self.dq = True #flag for which type of IND decision to make
         
-        self.coa_values = {'SE':se,
-                           'ST': st,
-                           'C': c,
-                           'OTC':otc}
+        self.coa_values = {'SE':coa_se,
+                           'ST': coa_st,
+                           'C': coa_c,
+                           'OTC':coa_otc}
+        
+        self.ind_values = {'SE':ind_se,
+                           'ST': ind_st,
+                           'C': ind_c,
+                           'OTC':ind_otc}
+        
+        self.ngo_values = {'SE':ngo_se,
+                           'ST': ngo_st,
+                           'C': ngo_c,
+                           'OTC':ngo_otc}
         
         
         
@@ -77,6 +90,10 @@ class HumanitarianLogistics(Model):
         self.city_count = 1
         
         
+            
+            
+        
+        
         ####### Generate COLS
         self.ta = City(self.city_count,self, {'edp'}, 'COL')
         
@@ -90,6 +107,10 @@ class HumanitarianLogistics(Model):
         ##### Generate AZC
         for i in range(1,self.number_pols*self.pol_to_azc_ratio):
             city = City(i, self, {'as_ext', 'tr'}, 'AZC')
+            
+        ##### cultural_wellbeing
+        self.cultural_wellbeing = False
+        self.cw_group = None
             
         
 

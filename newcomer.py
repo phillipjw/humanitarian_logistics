@@ -60,16 +60,27 @@ class Newcomer(Agent):
             self.second = bernoulli.rvs(self.specs[1], size = 1)[0] 
         else:
             self.second = 1
-                                  
-        # new comer values
-        v_set = [np.random.randint(50,60), np.random.randint(30,40),
-                             np.random.randint(40,50), np.random.randint(60,70)]
-        v_set_2 = [np.random.randint(30,40), np.random.randint(60,70),
-                             np.random.randint(50,60), np.random.randint(30,40)]
-        if self.model.schedule.steps > 150:
-            self.values = Values(10,v_set_2[0],v_set_2[1],v_set_2[2],v_set_2[3],self)
+        
+        if self.model.cultural_wellbeing:
+            if self.model.cw_group == 'A':
+                v_set = [np.random.randint(60,70), np.random.randint(30,40),
+                                 np.random.randint(60,70), np.random.randint(30,40)]
+            elif self.model.cw_group == 'B':
+                v_set = [np.random.randint(30,40), np.random.randint(60,70),
+                                 np.random.randint(30,40),np.random.randint(60,70)]
+            else:
+                v_set = [np.random.randint(30,70), np.random.randint(30,70),
+                                 np.random.randint(30,70),np.random.randint(30,70)]
         else:
-            self.values = Values(10,v_set[0],v_set[1],v_set[2],v_set[3],self)
+            # new comer values
+            v_set = [np.random.randint(50,60), np.random.randint(30,40),
+                                 np.random.randint(40,50), np.random.randint(60,70)]
+            v_set_2 = [np.random.randint(30,40), np.random.randint(60,70),
+                                 np.random.randint(50,60), np.random.randint(30,40)]
+            if self.model.schedule.steps > 150:
+                self.values = Values(10,v_set_2[0],v_set_2[1],v_set_2[2],v_set_2[3],self)
+            else:
+                self.values = Values(10,v_set[0],v_set[1],v_set[2],v_set[3],self)
 
 
         self.testing_activities = False

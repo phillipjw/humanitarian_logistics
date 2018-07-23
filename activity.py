@@ -210,7 +210,8 @@ class marketingCampaign(Action):
     
     def do(self):
         super().do()
-        self.agent.campaign = (self.agent.city.po_max - self.agent.city.public_opinion) / (100 - self.agent.values.v_tau[0])
+        expendable_funds = self.agent.funds - self.agent.overhead
+        self.agent.campaign = min(expendable_funds,(self.agent.city.po_max - self.agent.city.public_opinion) / (100 - self.agent.values.v_tau[0]))
         self.agent.city.public_opinion += self.agent.campaign
         self.agent.cumulative_marketing_expenditures += self.agent.campaign
         self.agent.funds -= self.agent.campaign
