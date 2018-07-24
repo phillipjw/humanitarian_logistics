@@ -9,11 +9,12 @@ import traceback
 
 class ModelExplorer():
 
-    def __init__(self, p_width=200, p_height=200, p_num_pols=2, p_city_size=20, p_number_steps=500, p_shock_flag =False, p_decision_quality=True, 
-                 p_coa_se=55, p_coa_st=65, p_coa_c=45, p_coa_otc=60, p_ngo_se=45, p_ngo_st=50, p_ngo_c=55, p_ngo_otc=48, p_ind_se=45, p_ind_st=50, p_ind_c=55, p_ind_otc=65,
+    def __init__(self, p_po_uniform= False, p_width=200, p_height=200, p_num_pols=2, p_city_size=20, p_number_steps=500, p_shock_flag =False, p_decision_quality=True, 
+                 p_coa_se=55, p_coa_st=65, p_coa_c=45, p_coa_otc=60, p_ngo_se=50, p_ngo_st=55, p_ngo_c=60, p_ngo_otc=60, p_ind_se=50, p_ind_st=55, p_ind_c=60, p_ind_otc=60,
                  p_cultural_wellbeing=True, p_cw_group='A'):
 
         self.width = p_width
+        self.po_uniform = p_po_uniform
         self.height = p_height
         self.num_pols = p_num_pols
         self.city_size = p_city_size
@@ -636,7 +637,7 @@ class ModelExplorer():
     
     def trace(self, all_time_steps):
         toReturn = []
-        test = HumanitarianLogistics(False, self.width, self.height, self.num_pols, self.city_size, self.coa_se, self.coa_st, self.coa_c, self.coa_otc,
+        test = HumanitarianLogistics(self.po_uniform, self.width, self.height, self.num_pols, self.city_size, self.coa_se, self.coa_st, self.coa_c, self.coa_otc,
                                      self.ngo_se, self.ngo_st, self.ngo_c, self.ngo_otc, self.ind_se, self.ind_st, self.ind_c, self.ind_otc)
         test.shock_flag = self.shock_flag
         test.dq = self.dq
