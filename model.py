@@ -110,7 +110,7 @@ class HumanitarianLogistics(Model):
             
         ##### cultural_wellbeing
         self.cultural_wellbeing = False
-        self.cw_group = None
+        self.cw_group = 'A'
             
         
 

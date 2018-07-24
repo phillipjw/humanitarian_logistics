@@ -65,12 +65,14 @@ class Newcomer(Agent):
             if self.model.cw_group == 'A':
                 v_set = [np.random.randint(60,70), np.random.randint(30,40),
                                  np.random.randint(60,70), np.random.randint(30,40)]
+                
             elif self.model.cw_group == 'B':
                 v_set = [np.random.randint(30,40), np.random.randint(60,70),
                                  np.random.randint(30,40),np.random.randint(60,70)]
-            else:
+            elif self.model.cw_group == 'C':
                 v_set = [np.random.randint(30,70), np.random.randint(30,70),
                                  np.random.randint(30,70),np.random.randint(30,70)]
+            self.values = Values(10,v_set[0],v_set[1],v_set[2],v_set[3],self)
         else:
             # new comer values
             v_set = [np.random.randint(50,60), np.random.randint(30,40),
