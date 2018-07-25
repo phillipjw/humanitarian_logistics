@@ -611,9 +611,10 @@ class ModelExplorer():
 
     def trace_given_cw(self):
         
+        myData = [["trial_id", "step", "coa_se_value", "coa_st_value", "coa_c_value", "coa_otc_value", "ngo_se_value", "ngo_st_value", "ngo_c_value", "ngo_otc_value", "ind_se_value", "ind_st_value", "ind_c_value", "ind_otc_value", "ngo_funds", "ngo_cfr", "ngo_cme", "city_po", "building_health", "newcomer_acculturation", "azc_staff", "city_costs", "city_crime", "coa_costs", "newcomer_health", "newcomer_distress", "cw_group"]]
         
-        myData = [["step", "coa_se_value", "coa_st_value", "coa_c_value", "coa_otc_value", "ngo_se_value", "ngo_st_value", "ngo_c_value", "ngo_otc_value", "ind_se_value", "ind_st_value", "ind_c_value", "ind_otc_value", "ngo_funds", "ngo_cfr", "ngo_cme", "city_po", "building_health", "newcomer_acculturation", "azc_staff", "city_costs", "city_crime", "coa_costs", "newcomer_health", "newcomer_distress", "cw_group"]]
-        
+        trial = range(0,10)
+
         fileprefix = 'trace-of-cw-'
         filesuffix = str(self.cw_group) + '.csv'
         
@@ -622,20 +623,20 @@ class ModelExplorer():
         with myFile:
             writer = csv.writer(myFile)
             writer.writerows(myData)
-        
-        sim_values = self.trace(all_time_steps=True)
-        if sim_values is not None:
-            for x in range(0, len(sim_values)):
-                valuesToAdd = sim_values[x]
-                if valuesToAdd is not None:
-                    myFile = open(filename, 'a')
-                    with myFile:
-                        writer = csv.writer(myFile)
-                        writer.writerows([valuesToAdd])
-        if sim_values is None:
-            print("Exception thrown during simulation run.")
+        for t in trial:
+            sim_values = self.trace(all_time_steps=True, trial_id=t)
+            if sim_values is not None:
+                for x in range(0, len(sim_values)):
+                    valuesToAdd = sim_values[x]
+                    if valuesToAdd is not None:
+                        myFile = open(filename, 'a')
+                        with myFile:
+                            writer = csv.writer(myFile)
+                            writer.writerows([valuesToAdd])
+            if sim_values is None:
+                print("Exception thrown during simulation run.")
     
-    def trace(self, all_time_steps):
+    def trace(self, all_time_steps, trial_id):
         toReturn = []
         test = HumanitarianLogistics(self.po_uniform, self.width, self.height, self.num_pols, self.city_size, self.coa_se, self.coa_st, self.coa_c, self.coa_otc,
                                      self.ngo_se, self.ngo_st, self.ngo_c, self.ngo_otc, self.ind_se, self.ind_st, self.ind_c, self.ind_otc)
@@ -685,7 +686,7 @@ class ModelExplorer():
             ct_costs = np.nanmean([city.costs for city in cities])
             ct_crime = np.nanmean([city.crime for city in cities])
             staff = np.nanmean([coa.staff for coa in coa_array])
-            values = [step, self.coa_se, self.coa_st, self.coa_c, self.coa_otc, self.ngo_se, self.ngo_st, self.ngo_c, self.ngo_otc, self.ind_se, self.ind_st, self.ind_c, self.ind_otc, ng, ngo_cfr, ngo_cme, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress, self.cw_group]
+            values = [trial_id, step, self.coa_se, self.coa_st, self.coa_c, self.coa_otc, self.ngo_se, self.ngo_st, self.ngo_c, self.ngo_otc, self.ind_se, self.ind_st, self.ind_c, self.ind_otc, ng, ngo_cfr, ngo_cme, ct, bh, ac, staff, ct_costs, ct_crime, coa_costs, nc_health, nc_distress, self.cw_group]
             if all_time_steps==True:
                 toReturn.append(values)
         if all_time_steps == False:
