@@ -32,7 +32,8 @@ IP pertains to UU
 
 ## Acknowledgments
 
-* Frank Dignum - Advisor
-* Christine Boshuijzen - Comrad
+* Dr. Frank Dignum - Advisor
+* Dr. Christine Boshuijzen - Comrad
+* Dr. Ross Gore - Copilot
 
 
