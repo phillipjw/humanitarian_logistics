@@ -21,6 +21,11 @@ python run.py
 
 ### Notes
 Control COA/NGO/IND values with the sliders
+newcomers.py contains the code the newcomer agents
+organizations.py contains the code for COA/NGO/IND/AZC/Activity Centers
+activity.py contains actions and activity code
+Values.py contains the values object
+
 
 ## Authors
 
